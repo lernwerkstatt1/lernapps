@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aminosäure-Baukasten</title>
+<style>
+:root{
+  --bg:#f4f4f1;
+  --paper:#fff;
+  --ink:#1e1e1e;
+  --muted:#666;
+  --ok:#2e7d32;
+  --warn:#b35b00;
+  --bad:#b3261e;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"MS PGothic","MS Gothic",Arial,sans-serif;
+  line-height:1.42;
+  -webkit-text-size-adjust:100%;
+}
+header{
+  padding:18px;
+  background:#fff;
+  border-bottom:2px solid #111;
+  position:sticky;
+  top:0;
+  z-index:5;
+}
+h1{margin:0;font-size:25px}
+main{max-width:1120px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}header{position:static}}
+section,.card{
+  background:var(--paper);
+  border:2px solid #111;
+  border-radius:18px;
+  box-shadow:0 8px 24px rgba(0,0,0,.10);
+  padding:16px;
+}
+h2{margin:0 0 10px;font-size:20px}
+h3{margin:16px 0 8px;font-size:17px}
+p{margin:8px 0;font-size:16px}
+.small{font-size:14px;color:var(--muted)}
+.bold{font-weight:bold}
+.tag{
+  display:inline-block;
+  padding:3px 8px;
+  border:1.5px solid #111;
+  border-radius:999px;
+  background:#f8f8f8;
+  font-size:13px;
+  margin:2px;
+  white-space:nowrap;
+}
+.missions{display:grid;gap:10px;margin-top:10px}
+.mission-btn{
+  width:100%;
+  text-align:left;
+  border:2px solid #111;
+  background:#fff;
+  border-radius:14px;
+  padding:12px;
+  cursor:pointer;
+  font-family:inherit;
+  box-shadow:0 3px 0 #111;
+}
+.mission-btn:active,.btn:active{transform:translateY(1px);box-shadow:0 1px 0 #111}
+.mission-btn.active{background:#e8f0ff}
+.mission-title{font-weight:bold;font-size:16px}
+.mission-text{font-size:14px;color:#333;margin-top:3px}
+.food-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:10px;
+}
+@media(max-width:560px){.food-grid{grid-template-columns:1fr}}
+.food{
+  border:2px solid #111;
+  border-radius:14px;
+  padding:10px;
+  background:#fff;
+  min-height:122px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:8px;
+}
+.food.disabled{opacity:.35;filter:grayscale(.4)}
+.food-title{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:flex-start;
+  font-weight:bold;
+  font-size:16px;
+}
+.food-desc{font-size:13px;color:#444}
+.food-portion{font-size:12px;color:#666;margin-top:4px}
+.controls{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.btn{
+  border:2px solid #111;
+  border-radius:12px;
+  background:#fff;
+  font-family:inherit;
+  padding:8px 10px;
+  cursor:pointer;
+  box-shadow:0 2px 0 #111;
+  min-width:38px;
+  font-weight:bold;
+  touch-action:manipulation;
+}
+.btn.primary{background:#e8f0ff}
+.btn.danger{background:#fff0f0}
+.fixed{
+  font-size:13px;
+  color:#333;
+  border:1.5px dashed #111;
+  border-radius:10px;
+  padding:6px 8px;
+  background:#fafafa;
+  margin-top:6px;
+}
+.status{display:grid;gap:10px}
+.meter-wrap{
+  border:2px solid #111;
+  border-radius:14px;
+  padding:10px;
+  background:#fff;
+}
+.meter-head{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:baseline;
+  margin-bottom:6px;
+}
+.meter-name{font-weight:bold;font-size:15px}
+.meter-val{font-size:13px;color:#333}
+.bar{
+  height:22px;
+  border:2px solid #111;
+  background:#fff;
+  border-radius:999px;
+  overflow:hidden;
+}
+.bar>div{
+  height:100%;
+  width:0%;
+  transition:width .25s ease;
+  background:repeating-linear-gradient(45deg,#d9e8ff,#d9e8ff 10px,#c5dafd 10px,#c5dafd 20px);
+}
+.bar.ok>div{background:repeating-linear-gradient(45deg,#d7f0d8,#d7f0d8 10px,#b9e3bb 10px,#b9e3bb 20px)}
+.bar.bad>div{background:repeating-linear-gradient(45deg,#ffd8d8,#ffd8d8 10px,#ffc1c1 10px,#ffc1c1 20px)}
+.summary{
+  border:2px solid #111;
+  border-radius:16px;
+  padding:12px;
+  background:#fff;
+  min-height:132px;
+}
+.result{font-size:18px;font-weight:bold;margin-bottom:6px}
+.result.good{color:var(--ok)}
+.result.warn{color:var(--warn)}
+.result.bad{color:var(--bad)}
+.protein-chain{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:10px;
+  border:2px solid #111;
+  border-radius:14px;
+  background:#fbfbfb;
+  min-height:54px;
+}
+@media(max-width:560px){.protein-chain{grid-template-columns:1fr}}
+.brick{
+  width:100%;
+  min-height:72px;
+  padding:8px;
+  border:2px solid #111;
+  border-radius:10px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  gap:4px;
+  font-weight:bold;
+  font-size:13px;
+  background:#fff;
+  text-align:left;
+}
+.formula{
+  font-family:"MS PGothic","MS Gothic",Arial,sans-serif;
+  font-weight:normal;
+  font-size:13px;
+  line-height:1.25;
+  word-break:break-word;
+}
+.formula-note{
+  font-size:11px;
+  color:#444;
+  font-weight:normal;
+}
+.lys{background:#ffe1e1}
+.saa{background:#fff0bf}
+.leu{background:#d7f0d8}
+.trp{background:#dbe7ff}
+.val{background:#eadcff}
+.table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+.table th,.table td{border:1.5px solid #111;padding:7px;vertical-align:top}
+.table th{background:#f0f0f0}
+.tasks{margin-top:16px}
+.line{border-bottom:2px solid #aaa;height:26px;margin:4px 0}
+details{
+  margin-top:16px;
+  border:2px solid #111;
+  border-radius:14px;
+  padding:10px 12px;
+  background:#fff;
+}
+summary{cursor:pointer;font-weight:bold;font-size:16px}
+.footer-note{color:#444;font-size:13px;margin:14px 0 0}
+.mode-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+<h1>Aminosäure-Baukasten – Ist Protein gleich Protein?</h1>
+</header>
+
+<main>
+<section>
+<h2>Prinzip</h2>
+<p>
+  Der Körper baut eigene Proteine aus Aminosäuren. Für ein bestimmtes Körperprotein müssen die passenden
+  Aminosäuren in ausreichender Menge vorhanden sein. Fehlt eine benötigte Aminosäure im Verhältnis zum Bauplan,
+  kann der Aufbau begrenzt werden, auch wenn insgesamt Protein gegessen wurde.
+</p>
+<p class="small">
+  Die Werte in diesem Spiel sind <span class="bold">portionsbezogene Modellpunkte</span>. Sie wurden aus echten
+  Aminosäurewerten abgeleitet und für den Unterricht vereinfacht. Eine volle Leiste bedeutet hier nicht Tagesbedarf,
+  sondern: Diese Aminosäure reicht für den gewählten Modell-Bauplan.
+</p>
+</section>
+
+<div class="grid" style="margin-top:16px;">
+<section>
+<h2>1. Modus wählen</h2>
+<div class="missions" id="missions"></div>
+
+<h2 style="margin-top:18px;">2. Mahlzeit zusammenstellen</h2>
+<p id="missionInstruction" class="small"></p>
+<div class="mode-row">
+  <button class="btn danger" onclick="resetMission()">Zurücksetzen</button>
+  <button class="btn primary" onclick="randomTry()">Zufällige Mahlzeit</button>
+</div>
+<div class="food-grid" id="foodGrid"></div>
+</section>
+
+<section>
+<h2>Aminosäuren im Modell</h2>
+<p class="small">
+  Diese Aminosäuren werden im Spiel verfolgt. Die Strukturformeln sind vereinfacht dargestellt. Ziel: Die Balken unten müssen mindestens bis zur Markierung gefüllt werden.
+</p>
+<div class="protein-chain" id="chain"></div>
+
+<h3>Versorgung durch die gewählte Mahlzeit</h3>
+<div class="status" id="meters"></div>
+
+<h3>Auswertung</h3>
+<div class="summary">
+  <div id="resultTitle" class="result">Noch keine Auswahl.</div>
+  <div id="resultText">Wähle Lebensmittel aus.</div>
+</div>
+</section>
+</div>
+
+<section class="tasks">
+<h2>Arbeitsaufträge</h2>
+<p><span class="bold">①</span> Starte den freien Modus und wähle jeweils nur ein Lebensmittel aus. Welche Lebensmittel füllen die Balken stark, welche nur schwach?</p>
+<div class="line"></div>
+<p><span class="bold">②</span> Starte „Reisgericht retten“. Welche Ergänzung hilft besser: Mais, Linsen, Bohnen oder Tofu?</p>
+<div class="line"></div>
+<p><span class="bold">③</span> Starte „Rein pflanzlich kombinieren“. Finde eine rein pflanzliche Kombination, bei der alle Balken voll werden.</p>
+<div class="line"></div>
+<p><span class="bold">④</span> Starte „High-Protein allein?“. Prüfe, ob der Proteinriegel allein reicht. Ergänze höchstens zwei weitere Lebensmittel.</p>
+<div class="line"></div>
+<p><span class="bold">⑤</span> Starte „Die uncoole Proteinmahlzeit“. Finde eine einfache Alltagskombination, bei der alle Balken voll werden.</p>
+<div class="line"></div>
+</section>
+
+<details>
+<summary>Info für Lehrkraft / Datenmodell anzeigen</summary>
+<p>
+  Die Aminosäurewerte sind auf übliche Portionen bezogen und dann in Modellpunkte umgerechnet. Grundlage ist ein
+  FAO-Scoring-Pattern für ältere Kinder, Jugendliche und Erwachsene. 10 Punkte entsprechen im Spiel ungefähr dem
+  Aminosäureanteil, der in 50 g ideal zusammengesetztem Protein für diese Aminosäure enthalten wäre.
+</p>
+<p>
+  Die Werte sind für Unterricht und Exploration gedacht. Sie ersetzen keine Ernährungsberatung und keine exakte
+  Nährwertdatenbank. Beim Proteinriegel wurde ein Riegel mit Milch-/Whey-Protein als Modell angenommen; andere
+  Riegel können deutlich andere Aminosäureprofile besitzen.
+</p>
+<p>
+  Prüflösungen: Mission 2 ist z. B. mit Reis + Vollkornbrot + Linsen + Tofu möglich. Mission 4 ist z. B. mit
+  Kartoffeln + Ei + Spinat möglich.
+</p>
+<table class="table">
+<tr><th>Vereinfachung im Spiel</th><th>Biologische Aussage</th></tr>
+<tr>
+  <td>Es werden nur fünf Aminosäureleisten gezeigt.</td>
+  <td>Der Körper benötigt mehr Aminosäuren; einige davon sind unentbehrlich und müssen über Nahrung aufgenommen werden.</td>
+</tr>
+<tr>
+  <td>Methionin/Cystein wird gemeinsam betrachtet.</td>
+  <td>In der Proteinqualitätsbewertung werden schwefelhaltige Aminosäuren häufig zusammen beurteilt; in Nährwertdaten erscheint Cystein oft als Cystin.</td>
+</tr>
+<tr>
+  <td>Lebensmittel liefern Modellpunkte statt echter mg-Werte.</td>
+  <td>Die Punkte sind aus realen Aminosäurewerten abgeleitet, aber vereinfacht und gerundet.</td>
+</tr>
+</table>
+</details>
+
+<p class="footer-note">
+  Modellspiel für den Unterricht: Proteinqualität, essentielle Aminosäuren und ergänzende Proteinquellen.
+</p>
+</main>
+
+<script>
+const amino = [
+  {key:"lys", name:"Lysin", klass:"lys", formula:"H₂N–CH(COOH)–(CH₂)₄–NH₂"},
+  {key:"saa", name:"Methionin/Cystein", klass:"saa", formula:"Methionin: H₂N–CH(COOH)–CH₂–CH₂–S–CH₃<br>Cystein: H₂N–CH(COOH)–CH₂–SH", note:"Cystin entsteht aus zwei Cystein-Resten über eine S–S-Brücke."},
+  {key:"leu", name:"Leucin", klass:"leu", formula:"H₂N–CH(COOH)–CH₂–CH(CH₃)₂"},
+  {key:"trp", name:"Tryptophan", klass:"trp", formula:"H₂N–CH(COOH)–CH₂–Indolring"},
+  {key:"val", name:"Valin", klass:"val", formula:"H₂N–CH(COOH)–CH(CH₃)₂"}
+];
+
+const foods = [
+  {id:"reis", name:"Reis", portion:"ca. 150–160 g gekocht", type:"pflanzlich", desc:"Alltagsbeilage; füllt wenig und ist allein unausgewogen.", protein:4, vals:{lys:1,saa:2,leu:1,trp:2,val:1}},
+  {id:"brot", name:"Vollkornbrot", portion:"2 Scheiben", type:"pflanzlich", desc:"Getreideprodukt; kann durch Hülsenfrüchte ergänzt werden.", protein:8, vals:{lys:1,saa:3,leu:2,trp:3,val:2}},
+  {id:"linsen", name:"Linsen", portion:"ca. 150 g gekocht", type:"pflanzlich", desc:"Hülsenfrucht; ergänzt Getreideprodukte besonders gut.", protein:14, vals:{lys:4,saa:3,leu:3,trp:4,val:3}},
+  {id:"bohnen", name:"Bohnen", portion:"ca. 150 g gekocht", type:"pflanzlich", desc:"Hülsenfrucht; liefert im Modell viel Lysin.", protein:13, vals:{lys:4,saa:3,leu:3,trp:5,val:3}},
+  {id:"mais", name:"Mais", portion:"ca. 100 g gekocht", type:"pflanzlich", desc:"Beilage; als Proteinquelle eher schwach.", protein:3, vals:{lys:1,saa:1,leu:1,trp:1,val:1}},
+  {id:"kartoffeln", name:"Kartoffeln", portion:"ca. 250 g gekocht", type:"pflanzlich", desc:"Wenig Proteinmenge, aber als Kombinationspartner interessant.", protein:5, vals:{lys:1,saa:1,leu:1,trp:2,val:1}},
+  {id:"tofu", name:"Tofu / Soja", portion:"ca. 100 g", type:"pflanzlich", desc:"Pflanzliche Proteinquelle mit recht vollständigem Profil.", protein:17, vals:{lys:4,saa:2,leu:5,trp:7,val:4}},
+  {id:"mandeln", name:"Mandeln", portion:"ca. 30 g", type:"pflanzlich", desc:"Proteinreich wirkend, aber als Portion nur mäßiger Beitrag.", protein:6, vals:{lys:1,saa:1,leu:1,trp:2,val:1}},
+  {id:"spinat", name:"Spinat", portion:"ca. 150 g gekocht", type:"pflanzlich", desc:"Teil einer Mahlzeit; Protein ist hier nicht der Hauptbeitrag.", protein:5, vals:{lys:1,saa:1,leu:1,trp:2,val:1}},
+  {id:"ei", name:"Ei", portion:"1 Ei, ca. 50 g", type:"tierisch", desc:"Kleine Portion mit ausgewogenem Aminosäureprofil.", protein:6, vals:{lys:2,saa:3,leu:2,trp:2,val:2}},
+  {id:"skyr", name:"Skyr / griechischer Joghurt", portion:"ca. 200 g", type:"tierisch", desc:"Proteinreiches Milchprodukt aus der Fitness- und Alltagsküche.", protein:20, vals:{lys:4,saa:4,leu:3,trp:2,val:4}},
+  {id:"huhn", name:"Hähnchenbrust", portion:"ca. 80 g gegart", type:"tierisch", desc:"Klassische Fitness-Proteinquelle; pro Portion starker Beitrag.", protein:25, vals:{lys:9,saa:9,leu:6,trp:9,val:6}},
+  {id:"whey", name:"Whey-Proteinpulver", portion:"1 Portion Pulver", type:"produkt", desc:"Konzentrierte Proteinquelle; kein normales Lebensmittel im engeren Sinn.", protein:20, vals:{lys:8,saa:7,leu:7,trp:10,val:6}},
+  {id:"riegel", name:"Proteinriegel", portion:"1 Riegel, Milch-/Whey-Basis", type:"produkt", desc:"Geschätztes Profil für einen Riegel mit Milch-/Whey-Protein.", protein:20, vals:{lys:7,saa:6,leu:7,trp:10,val:6}}
+];
+
+const missions = [
+  {
+    id:"frei",
+    title:"Freier Modus: Lebensmittel vergleichen",
+    text:"Einzelne Lebensmittel testen oder beliebig kombinieren.",
+    max:12,
+    locked:{},
+    allowed:null,
+    target:{lys:10,saa:10,leu:10,trp:10,val:10},
+    instruction:"Freier Modus: Lebensmittel können einzeln oder kombiniert getestet werden. Die Balken zeigen, welche Aminosäuren im Verhältnis zum Modell-Bauplan stärker oder schwächer vertreten sind.",
+    free:true
+  },
+  {
+    id:"reis",
+    title:"Mission 1: Reisgericht retten",
+    text:"Grundlage sind 2 Portionen Reis. Ergänze sinnvoll.",
+    max:4,
+    locked:{reis:2},
+    allowed:null,
+    target:{lys:8,saa:8,leu:8,trp:8,val:8},
+    instruction:"Die Mahlzeit startet mit 2 Portionen Reis. Reis liefert Protein, aber nicht alle benötigten Aminosäuren im passenden Verhältnis. Ergänze höchstens 2 weitere Portionen."
+  },
+  {
+    id:"pflanzlich",
+    title:"Mission 2: Rein pflanzlich kombinieren",
+    text:"Baue ein vollständigeres Profil ohne tierische Lebensmittel.",
+    max:5,
+    locked:{},
+    allowed:["reis","brot","linsen","bohnen","mais","kartoffeln","tofu","mandeln","spinat"],
+    target:{lys:10,saa:10,leu:10,trp:10,val:10},
+    instruction:"Es sind nur pflanzliche Lebensmittel erlaubt. Kombiniere unterschiedliche Proteinquellen."
+  },
+  {
+    id:"hype",
+    title:"Mission 3: High-Protein allein?",
+    text:"Ein Proteinriegel ist schon gewählt. Reicht das?",
+    max:3,
+    locked:{riegel:1},
+    allowed:null,
+    target:{lys:10,saa:10,leu:10,trp:10,val:10},
+    instruction:"Ein Proteinriegel ist bereits gewählt. Prüfe, ob er allein reicht, und ergänze bei Bedarf sinnvoll."
+  },
+  {
+    id:"uncoole",
+    title:"Mission 4: Die uncoole Proteinmahlzeit",
+    text:"Finde eine unscheinbare Alltagskombination.",
+    max:3,
+    locked:{},
+    allowed:["kartoffeln","spinat","ei","brot","skyr","mandeln","mais"],
+    target:{lys:4,saa:5,leu:4,trp:6,val:4},
+    instruction:"Nicht jede gute Proteinmahlzeit sieht nach Fitnessküche aus. Finde mit höchstens 3 Portionen eine einfache Alltagskombination, die den kleinen Modell-Bauplan erfüllt."
+  }
+];
+
+let current = missions[0];
+let counts = {};
+
+function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
+function setMission(id){ current = missions.find(m => m.id === id); resetMission(); }
+function resetMission(){ counts = clone(current.locked || {}); render(); }
+function totalPortions(){ return Object.values(counts).reduce((a,b)=>a+b,0); }
+function isLocked(id){ return (current.locked && current.locked[id]) ? current.locked[id] : 0; }
+function allowedFood(f){ return !current.allowed || current.allowed.includes(f.id); }
+
+function addFood(id){
+  const f = foods.find(x => x.id === id);
+  if(!allowedFood(f)) return;
+  if(totalPortions() >= current.max) return;
+  counts[id] = (counts[id] || 0) + 1;
+  render();
+}
+
+function removeFood(id){
+  const locked = isLocked(id);
+  const now = counts[id] || 0;
+  if(now <= locked) return;
+  counts[id] = now - 1;
+  if(counts[id] <= 0) delete counts[id];
+  render();
+}
+
+function totals(){
+  const t = {lys:0,saa:0,leu:0,trp:0,val:0,protein:0};
+  for(const [id,count] of Object.entries(counts)){
+    const f = foods.find(x => x.id === id);
+    if(!f) continue;
+    t.protein += f.protein * count;
+    for(const a of amino){
+      t[a.key] += f.vals[a.key] * count;
+    }
+  }
+  return t;
+}
+
+function limiting(t){
+  let minKey = amino[0].key;
+  let minRatio = Infinity;
+  for(const a of amino){
+    const ratio = t[a.key] / current.target[a.key];
+    if(ratio < minRatio){
+      minRatio = ratio;
+      minKey = a.key;
+    }
+  }
+  return {key:minKey, ratio:minRatio, obj:amino.find(a => a.key === minKey)};
+}
+
+function success(t){
+  return amino.every(a => t[a.key] >= current.target[a.key]);
+}
+
+function randomTry(){
+  counts = clone(current.locked || {});
+  const available = foods.filter(allowedFood);
+  while(totalPortions() < current.max){
+    const f = available[Math.floor(Math.random()*available.length)];
+    counts[f.id] = (counts[f.id] || 0) + 1;
+    if(Math.random() < .22) break;
+  }
+  render();
+}
+
+function renderMissions(){
+  const box = document.getElementById("missions");
+  box.innerHTML = "";
+  missions.forEach(m => {
+    const btn = document.createElement("button");
+    btn.className = "mission-btn" + (m.id === current.id ? " active" : "");
+    btn.onclick = () => setMission(m.id);
+    btn.innerHTML = `<div class="mission-title">${m.title}</div><div class="mission-text">${m.text}</div>`;
+    box.appendChild(btn);
+  });
+}
+
+function renderFoods(){
+  const grid = document.getElementById("foodGrid");
+  grid.innerHTML = "";
+  foods.forEach(f => {
+    const disabled = !allowedFood(f);
+    const locked = isLocked(f.id);
+    const count = counts[f.id] || 0;
+    const div = document.createElement("div");
+    div.className = "food" + (disabled ? " disabled" : "");
+    const fixedText = locked ? `<div class="fixed">${locked} Portion(en) vorgegeben</div>` : "";
+    div.innerHTML = `
+      <div>
+        <div class="food-title">
+          <span>${f.name}</span>
+        </div>
+        <div class="food-desc">${f.desc}</div>
+        <div class="food-portion">Portion: ${f.portion}</div>
+        ${fixedText}
+      </div>
+      <div class="controls">
+        <button class="btn" ${disabled ? "disabled" : ""} onclick="removeFood('${f.id}')">−</button>
+        <span class="tag">${count}</span>
+        <button class="btn" ${disabled ? "disabled" : ""} onclick="addFood('${f.id}')">+</button>
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function renderChain(){
+  const box = document.getElementById("chain");
+  box.innerHTML = "";
+  const pattern = ["lys","saa","leu","trp","val"];
+  pattern.forEach(k => {
+    const a = amino.find(x => x.key === k);
+    const span = document.createElement("span");
+    span.className = "brick " + a.klass;
+    span.title = a.name;
+    span.innerHTML = `<span>${a.name}</span><span class="formula">${a.formula}</span>${a.note ? `<span class="formula-note">${a.note}</span>` : ""}`;
+    box.appendChild(span);
+  });
+}
+
+function renderMeters(){
+  const t = totals();
+  const box = document.getElementById("meters");
+  box.innerHTML = "";
+  amino.forEach(a => {
+    const percent = Math.min(100, Math.round((t[a.key] / current.target[a.key]) * 100));
+    const div = document.createElement("div");
+    const klass = percent >= 100 ? "ok" : (percent < 50 ? "bad" : "");
+    div.className = "meter-wrap";
+    div.innerHTML = `
+      <div class="meter-head">
+        <span class="meter-name">${a.name}</span>
+        <span class="meter-val">${t[a.key]} / ${current.target[a.key]}</span>
+      </div>
+      <div class="bar ${klass}"><div style="width:${percent}%"></div></div>
+    `;
+    box.appendChild(div);
+  });
+}
+
+function renderResult(){
+  const t = totals();
+  const lim = limiting(t);
+  const ok = success(t);
+  const title = document.getElementById("resultTitle");
+  const text = document.getElementById("resultText");
+  const portions = totalPortions();
+
+  if(portions === 0){
+    title.className = "result";
+    title.textContent = "Noch keine Auswahl.";
+    text.textContent = "Wähle Lebensmittel aus.";
+    return;
+  }
+
+  if(current.free){
+    if(ok){
+      title.className = "result good";
+      title.textContent = "Modell-Bauplan erfüllt.";
+      text.innerHTML = `Die Auswahl liefert insgesamt <span class="bold">${t.protein}</span> Protein-Modellpunkte. Alle dargestellten Aminosäuren erreichen den Modell-Bauplan.`;
+    } else {
+      title.className = "result warn";
+      title.textContent = "Freier Vergleich.";
+      text.innerHTML = `Die Auswahl liefert insgesamt <span class="bold">${t.protein}</span> Protein-Modellpunkte. Im Verhältnis zum Modell-Bauplan ist vor allem <span class="bold">${lim.obj.name}</span> knapp.`;
+    }
+    return;
+  }
+
+  if(ok){
+    title.className = "result good";
+    title.textContent = "Proteinbau möglich.";
+    text.innerHTML = `Alle dargestellten Aminosäuren sind ausreichend vorhanden. Die Mahlzeit liefert insgesamt <span class="bold">${t.protein}</span> Protein-Modellpunkte.`;
+  } else if(portions >= current.max){
+    title.className = "result bad";
+    title.textContent = "Proteinbau begrenzt.";
+    text.innerHTML = `Die Mahlzeit liefert <span class="bold">${t.protein}</span> Protein-Modellpunkte. Trotzdem ist <span class="bold">${lim.obj.name}</span> im Verhältnis zum Bauplan noch zu knapp. Diese Aminosäure begrenzt den Aufbau.`;
+  } else {
+    title.className = "result warn";
+    title.textContent = "Noch nicht vollständig.";
+    text.innerHTML = `Aktuell ist vor allem <span class="bold">${lim.obj.name}</span> knapp. Es sind noch ${current.max - portions} Portion(en) möglich.`;
+  }
+}
+
+function render(){
+  document.getElementById("missionInstruction").textContent =
+    current.instruction + ` Maximal ${current.max} Portionen. Aktuell: ${totalPortions()} Portion(en).`;
+  renderMissions();
+  renderFoods();
+  renderChain();
+  renderMeters();
+  renderResult();
+}
+
+resetMission();
+</script>
+</body>
+</html>
