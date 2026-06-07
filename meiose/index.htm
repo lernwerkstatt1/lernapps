@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meiose – Interaktive Lernapp</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1e2530;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --purple: #a78bfa;
+    --purple-dark: #7c3aed;
+    --purple-bg: rgba(124,58,237,0.12);
+    --teal: #34d399;
+    --teal-dark: #059669;
+    --teal-bg: rgba(52,211,153,0.1);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.12);
+    --green: #4ade80;
+    --green-bg: rgba(74,222,128,0.1);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251,191,36,0.1);
+    --blue: #60a5fa;
+    --chr-vater: #a78bfa;
+    --chr-mutter: #34d399;
+    --chr-dim: #4b5563;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg2);
+    position: sticky; top:0; z-index:100;
+  }
+  .logo-badge {
+    background: var(--purple-bg);
+    border: 1px solid var(--purple-dark);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--purple);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  .progress-wrap { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+  .progress-bar { width: 120px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--purple); border-radius: 2px; transition: width 0.5s ease; }
+
+  /* MAIN LAYOUT */
+  main { max-width: 1000px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  /* STEP INDICATOR */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 36px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .step-item {
+    flex: 1;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .step-item:last-child { border-right: none; }
+  .step-item.active { background: var(--purple-bg); color: var(--purple); }
+  .step-item.done { background: var(--teal-bg); color: var(--teal); }
+  .step-item .step-num { display: block; font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+
+  /* FACT PILL */
+  .fact-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .fact-pill {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .fact-pill .val { font-weight: 700; color: var(--purple); font-size: 15px; }
+  .fact-pill.teal .val { color: var(--teal); }
+  .fact-pill.amber .val { color: var(--amber); }
+
+  /* SVG STAGE */
+  .svg-stage {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .svg-stage svg { width: 100%; height: auto; display: block; }
+
+  /* CALLOUT */
+  .callout {
+    border-left: 3px solid var(--purple);
+    background: var(--purple-bg);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .callout.teal { border-color: var(--teal); background: var(--teal-bg); }
+  .callout.amber { border-color: var(--amber); background: var(--amber-bg); }
+  .callout strong { color: var(--purple); }
+  .callout.teal strong { color: var(--teal); }
+  .callout.amber strong { color: var(--amber); }
+
+  /* QUIZ */
+  .quiz-section { margin-top: 28px; }
+  .quiz-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .quiz-title::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--purple); }
+
+  .question-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .question-block.answered-correct { border-color: var(--teal); background: var(--teal-bg); }
+  .question-block.answered-wrong { border-color: var(--red); }
+  .question-text { font-size: 15px; font-weight: 500; margin-bottom: 14px; line-height: 1.5; }
+
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: left;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+  }
+  .option-btn:hover:not(:disabled) {
+    background: var(--bg3);
+    border-color: var(--purple);
+    transform: translateX(2px);
+  }
+  .option-btn:disabled { cursor: default; }
+  .option-btn.correct {
+    background: var(--green-bg);
+    border-color: var(--green);
+    color: var(--green);
+    font-weight: 600;
+  }
+  .option-btn.wrong {
+    background: var(--red-bg);
+    border-color: var(--red);
+    color: var(--red);
+    font-weight: 600;
+  }
+  .option-btn.greyed {
+    opacity: 0.35;
+  }
+  .option-letter {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+  }
+  .option-btn.correct .option-letter { background: var(--teal-bg); color: var(--teal); }
+  .option-btn.wrong .option-letter { background: var(--red-bg); color: var(--red); }
+
+  .feedback-msg {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    display: none;
+  }
+  .feedback-msg.show { display: block; animation: slideIn 0.2s ease; }
+  .feedback-msg.ok { background: var(--green-bg); border: 1px solid rgba(74,222,128,0.2); color: var(--green); }
+  .feedback-msg.fail { background: var(--red-bg); border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
+
+  /* LABEL QUIZ - click on SVG elements */
+  .label-quiz-wrap { position: relative; }
+  .click-target {
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .click-target:hover { opacity: 0.8; }
+
+  /* NAV BUTTONS */
+  .nav-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    align-items: center;
+  }
+  .btn-nav {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--purple-dark);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border2) !important;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--border2); }
+  .score-badge {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+  .score-badge span { color: var(--teal); font-weight: 700; }
+
+  /* SECTION label */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* RESULT SCREEN */
+  #result-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .result-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: 700;
+    border: 3px solid var(--teal);
+    color: var(--teal);
+    background: var(--teal-bg);
+  }
+  .result-title { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+  .result-sub { font-size: 16px; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+  .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 500px; margin: 0 auto 32px; }
+  .result-stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .result-stat .num { font-size: 28px; font-weight: 700; color: var(--purple); }
+  .result-stat .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* ANIMATIONS */
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .pulse { animation: pulse 1.5s ease-in-out infinite; }
+  .section-enter { animation: popIn 0.3s ease; }
+
+  /* CHR split animation helper */
+  .chr-animate { transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s; }
+
+  /* TABLE STYLE */
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .summary-table th { padding: 8px 12px; text-align: left; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border2); }
+  .summary-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .summary-table tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 100px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .tag-d { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
+  .tag-h { background: var(--teal-bg); color: var(--teal); border: 1px solid rgba(52,211,153,0.3); }
+
+  /* TOOLTIP */
+  .tooltip-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  /* SCORE DOTS */
+  .quiz-dots { display: flex; gap: 6px; margin-left: auto; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); transition: background 0.3s; }
+  .dot.ok { background: var(--teal); }
+  .dot.fail { background: var(--red); }
+
+  @media (max-width: 600px) {
+    header { padding: 14px 16px; }
+    main { padding: 20px 12px 60px; }
+    .card { padding: 20px 18px; }
+    .steps .step-item { font-size: 9px; }
+    .result-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">Biologie 11</div>
+  <h1>Meiose – Chromosomen & Chromatiden</h1>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <span id="prog-text">0 / 5</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- STEP INDICATOR -->
+  <div class="steps" id="step-nav">
+    <div class="step-item active" onclick="goToSection(0)"><span class="step-num">1</span>Ausgangs&shy;zelle</div>
+    <div class="step-item" onclick="goToSection(1)"><span class="step-num">2</span>S-Phase</div>
+    <div class="step-item" onclick="goToSection(2)"><span class="step-num">3</span>Meiose I</div>
+    <div class="step-item" onclick="goToSection(3)"><span class="step-num">4</span>Meiose II</div>
+    <div class="step-item" onclick="goToSection(4)"><span class="step-num">5</span>Ergebnis</div>
+  </div>
+
+  <!-- ============================================================
+       SECTION 0 – AUSGANGSZELLE
+  ============================================================ -->
+  <div class="section-enter" id="sec-0">
+    <div class="card">
+      <div class="section-label">Schritt 1</div>
+      <div class="card-title">Die Ausgangszelle</div>
+      <div class="card-sub">Eine diploide Keimbahnzelle (Spermatogonie oder Oogonie) – wie jede normale Körperzelle. Beim Menschen: 46 Chromosomen in 23 homologen Paaren.</div>
+      <div class="fact-row">
+        <div class="fact-pill"><span class="val">46</span> Chromosomen</div>
+        <div class="fact-pill teal"><span class="val">2n</span> diploid</div>
+        <div class="fact-pill amber"><span class="val">2C</span> DNA-Menge</div>
+      </div>
+      <div class="svg-stage">
+        <!-- Ausgangszelle: 4 homologe Paare symbolisch, einfache Chromosomen -->
+        <svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="cellglow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.06"/>
+              <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!-- Zellkern -->
+          <ellipse cx="340" cy="100" rx="270" ry="82" fill="url(#cellglow)" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.6"/>
+          <text x="340" y="186" text-anchor="middle" font-size="12" fill="#7d8590" font-family="Space Grotesk">Zellkern (Nucleus)</text>
+
+          <!-- 8 Chromosomen als einfache Stäbe (4 Paare) -->
+          <!-- Paar 1 -->
+          <rect x="100" y="64" width="16" height="52" rx="8" fill="#a78bfa"/>
+          <rect x="124" y="64" width="16" height="52" rx="8" fill="#34d399"/>
+          <!-- Paar 2 -->
+          <rect x="170" y="68" width="14" height="44" rx="7" fill="#a78bfa"/>
+          <rect x="192" y="68" width="14" height="44" rx="7" fill="#34d399"/>
+          <!-- Paar 3 -->
+          <rect x="302" y="60" width="18" height="60" rx="9" fill="#a78bfa"/>
+          <rect x="328" y="60" width="18" height="60" rx="9" fill="#34d399"/>
+          <!-- Paar 4 -->
+          <rect x="420" y="70" width="14" height="40" rx="7" fill="#a78bfa"/>
+          <rect x="442" y="70" width="14" height="40" rx="7" fill="#34d399"/>
+          <!-- Paar 5 (klein) -->
+          <rect x="500" y="74" width="12" height="32" rx="6" fill="#a78bfa"/>
+          <rect x="520" y="74" width="12" height="32" rx="6" fill="#34d399"/>
+          <!-- Paar 6 -->
+          <rect x="228" y="72" width="14" height="40" rx="7" fill="#a78bfa"/>
+          <rect x="250" y="72" width="14" height="40" rx="7" fill="#34d399"/>
+
+          <!-- Legende -->
+          <rect x="60" y="158" width="12" height="16" rx="6" fill="#a78bfa"/>
+          <text x="78" y="170" font-size="12" fill="#a78bfa" font-family="Space Grotesk">väterliches Chr.</text>
+          <rect x="210" y="158" width="12" height="16" rx="6" fill="#34d399"/>
+          <text x="228" y="170" font-size="12" fill="#34d399" font-family="Space Grotesk">mütterliches Chr.</text>
+          <text x="430" y="170" font-size="11" fill="#7d8590" font-family="Space Grotesk">6 von 23 Paaren gezeigt</text>
+        </svg>
+      </div>
+      <div class="callout">
+        Jedes Chromosom liegt als <strong>Einzelkopie</strong> vor – 1 DNA-Doppelhelix, 1 Chromatide. Die Chromosomenzahl 2n=46 gilt <strong>noch ohne Replikation</strong>.
+      </div>
+    </div>
+
+    <!-- QUIZ 0 -->
+    <div class="quiz-section">
+      <div class="quiz-title">Wissens-Check <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)">Klick auf die richtige Antwort</span></div>
+
+      <div class="question-block" id="q0">
+        <div class="question-text">Wie viele homologe Chromosomenpaare hat eine menschliche Körperzelle?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q0',false,'Die Zahl 46 ist die Gesamtzahl der Chromosomen, nicht die Paarzahl.')">
+            <span class="option-letter">A</span> 46 Paare
+          </button>
+          <button class="option-btn" onclick="answer(this,'q0',true,'Genau! 46 Chromosomen = 23 Paare. Je 1 Chromosom stammt vom Vater, 1 von der Mutter.')">
+            <span class="option-letter">B</span> 23 Paare
+          </button>
+          <button class="option-btn" onclick="answer(this,'q0',false,'92 wäre die Anzahl der Chromatiden nach der S-Phase – nicht die Paarzahl.')">
+            <span class="option-letter">C</span> 92 Paare
+          </button>
+          <button class="option-btn" onclick="answer(this,'q0',false,'Nur 1 Paar? Nein – das betrifft nur die Geschlechtschromosomen (XX oder XY).')">
+            <span class="option-letter">D</span> 1 Paar
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q0"></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-nav btn-primary" onclick="goToSection(1)">Weiter: S-Phase →</button>
+      <div class="score-badge">Punkte: <span id="score-disp">0</span></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECTION 1 – S-PHASE / DNA-REPLIKATION
+  ============================================================ -->
+  <div id="sec-1" style="display:none">
+    <div class="card section-enter">
+      <div class="section-label">Schritt 2</div>
+      <div class="card-title">S-Phase – DNA-Replikation</div>
+      <div class="card-sub">Bevor die Meiose beginnt, verdoppelt die S-Phase die gesamte DNA. Jedes Chromosom besteht danach aus zwei identischen <strong>Schwesterchromatiden</strong>, die am Zentromer verbunden sind.</div>
+
+      <div class="fact-row">
+        <div class="fact-pill"><span class="val">46</span> Chromosomen</div>
+        <div class="fact-pill teal"><span class="val">92</span> Chromatiden</div>
+        <div class="fact-pill teal"><span class="val">2n</span> diploid (noch!)</div>
+        <div class="fact-pill amber"><span class="val">4C</span> DNA-Menge</div>
+      </div>
+
+      <div class="svg-stage">
+        <svg viewBox="0 0 680 240" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+          </defs>
+
+          <!-- VOR S-PHASE -->
+          <text x="90" y="24" text-anchor="middle" font-size="12" fill="#7d8590" font-family="Space Grotesk">Vor S-Phase</text>
+          <text x="90" y="38" text-anchor="middle" font-size="11" fill="#a78bfa" font-family="DM Mono">1 Chromatide</text>
+
+          <!-- Einzelnes Chromosom -->
+          <rect x="72" y="48" width="20" height="64" rx="10" fill="#a78bfa"/>
+          <text x="82" y="128" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">1 Chr.</text>
+
+          <!-- Pfeil Replikation -->
+          <line x1="140" y1="90" x2="220" y2="90" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arr)"/>
+          <text x="180" y="82" text-anchor="middle" font-size="11" fill="#a78bfa" font-family="Space Grotesk">Replikation</text>
+          <text x="180" y="104" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">(S-Phase)</text>
+
+          <!-- NACH S-PHASE: Doppelchromatid -->
+          <text x="290" y="24" text-anchor="middle" font-size="12" fill="#7d8590" font-family="Space Grotesk">Nach S-Phase</text>
+          <text x="290" y="38" text-anchor="middle" font-size="11" fill="#34d399" font-family="DM Mono">2 Schwesterchromatiden</text>
+
+          <!-- Zwei Chromatiden + Zentromer -->
+          <rect x="262" y="48" width="16" height="64" rx="8" fill="#a78bfa"/>
+          <rect x="284" y="48" width="16" height="64" rx="8" fill="#7c3aed"/>
+          <!-- Zentromer -->
+          <ellipse cx="278" cy="80" rx="10" ry="7" fill="#1e2530" stroke="#a78bfa" stroke-width="1.5"/>
+          <text x="278" y="83" text-anchor="middle" font-size="8" fill="#a78bfa" font-family="DM Mono">Z</text>
+
+          <!-- Label -->
+          <text x="264" y="128" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">immer noch</text>
+          <text x="264" y="140" text-anchor="middle" font-size="10" fill="#a78bfa" font-family="DM Mono">1 Chromosom</text>
+          <text x="306" y="128" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">aber</text>
+          <text x="306" y="140" text-anchor="middle" font-size="10" fill="#34d399" font-family="DM Mono">2 Chromatiden</text>
+
+          <!-- BIG VISUAL: 3 Paare mit Chromatiden -->
+          <text x="510" y="24" text-anchor="middle" font-size="12" fill="#7d8590" font-family="Space Grotesk">3 homologe Paare nach S-Phase</text>
+
+          <!-- Bivalent 1: groß -->
+          <!-- väterlich -->
+          <rect x="430" y="44" width="14" height="56" rx="7" fill="#a78bfa"/>
+          <rect x="448" y="44" width="14" height="56" rx="7" fill="#7c3aed"/>
+          <ellipse cx="455" cy="72" rx="9" ry="6" fill="#1e2530" stroke="#a78bfa" stroke-width="1.2"/>
+          <!-- mütterlich -->
+          <rect x="470" y="44" width="14" height="56" rx="7" fill="#34d399"/>
+          <rect x="488" y="44" width="14" height="56" rx="7" fill="#059669"/>
+          <ellipse cx="495" cy="72" rx="9" ry="6" fill="#1e2530" stroke="#34d399" stroke-width="1.2"/>
+
+          <!-- Bivalent 2: mittel -->
+          <rect x="430" y="118" width="13" height="44" rx="6" fill="#a78bfa"/>
+          <rect x="447" y="118" width="13" height="44" rx="6" fill="#7c3aed"/>
+          <ellipse cx="453" cy="140" rx="8" ry="5" fill="#1e2530" stroke="#a78bfa" stroke-width="1.2"/>
+          <rect x="468" y="118" width="13" height="44" rx="6" fill="#34d399"/>
+          <rect x="485" y="118" width="13" height="44" rx="6" fill="#059669"/>
+          <ellipse cx="491" cy="140" rx="8" ry="5" fill="#1e2530" stroke="#34d399" stroke-width="1.2"/>
+
+          <!-- Bivalent 3: klein -->
+          <rect x="530" y="80" width="11" height="32" rx="5" fill="#a78bfa"/>
+          <rect x="545" y="80" width="11" height="32" rx="5" fill="#7c3aed"/>
+          <ellipse cx="548" cy="96" rx="7" ry="5" fill="#1e2530" stroke="#a78bfa" stroke-width="1.2"/>
+          <rect x="562" y="80" width="11" height="32" rx="5" fill="#34d399"/>
+          <rect x="577" y="80" width="11" height="32" rx="5" fill="#059669"/>
+          <ellipse cx="580" cy="96" rx="7" ry="5" fill="#1e2530" stroke="#34d399" stroke-width="1.2"/>
+
+          <!-- Zentromer-Legende -->
+          <text x="510" y="182" text-anchor="middle" font-size="11" fill="#7d8590" font-family="Space Grotesk">Z = Zentromer (hält Chromatiden zusammen)</text>
+          <text x="510" y="196" text-anchor="middle" font-size="11" fill="#a78bfa" font-family="Space Grotesk">■ väterlich   </text>
+          <text x="540" y="196" text-anchor="middle" font-size="11" fill="#34d399" font-family="Space Grotesk">■ mütterlich</text>
+          <text x="510" y="210" text-anchor="middle" font-size="11" fill="#7d8590" font-family="Space Grotesk">Hell = Kopie (Schwesterchromatide)</text>
+        </svg>
+      </div>
+
+      <div class="callout" style="border-color:var(--amber);background:var(--amber-bg)">
+        <strong style="color:var(--amber)">⚠ Der häufigste Fehler:</strong> Die Chromosomenzahl bleibt <strong style="color:var(--amber)">46</strong> – obwohl sich die DNA verdoppelt hat! Man zählt Chromosomen an den Zentromeren, und davon gibt es nach wie vor 46. Die DNA-Menge steigt aber von 2C auf <strong style="color:var(--amber)">4C</strong>.
+      </div>
+    </div>
+
+    <div class="quiz-section">
+      <div class="quiz-title">Wissens-Check</div>
+
+      <div class="question-block" id="q1a">
+        <div class="question-text">Nach der S-Phase: Wie viele Chromosomen hat die Zelle?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q1a',false,'92 ist die Anzahl der Chromatiden, nicht der Chromosomen. Chromosomen werden an Zentromeren gezählt!')">
+            <span class="option-letter">A</span> 92 Chromosomen
+          </button>
+          <button class="option-btn" onclick="answer(this,'q1a',true,'Richtig! Die Chromosomenzahl ändert sich durch die Replikation nicht – es bleiben 46. Jedes Chromosom hat jetzt aber 2 Schwesterchromatiden.')">
+            <span class="option-letter">B</span> 46 Chromosomen
+          </button>
+          <button class="option-btn" onclick="answer(this,'q1a',false,'23 wäre die Zahl nach Meiose I – vor der Meiose sind es noch 46.')">
+            <span class="option-letter">C</span> 23 Chromosomen
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q1a"></div>
+      </div>
+
+      <div class="question-block" id="q1b">
+        <div class="question-text">Nach der S-Phase: Wie viele Chromatiden hat die Zelle?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q1b',false,'46 war die Chromatidenzahl VOR der S-Phase, als jedes Chromosom nur 1 Chromatide hatte.')">
+            <span class="option-letter">A</span> 46 Chromatiden
+          </button>
+          <button class="option-btn" onclick="answer(this,'q1b',false,'23 ist die Chromosomenzahl nach Meiose I – nicht die Chromatidenzahl.')">
+            <span class="option-letter">B</span> 23 Chromatiden
+          </button>
+          <button class="option-btn" onclick="answer(this,'q1b',true,'Genau! 46 Chromosomen × 2 Schwesterchromatiden = 92 Chromatiden. Das ist der Kernpunkt!')">
+            <span class="option-letter">C</span> 92 Chromatiden
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q1b"></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-nav btn-secondary" onclick="goToSection(0)">← Zurück</button>
+      <button class="btn-nav btn-primary" onclick="goToSection(2)">Weiter: Meiose I →</button>
+      <div class="score-badge">Punkte: <span id="score-disp2">0</span></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECTION 2 – MEIOSE I
+  ============================================================ -->
+  <div id="sec-2" style="display:none">
+    <div class="card section-enter">
+      <div class="section-label">Schritt 3</div>
+      <div class="card-title">Meiose I – Die reduktionelle Teilung</div>
+      <div class="card-sub">Die homologen Chromosomenpaare werden getrennt. Aus 1 diploiden Zelle werden 2 haploide Tochterzellen – aber mit je 2 Chromatiden pro Chromosom.</div>
+
+      <div class="fact-row">
+        <div class="fact-pill"><span class="val">2</span> Tochterzellen</div>
+        <div class="fact-pill teal"><span class="val">23</span> Chr. je Zelle</div>
+        <div class="fact-pill teal"><span class="val">n</span> haploid</div>
+        <div class="fact-pill amber"><span class="val">2C</span> DNA je Zelle</div>
+      </div>
+
+      <div class="svg-stage">
+        <svg viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+            <marker id="arr2g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+          </defs>
+
+          <!-- MUTTERZELLE links -->
+          <text x="120" y="20" text-anchor="middle" font-size="12" fill="#7d8590" font-family="Space Grotesk">Mutterzelle (2n=46)</text>
+          <ellipse cx="120" cy="110" rx="90" ry="70" fill="none" stroke="#a78bfa" stroke-width="1" stroke-dasharray="5 3" opacity="0.5"/>
+
+          <!-- 3 homologe Paare als Bivalente -->
+          <!-- Paar A -->
+          <rect x="52" y="68" width="12" height="48" rx="6" fill="#a78bfa"/>
+          <rect x="66" y="68" width="12" height="48" rx="6" fill="#7c3aed"/>
+          <ellipse cx="66" cy="92" rx="8" ry="5" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+          <rect x="82" y="68" width="12" height="48" rx="6" fill="#34d399"/>
+          <rect x="96" y="68" width="12" height="48" rx="6" fill="#059669"/>
+          <ellipse cx="96" cy="92" rx="8" ry="5" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+
+          <!-- Paar B -->
+          <rect x="130" y="78" width="11" height="36" rx="5" fill="#a78bfa"/>
+          <rect x="143" y="78" width="11" height="36" rx="5" fill="#7c3aed"/>
+          <ellipse cx="143" cy="96" rx="7" ry="4" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+          <rect x="156" y="78" width="11" height="36" rx="5" fill="#34d399"/>
+          <rect x="169" y="78" width="11" height="36" rx="5" fill="#059669"/>
+          <ellipse cx="169" cy="96" rx="7" ry="4" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+
+          <!-- Paar C (small) -->
+          <rect x="86" y="130" width="10" height="28" rx="5" fill="#a78bfa"/>
+          <rect x="98" y="130" width="10" height="28" rx="5" fill="#7c3aed"/>
+          <ellipse cx="98" cy="144" rx="6" ry="4" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+          <rect x="112" y="130" width="10" height="28" rx="5" fill="#34d399"/>
+          <rect x="124" y="130" width="10" height="28" rx="5" fill="#059669"/>
+          <ellipse cx="124" cy="144" rx="6" ry="4" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+
+          <!-- Was wird getrennt Label -->
+          <text x="120" y="198" text-anchor="middle" font-size="11" fill="#fbbf24" font-family="Space Grotesk">homologe Paare</text>
+          <text x="120" y="212" text-anchor="middle" font-size="11" fill="#7d8590" font-family="Space Grotesk">werden getrennt →</text>
+
+          <!-- PFEIL MEIOSE I -->
+          <line x1="225" y1="110" x2="295" y2="110" stroke="#a78bfa" stroke-width="2" marker-end="url(#arr2)"/>
+          <text x="260" y="98" text-anchor="middle" font-size="12" fill="#a78bfa" font-family="Space Grotesk">Meiose I</text>
+          <text x="260" y="128" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">homologe</text>
+          <text x="260" y="140" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">Trennung</text>
+
+          <!-- TOCHTERZELLE 1 - oben rechts -->
+          <text x="430" y="20" text-anchor="middle" font-size="12" fill="#a78bfa" font-family="Space Grotesk">Tochterzelle 1 (n=23)</text>
+          <ellipse cx="430" cy="90" rx="90" ry="60" fill="none" stroke="#a78bfa" stroke-width="1" stroke-dasharray="5 3" opacity="0.5"/>
+
+          <!-- väterliche Chromatiden -->
+          <rect x="368" y="52" width="12" height="48" rx="6" fill="#a78bfa"/>
+          <rect x="382" y="52" width="12" height="48" rx="6" fill="#7c3aed"/>
+          <ellipse cx="382" cy="76" rx="8" ry="5" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+
+          <rect x="412" y="60" width="11" height="36" rx="5" fill="#a78bfa"/>
+          <rect x="425" y="60" width="11" height="36" rx="5" fill="#7c3aed"/>
+          <ellipse cx="425" cy="78" rx="7" ry="4" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+
+          <rect x="458" y="66" width="10" height="28" rx="5" fill="#a78bfa"/>
+          <rect x="470" y="66" width="10" height="28" rx="5" fill="#7c3aed"/>
+          <ellipse cx="470" cy="80" rx="6" ry="4" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+
+          <text x="430" y="166" text-anchor="middle" font-size="11" fill="#a78bfa" font-family="DM Mono">23 Chr. / 46 Chromatiden</text>
+
+          <!-- TOCHTERZELLE 2 - unten rechts -->
+          <text x="430" y="195" text-anchor="middle" font-size="12" fill="#34d399" font-family="Space Grotesk">Tochterzelle 2 (n=23)</text>
+          <ellipse cx="430" cy="248" rx="90" ry="55" fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="5 3" opacity="0.5"/>
+
+          <!-- mütterliche Chromatiden -->
+          <rect x="366" y="214" width="12" height="48" rx="6" fill="#34d399"/>
+          <rect x="380" y="214" width="12" height="48" rx="6" fill="#059669"/>
+          <ellipse cx="380" cy="238" rx="8" ry="5" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+
+          <rect x="410" y="222" width="11" height="36" rx="5" fill="#34d399"/>
+          <rect x="423" y="222" width="11" height="36" rx="5" fill="#059669"/>
+          <ellipse cx="423" cy="240" rx="7" ry="4" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+
+          <rect x="456" y="226" width="10" height="28" rx="5" fill="#34d399"/>
+          <rect x="468" y="226" width="10" height="28" rx="5" fill="#059669"/>
+          <ellipse cx="468" cy="240" rx="6" ry="4" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+
+          <text x="430" y="278" text-anchor="middle" font-size="11" fill="#34d399" font-family="DM Mono">23 Chr. / 46 Chromatiden</text>
+
+          <!-- Trennungspfeil zu beiden Zellen -->
+          <path d="M295 90 Q310 90 320 75 Q330 60 345 60" stroke="#a78bfa" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+          <path d="M295 130 Q310 130 320 200 Q330 240 345 240" stroke="#34d399" stroke-width="1.5" fill="none" marker-end="url(#arr2g)"/>
+
+          <!-- Wichtig-Hinweis -->
+          <rect x="570" y="100" width="100" height="60" rx="8" fill="rgba(251,191,36,0.1)" stroke="rgba(251,191,36,0.3)" stroke-width="1"/>
+          <text x="620" y="122" text-anchor="middle" font-size="10" fill="#fbbf24" font-family="Space Grotesk">Schwestern</text>
+          <text x="620" y="136" text-anchor="middle" font-size="10" fill="#fbbf24" font-family="Space Grotesk">bleiben</text>
+          <text x="620" y="150" text-anchor="middle" font-size="10" fill="#fbbf24" font-family="Space Grotesk">verbunden!</text>
+        </svg>
+      </div>
+
+      <div class="callout">
+        <strong>Was wird getrennt?</strong> Die <strong>homologen Chromosomen</strong> (väterlich ↔ mütterlich) – NICHT die Schwesterchromatiden! Die Schwestern bleiben am Zentromer verbunden. Jede Tochterzelle hat 23 Chromosomen, aber noch je 2 Chromatiden pro Chromosom → DNA = 2C.
+      </div>
+    </div>
+
+    <div class="quiz-section">
+      <div class="quiz-title">Wissens-Check</div>
+
+      <div class="question-block" id="q2a">
+        <div class="question-text">Was wird in der Meiose I getrennt?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q2a',false,'Die Schwesterchromatiden werden erst in Meiose II getrennt – das ist der Unterschied!')">
+            <span class="option-letter">A</span> Schwesterchromatiden
+          </button>
+          <button class="option-btn" onclick="answer(this,'q2a',true,'Genau! Meiose I = reduktionelle Teilung: homologe Chromosomen gehen in verschiedene Tochterzellen.')">
+            <span class="option-letter">B</span> Homologe Chromosomen
+          </button>
+          <button class="option-btn" onclick="answer(this,'q2a',false,'Die DNA-Moleküle werden nicht direkt getrennt – man spricht von Chromosomen und Chromatiden.')">
+            <span class="option-letter">C</span> DNA-Moleküle
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q2a"></div>
+      </div>
+
+      <div class="question-block" id="q2b">
+        <div class="question-text">Wie viele Chromatiden hat jede Tochterzelle NACH Meiose I?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q2b',false,'23 ist die Chromosomenzahl, aber jedes Chromosom hat noch 2 Chromatiden. Also: 23 × 2 = ?')">
+            <span class="option-letter">A</span> 23 Chromatiden
+          </button>
+          <button class="option-btn" onclick="answer(this,'q2b',true,'Richtig! 23 Chromosomen × 2 Schwesterchromatiden = 46 Chromatiden. Meiose II trennt diese erst.')">
+            <span class="option-letter">B</span> 46 Chromatiden
+          </button>
+          <button class="option-btn" onclick="answer(this,'q2b',false,'92 war die Gesamtzahl vor der Meiose. Nach Meiose I hat jede der 2 Zellen die Hälfte davon.')">
+            <span class="option-letter">C</span> 92 Chromatiden
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q2b"></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-nav btn-secondary" onclick="goToSection(1)">← Zurück</button>
+      <button class="btn-nav btn-primary" onclick="goToSection(3)">Weiter: Meiose II →</button>
+      <div class="score-badge">Punkte: <span id="score-disp3">0</span></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECTION 3 – MEIOSE II
+  ============================================================ -->
+  <div id="sec-3" style="display:none">
+    <div class="card section-enter">
+      <div class="section-label">Schritt 4</div>
+      <div class="card-title">Meiose II – Wie eine Mitose</div>
+      <div class="card-sub">Jede der 2 Tochterzellen teilt sich nochmals. Jetzt werden die Schwesterchromatiden getrennt – genau wie bei der Mitose.</div>
+
+      <div class="fact-row">
+        <div class="fact-pill"><span class="val">4</span> Tochterzellen</div>
+        <div class="fact-pill teal"><span class="val">23</span> Chr. je Zelle</div>
+        <div class="fact-pill teal"><span class="val">n</span> haploid</div>
+        <div class="fact-pill amber"><span class="val">1C</span> DNA je Zelle</div>
+      </div>
+
+      <div class="svg-stage">
+        <svg viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr3a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+            <marker id="arr3b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+          </defs>
+
+          <!-- EINGABE: 2 haploide Zellen mit Doppelchromatiden -->
+          <text x="90" y="20" text-anchor="middle" font-size="12" fill="#a78bfa" font-family="Space Grotesk">Zelle 1 (n, 2C)</text>
+          <ellipse cx="90" cy="95" rx="72" ry="55" fill="none" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+          <rect x="46" y="58" width="12" height="44" rx="6" fill="#a78bfa"/>
+          <rect x="60" y="58" width="12" height="44" rx="6" fill="#7c3aed"/>
+          <ellipse cx="60" cy="80" rx="7" ry="4" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+          <rect x="84" y="64" width="10" height="32" rx="5" fill="#a78bfa"/>
+          <rect x="96" y="64" width="10" height="32" rx="5" fill="#7c3aed"/>
+          <ellipse cx="96" cy="80" rx="7" ry="4" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+          <rect x="118" y="68" width="9" height="24" rx="4" fill="#a78bfa"/>
+          <rect x="129" y="68" width="9" height="24" rx="4" fill="#7c3aed"/>
+          <ellipse cx="129" cy="80" rx="6" ry="4" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+          <text x="90" y="165" text-anchor="middle" font-size="10" fill="#a78bfa" font-family="DM Mono">23 Chr., 46 Chrm.</text>
+
+          <text x="90" y="190" text-anchor="middle" font-size="12" fill="#34d399" font-family="Space Grotesk">Zelle 2 (n, 2C)</text>
+          <ellipse cx="90" cy="245" rx="72" ry="45" fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+          <rect x="46" y="214" width="12" height="44" rx="6" fill="#34d399"/>
+          <rect x="60" y="214" width="12" height="44" rx="6" fill="#059669"/>
+          <ellipse cx="60" cy="236" rx="7" ry="4" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+          <rect x="84" y="220" width="10" height="32" rx="5" fill="#34d399"/>
+          <rect x="96" y="220" width="10" height="32" rx="5" fill="#059669"/>
+          <ellipse cx="96" cy="236" rx="7" ry="4" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+          <rect x="118" y="226" width="9" height="24" rx="4" fill="#34d399"/>
+          <rect x="129" y="226" width="9" height="24" rx="4" fill="#059669"/>
+          <ellipse cx="129" cy="238" rx="6" ry="4" fill="#1e2530" stroke="#34d399" stroke-width="1"/>
+          <text x="90" y="272" text-anchor="middle" font-size="10" fill="#34d399" font-family="DM Mono">23 Chr., 46 Chrm.</text>
+
+          <!-- PFEILE MEIOSE II -->
+          <line x1="178" y1="95" x2="234" y2="95" stroke="#a78bfa" stroke-width="2" marker-end="url(#arr3a)"/>
+          <text x="206" y="84" text-anchor="middle" font-size="11" fill="#a78bfa" font-family="Space Grotesk">Meiose II</text>
+          <text x="206" y="110" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">Schwester-</text>
+          <text x="206" y="122" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">trennung</text>
+
+          <line x1="178" y1="245" x2="234" y2="245" stroke="#34d399" stroke-width="2" marker-end="url(#arr3b)"/>
+          <text x="206" y="234" text-anchor="middle" font-size="11" fill="#34d399" font-family="Space Grotesk">Meiose II</text>
+
+          <!-- 4 Tochterzellen -->
+          <!-- Zelle A -->
+          <text x="318" y="20" text-anchor="middle" font-size="11" fill="#a78bfa" font-family="Space Grotesk">Zelle A (n, 1C)</text>
+          <ellipse cx="318" cy="80" rx="60" ry="44" fill="none" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+          <rect x="278" y="48" width="11" height="40" rx="5" fill="#a78bfa"/>
+          <rect x="304" y="54" width="10" height="30" rx="5" fill="#a78bfa"/>
+          <rect x="326" y="58" width="9" height="22" rx="4" fill="#a78bfa"/>
+          <text x="318" y="138" text-anchor="middle" font-size="10" fill="#a78bfa" font-family="DM Mono">23 Chr., 23 Chrm.</text>
+
+          <!-- Zelle B -->
+          <text x="318" y="158" text-anchor="middle" font-size="11" fill="#7c3aed" font-family="Space Grotesk">Zelle B (n, 1C)</text>
+          <ellipse cx="318" cy="218" rx="60" ry="44" fill="none" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+          <rect x="278" y="186" width="11" height="40" rx="5" fill="#7c3aed"/>
+          <rect x="304" y="194" width="10" height="30" rx="5" fill="#7c3aed"/>
+          <rect x="326" y="198" width="9" height="22" rx="4" fill="#7c3aed"/>
+          <text x="318" y="278" text-anchor="middle" font-size="10" fill="#7c3aed" font-family="DM Mono">23 Chr., 23 Chrm.</text>
+
+          <!-- Zelle C -->
+          <text x="488" y="20" text-anchor="middle" font-size="11" fill="#34d399" font-family="Space Grotesk">Zelle C (n, 1C)</text>
+          <ellipse cx="488" cy="80" rx="60" ry="44" fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+          <rect x="448" y="48" width="11" height="40" rx="5" fill="#34d399"/>
+          <rect x="474" y="54" width="10" height="30" rx="5" fill="#34d399"/>
+          <rect x="496" y="58" width="9" height="22" rx="4" fill="#34d399"/>
+          <text x="488" y="138" text-anchor="middle" font-size="10" fill="#34d399" font-family="DM Mono">23 Chr., 23 Chrm.</text>
+
+          <!-- Zelle D -->
+          <text x="488" y="158" text-anchor="middle" font-size="11" fill="#059669" font-family="Space Grotesk">Zelle D (n, 1C)</text>
+          <ellipse cx="488" cy="218" rx="60" ry="44" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+          <rect x="448" y="186" width="11" height="40" rx="5" fill="#059669"/>
+          <rect x="474" y="194" width="10" height="30" rx="5" fill="#059669"/>
+          <rect x="496" y="198" width="9" height="22" rx="4" fill="#059669"/>
+          <text x="488" y="278" text-anchor="middle" font-size="10" fill="#059669" font-family="DM Mono">23 Chr., 23 Chrm.</text>
+
+          <!-- Verbindungspfeile -->
+          <path d="M240 80 Q265 80 280 60" stroke="#a78bfa" stroke-width="1.2" fill="none" marker-end="url(#arr3a)"/>
+          <path d="M240 95 Q262 95 280 205" stroke="#7c3aed" stroke-width="1.2" fill="none" marker-end="url(#arr3a)"/>
+          <path d="M240 245 Q265 245 430 80" stroke="#34d399" stroke-width="1.2" fill="none" marker-end="url(#arr3b)"/>
+          <path d="M240 258 Q262 258 430 218" stroke="#059669" stroke-width="1.2" fill="none" marker-end="url(#arr3b)"/>
+        </svg>
+      </div>
+
+      <div class="callout teal">
+        <strong>Was wird jetzt getrennt?</strong> Die <strong>Schwesterchromatiden</strong> – wie bei der Mitose! Das Zentromer wird durchtrennt. Jede Chromatide wird zu einem eigenständigen Chromosom. Ergebnis: 4 Zellen mit je 23 Chromosomen und je 1 Chromatide (DNA = 1C).
+      </div>
+    </div>
+
+    <div class="quiz-section">
+      <div class="quiz-title">Wissens-Check</div>
+
+      <div class="question-block" id="q3a">
+        <div class="question-text">Wie unterscheidet sich die Chromosomenzahl nach Meiose I und nach Meiose II?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q3a',false,'Die Chromosomenzahl ändert sich in Meiose II nicht! Was sich ändert, ist die Chromatidenzahl.')">
+            <span class="option-letter">A</span> Nach Meiose II hat jede Zelle nur noch 12 Chromosomen
+          </button>
+          <button class="option-btn" onclick="answer(this,'q3a',true,'Richtig! Beide Male 23 Chromosomen – aber nach Meiose I hat jedes Chr. noch 2 Chromatiden, nach Meiose II nur noch 1.')">
+            <span class="option-letter">B</span> Beide Male 23 – aber die Chromatidenzahl pro Chr. ändert sich von 2 auf 1
+          </button>
+          <button class="option-btn" onclick="answer(this,'q3a',false,'Nach Meiose II entstehen 4 Zellen – jede mit 23 Chromosomen, nicht 46.')">
+            <span class="option-letter">C</span> Nach Meiose II haben die Zellen wieder 46 Chromosomen
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q3a"></div>
+      </div>
+
+      <div class="question-block" id="q3b">
+        <div class="question-text">Womit ist Meiose II am besten vergleichbar?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q3b',false,'Nein – Meiose I trennt homologe Chromosomen. Meiose II hat einen anderen Mechanismus.')">
+            <span class="option-letter">A</span> Mit Meiose I
+          </button>
+          <button class="option-btn" onclick="answer(this,'q3b',true,'Genau! In beiden Fällen werden Schwesterchromatiden getrennt. Der Unterschied: Bei der Mitose bleibt die Ploidie gleich, hier beginnt man schon mit n.')">
+            <span class="option-letter">B</span> Mit der Mitose
+          </button>
+          <button class="option-btn" onclick="answer(this,'q3b',false,'Die S-Phase ist die DNA-Replikation – etwas ganz anderes.')">
+            <span class="option-letter">C</span> Mit der S-Phase
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q3b"></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-nav btn-secondary" onclick="goToSection(2)">← Zurück</button>
+      <button class="btn-nav btn-primary" onclick="goToSection(4)">Weiter: Gesamtüberblick →</button>
+      <div class="score-badge">Punkte: <span id="score-disp4">0</span></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECTION 4 – ERGEBNIS + ABSCHLUSSQUIZ
+  ============================================================ -->
+  <div id="sec-4" style="display:none">
+    <div class="card section-enter">
+      <div class="section-label">Schritt 5 – Gesamtüberblick</div>
+      <div class="card-title">Die vollständige Übersicht</div>
+      <div class="card-sub">Alle Phasen auf einen Blick – mit Chromosomen, Chromatiden und DNA-Menge.</div>
+
+      <div class="svg-stage">
+        <svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#7d8590" stroke-width="1.5" stroke-linecap="round"/>
+            </marker>
+          </defs>
+
+          <!-- Schritt 1: Ausgangszelle -->
+          <rect x="10" y="60" width="104" height="80" rx="10" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+          <text x="62" y="82" text-anchor="middle" font-size="11" fill="#a78bfa" font-family="Space Grotesk" font-weight="600">Ausgangszelle</text>
+          <text x="62" y="98" text-anchor="middle" font-size="10" fill="#e6edf3" font-family="DM Mono">46 Chr.</text>
+          <text x="62" y="112" text-anchor="middle" font-size="10" fill="#34d399" font-family="DM Mono">46 Chrm.</text>
+          <text x="62" y="126" text-anchor="middle" font-size="10" fill="#fbbf24" font-family="DM Mono">2C | 2n</text>
+
+          <line x1="114" y1="100" x2="134" y2="100" stroke="#7d8590" stroke-width="1" marker-end="url(#arr4)"/>
+          <text x="124" y="92" text-anchor="middle" font-size="9" fill="#7d8590" font-family="Space Grotesk">S-Phase</text>
+
+          <!-- Schritt 2: nach S-Phase -->
+          <rect x="136" y="60" width="104" height="80" rx="10" fill="#1e2530" stroke="#fbbf24" stroke-width="1"/>
+          <text x="188" y="82" text-anchor="middle" font-size="11" fill="#fbbf24" font-family="Space Grotesk" font-weight="600">nach S-Phase</text>
+          <text x="188" y="98" text-anchor="middle" font-size="10" fill="#e6edf3" font-family="DM Mono">46 Chr.</text>
+          <text x="188" y="112" text-anchor="middle" font-size="10" fill="#34d399" font-family="DM Mono">92 Chrm. !</text>
+          <text x="188" y="126" text-anchor="middle" font-size="10" fill="#fbbf24" font-family="DM Mono">4C | 2n</text>
+
+          <line x1="240" y1="100" x2="260" y2="100" stroke="#7d8590" stroke-width="1" marker-end="url(#arr4)"/>
+          <text x="250" y="92" text-anchor="middle" font-size="9" fill="#7d8590" font-family="Space Grotesk">Mei. I</text>
+
+          <!-- Schritt 3: nach Meiose I (2 Zellen) -->
+          <rect x="262" y="30" width="104" height="80" rx="10" fill="#1e2530" stroke="#a78bfa" stroke-width="1"/>
+          <text x="314" y="52" text-anchor="middle" font-size="10" fill="#a78bfa" font-family="Space Grotesk" font-weight="600">nach Mei. I</text>
+          <text x="314" y="66" text-anchor="middle" font-size="9" fill="#7d8590" font-family="Space Grotesk">(× 2 Zellen)</text>
+          <text x="314" y="82" text-anchor="middle" font-size="10" fill="#e6edf3" font-family="DM Mono">23 Chr.</text>
+          <text x="314" y="96" text-anchor="middle" font-size="10" fill="#34d399" font-family="DM Mono">46 Chrm.</text>
+          <text x="314" y="110" text-anchor="middle" font-size="10" fill="#fbbf24" font-family="DM Mono">2C | n</text>
+
+          <rect x="262" y="130" width="104" height="50" rx="10" fill="#161b22" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="3 2"/>
+          <text x="314" y="152" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">(2. Tochterzelle</text>
+          <text x="314" y="166" text-anchor="middle" font-size="10" fill="#7d8590" font-family="Space Grotesk">identisch)</text>
+
+          <line x1="366" y1="70" x2="386" y2="70" stroke="#7d8590" stroke-width="1" marker-end="url(#arr4)"/>
+          <text x="376" y="62" text-anchor="middle" font-size="9" fill="#7d8590" font-family="Space Grotesk">Mei. II</text>
+
+          <!-- Schritt 4: nach Meiose II (4 Zellen) -->
+          <rect x="388" y="30" width="104" height="80" rx="10" fill="#1e2530" stroke="#34d399" stroke-width="1.5"/>
+          <text x="440" y="52" text-anchor="middle" font-size="10" fill="#34d399" font-family="Space Grotesk" font-weight="600">nach Mei. II</text>
+          <text x="440" y="66" text-anchor="middle" font-size="9" fill="#7d8590" font-family="Space Grotesk">(× 4 Zellen)</text>
+          <text x="440" y="82" text-anchor="middle" font-size="10" fill="#e6edf3" font-family="DM Mono">23 Chr.</text>
+          <text x="440" y="96" text-anchor="middle" font-size="10" fill="#34d399" font-family="DM Mono">23 Chrm. ✓</text>
+          <text x="440" y="110" text-anchor="middle" font-size="10" fill="#fbbf24" font-family="DM Mono">1C | n</text>
+
+          <!-- 3 weitere Keimzellen als Schatten -->
+          <rect x="400" y="120" width="104" height="30" rx="8" fill="#161b22" stroke="#34d399" stroke-width="0.5" stroke-dasharray="3 2"/>
+          <rect x="412" y="140" width="104" height="26" rx="8" fill="#161b22" stroke="#34d399" stroke-width="0.5" stroke-dasharray="3 2"/>
+          <rect x="424" y="157" width="104" height="26" rx="8" fill="#0d1117" stroke="#34d399" stroke-width="0.5" stroke-dasharray="3 2"/>
+          <text x="490" y="178" text-anchor="middle" font-size="9" fill="#7d8590" font-family="Space Grotesk">4 Keimzellen gesamt</text>
+
+          <!-- Befruchtung -->
+          <line x1="492" y1="70" x2="558" y2="70" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr4)"/>
+          <text x="525" y="62" text-anchor="middle" font-size="9" fill="#60a5fa" font-family="Space Grotesk">+ Befruchtung</text>
+          <rect x="560" y="50" width="104" height="60" rx="10" fill="#1e2530" stroke="#60a5fa" stroke-width="1"/>
+          <text x="612" y="72" text-anchor="middle" font-size="10" fill="#60a5fa" font-family="Space Grotesk" font-weight="600">Zygote</text>
+          <text x="612" y="88" text-anchor="middle" font-size="10" fill="#e6edf3" font-family="DM Mono">46 Chr.</text>
+          <text x="612" y="102" text-anchor="middle" font-size="10" fill="#fbbf24" font-family="DM Mono">2n | 2C</text>
+        </svg>
+      </div>
+
+      <!-- Übersichtstabelle -->
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Zellen</th>
+            <th>Chromosomen</th>
+            <th>Chromatiden</th>
+            <th>Ploidie</th>
+            <th>DNA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ausgangszelle</td>
+            <td>1</td>
+            <td>46</td>
+            <td>46</td>
+            <td><span class="tag tag-d">2n</span></td>
+            <td>2C</td>
+          </tr>
+          <tr>
+            <td>Nach S-Phase</td>
+            <td>1</td>
+            <td><strong>46</strong></td>
+            <td style="color:var(--teal)"><strong>92</strong></td>
+            <td><span class="tag tag-d">2n</span></td>
+            <td style="color:var(--amber)">4C</td>
+          </tr>
+          <tr>
+            <td>Nach Meiose I</td>
+            <td>2</td>
+            <td>23</td>
+            <td>46</td>
+            <td><span class="tag tag-h">n</span></td>
+            <td>2C</td>
+          </tr>
+          <tr>
+            <td>Nach Meiose II</td>
+            <td>4</td>
+            <td>23</td>
+            <td style="color:var(--teal)"><strong>23</strong></td>
+            <td><span class="tag tag-h">n</span></td>
+            <td style="color:var(--amber)">1C</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ABSCHLUSSQUIZ -->
+    <div class="quiz-section">
+      <div class="quiz-title">Abschluss-Quiz – Alles zusammen!</div>
+
+      <div class="question-block" id="q4a">
+        <div class="question-text">Eine Spermatogonie (2n=46) durchläuft die komplette Meiose. Wie viele Spermien entstehen, und wie viele Chromosomen hat jedes?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q4a',false,'2 Spermien wäre das Ergebnis nach Meiose I. Die Meiose besteht aus zwei Teilungen!')">
+            <span class="option-letter">A</span> 2 Spermien mit je 46 Chromosomen
+          </button>
+          <button class="option-btn" onclick="answer(this,'q4a',false,'4 Spermien ist richtig – aber mit je 46 Chromosomen? Das wäre wieder diploid.')">
+            <span class="option-letter">B</span> 4 Spermien mit je 46 Chromosomen
+          </button>
+          <button class="option-btn" onclick="answer(this,'q4a',true,'Perfekt! Aus 1 Spermatogonie entstehen 4 haploide Spermien mit je 23 Chromosomen.')">
+            <span class="option-letter">C</span> 4 Spermien mit je 23 Chromosomen
+          </button>
+          <button class="option-btn" onclick="answer(this,'q4a',false,'2 Spermien mit je 23 Chr. – das wäre nach Meiose I, nicht nach der vollständigen Meiose.')">
+            <span class="option-letter">D</span> 2 Spermien mit je 23 Chromosomen
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q4a"></div>
+      </div>
+
+      <div class="question-block" id="q4b">
+        <div class="question-text">In welcher Phase hat eine Keimbahnzelle die höchste DNA-Menge (4C)?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q4b',false,'In der Meiose II halbiert sich die DNA nochmals. Die höchste Menge wird vorher erreicht.')">
+            <span class="option-letter">A</span> Nach Meiose II
+          </button>
+          <button class="option-btn" onclick="answer(this,'q4b',false,'Nach Meiose I hat jede Zelle nur noch 2C – die Gesamtzelle hat sich halbiert.')">
+            <span class="option-letter">B</span> Nach Meiose I
+          </button>
+          <button class="option-btn" onclick="answer(this,'q4b',true,'Richtig! Die S-Phase verdoppelt die DNA auf 4C. Diese Menge bleibt bis zur ersten Teilung erhalten.')">
+            <span class="option-letter">C</span> Nach der S-Phase (vor Meiose I)
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q4b"></div>
+      </div>
+
+      <div class="question-block" id="q4c">
+        <div class="question-text">Ein Spermium (23 Chr.) befruchtet eine Eizelle (23 Chr.). Wie viele Chromosomen hat die Zygote?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(this,'q4c',false,'23 wäre nur die Hälfte – aber beide Gameten bringen je 23 Chromosomen mit.')">
+            <span class="option-letter">A</span> 23
+          </button>
+          <button class="option-btn" onclick="answer(this,'q4c',true,'Genau! 23 + 23 = 46 Chromosomen = 2n. Die Befruchtung stellt die diploide Chromosomenzahl wieder her.')">
+            <span class="option-letter">B</span> 46
+          </button>
+          <button class="option-btn" onclick="answer(this,'q4c',false,'92 wäre die Chromatidenzahl nach der S-Phase der Zygote – nicht die Chromosomenzahl zum Zeitpunkt der Befruchtung.')">
+            <span class="option-letter">C</span> 92
+          </button>
+        </div>
+        <div class="feedback-msg" id="fb-q4c"></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-nav btn-secondary" onclick="goToSection(3)">← Zurück</button>
+      <button class="btn-nav btn-primary" onclick="showResult()">Auswertung anzeigen ✓</button>
+      <div class="score-badge">Punkte: <span id="score-disp5">0</span></div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="result-screen">
+    <div class="result-circle" id="result-grade">?</div>
+    <div class="result-title" id="result-title">Auswertung</div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="result-grid">
+      <div class="result-stat">
+        <div class="num" id="res-correct">0</div>
+        <div class="lbl">Richtig</div>
+      </div>
+      <div class="result-stat">
+        <div class="num" id="res-wrong" style="color:var(--red)">0</div>
+        <div class="lbl">Falsch</div>
+      </div>
+      <div class="result-stat">
+        <div class="num" id="res-total">10</div>
+        <div class="lbl">Fragen gesamt</div>
+      </div>
+    </div>
+    <button class="btn-nav btn-primary" style="margin:0 auto" onclick="restart()">↺ Nochmal von vorn</button>
+  </div>
+
+</main>
+
+<script>
+  let score = 0;
+  let totalAnswered = 0;
+  let wrongAnswers = 0;
+  const TOTAL_Q = 10;
+
+  function answer(btn, qId, isCorrect, msg) {
+    const block = document.getElementById(qId);
+    if (block.classList.contains('answered-correct') || block.classList.contains('answered-wrong')) return;
+
+    const allBtns = block.querySelectorAll('.option-btn');
+    allBtns.forEach(b => { b.disabled = true; });
+
+    const fb = document.getElementById('fb-' + qId);
+
+    if (isCorrect) {
+      btn.classList.add('correct');
+      block.classList.add('answered-correct');
+      fb.className = 'feedback-msg ok show';
+      fb.innerHTML = '✓ ' + msg;
+      score++;
+      totalAnswered++;
+    } else {
+      btn.classList.add('wrong');
+      block.classList.add('answered-wrong');
+      fb.className = 'feedback-msg fail show';
+      fb.innerHTML = '✗ ' + msg;
+      wrongAnswers++;
+      totalAnswered++;
+      // Show correct answer
+      allBtns.forEach(b => {
+        if (!b.classList.contains('wrong')) b.classList.add('greyed');
+      });
+    }
+
+    updateScore();
+  }
+
+  function updateScore() {
+    const pct = Math.round((totalAnswered / TOTAL_Q) * 100);
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-text').textContent = totalAnswered + ' / ' + TOTAL_Q;
+    ['', '2', '3', '4', '5'].forEach(s => {
+      const el = document.getElementById('score-disp' + s);
+      if (el) el.textContent = score;
+    });
+  }
+
+  const sections = [0, 1, 2, 3, 4];
+  function goToSection(idx) {
+    sections.forEach(i => {
+      const el = document.getElementById('sec-' + i);
+      if (el) el.style.display = i === idx ? 'block' : 'none';
+    });
+    document.getElementById('result-screen').style.display = 'none';
+
+    // Update step nav
+    document.querySelectorAll('.step-item').forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      if (i === idx) el.classList.add('active');
+      else if (i < idx) el.classList.add('done');
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showResult() {
+    sections.forEach(i => {
+      const el = document.getElementById('sec-' + i);
+      if (el) el.style.display = 'none';
+    });
+    document.getElementById('result-screen').style.display = 'block';
+
+    document.getElementById('res-correct').textContent = score;
+    document.getElementById('res-wrong').textContent = wrongAnswers;
+    document.getElementById('res-total').textContent = TOTAL_Q;
+
+    const pct = score / TOTAL_Q;
+    const gradeEl = document.getElementById('result-grade');
+    const titleEl = document.getElementById('result-title');
+    const subEl = document.getElementById('result-sub');
+
+    if (pct >= 0.9) {
+      gradeEl.textContent = score + '/' + TOTAL_Q;
+      gradeEl.style.borderColor = 'var(--teal)';
+      gradeEl.style.color = 'var(--teal)';
+      gradeEl.style.background = 'var(--teal-bg)';
+      titleEl.textContent = 'Ausgezeichnet!';
+      subEl.textContent = 'Du beherrschst Chromosomen und Chromatiden in der Meiose. Sehr gut!';
+    } else if (pct >= 0.6) {
+      gradeEl.textContent = score + '/' + TOTAL_Q;
+      gradeEl.style.borderColor = 'var(--amber)';
+      gradeEl.style.color = 'var(--amber)';
+      gradeEl.style.background = 'var(--amber-bg)';
+      titleEl.textContent = 'Gut – noch ein bisschen Üben!';
+      subEl.textContent = 'Du hast die Grundlagen verstanden. Wiederhole nochmals den Unterschied Chromosom vs. Chromatide und die Trennung in Meiose I vs. II.';
+    } else {
+      gradeEl.textContent = score + '/' + TOTAL_Q;
+      gradeEl.style.borderColor = 'var(--red)';
+      gradeEl.style.color = 'var(--red)';
+      gradeEl.style.background = 'var(--red-bg)';
+      titleEl.textContent = 'Nochmal durcharbeiten!';
+      subEl.textContent = 'Kein Problem – die Meiose ist tricky. Geh die Abschnitte nochmal durch, besonders S-Phase und den Unterschied Meiose I/II.';
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function restart() {
+    score = 0; totalAnswered = 0; wrongAnswers = 0;
+    updateScore();
+    // Reset all questions
+    document.querySelectorAll('.question-block').forEach(b => {
+      b.classList.remove('answered-correct', 'answered-wrong');
+    });
+    document.querySelectorAll('.option-btn').forEach(b => {
+      b.disabled = false;
+      b.classList.remove('correct', 'wrong', 'greyed');
+    });
+    document.querySelectorAll('.feedback-msg').forEach(f => {
+      f.classList.remove('show');
+    });
+    goToSection(0);
+  }
+</script>
+</body>
+</html>
