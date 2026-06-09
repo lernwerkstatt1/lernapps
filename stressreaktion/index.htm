@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stressreaktion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fef9f0;--panel:#fff;--border:#2d2d2d;--muted:#666;
+  --orange:#f4831f;--red:#e63946;--purple:#7b2d8b;--green:#06d6a0;--yellow:#ffd166;--blue:#118ab2;
+  --shadow:4px 4px 0 #2d2d2d;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);background-image:radial-gradient(circle,#00000007 1px,transparent 1px);background-size:18px 18px;color:var(--border);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:center;gap:16px;padding:5px 12px 3px;flex-shrink:0;position:relative;}
+h1{font-family:'Bangers',cursive;font-size:24px;letter-spacing:3px;color:var(--red);text-shadow:2px 2px 0 #2d2d2d;}
+h1 span{font-size:11px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--muted);letter-spacing:0;display:block;text-align:center;}
+
+/* mode toggle */
+.mode-toggle{display:flex;border:2px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:2px 2px 0 var(--border);flex-shrink:0;}
+.mode-btn{padding:5px 14px;font-family:'Bangers',cursive;font-size:14px;letter-spacing:.5px;cursor:pointer;border:none;background:#f0f0f0;color:var(--muted);transition:background .2s,color .2s;}
+.mode-btn.active{background:var(--border);color:#fff;}
+
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:210px 1fr 230px;gap:8px;padding:0 8px 8px;flex:1;min-height:0;}
+
+/* ── PANELS ── */
+.panel{background:var(--panel);border:2px solid var(--border);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+.ph{font-family:'Bangers',cursive;font-size:16px;letter-spacing:1px;padding:5px 10px 4px;border-bottom:2px solid var(--border);flex-shrink:0;}
+.pb{padding:7px;overflow-y:auto;flex:1;min-height:0;}
+.pb::-webkit-scrollbar{width:3px;}.pb::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px;}
+
+/* ── STRESSOR BUTTONS ── */
+.sbtn{width:100%;display:flex;align-items:center;gap:7px;padding:6px 9px;margin-bottom:4px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;box-shadow:2px 2px 0 var(--border);transition:transform .1s,box-shadow .1s;text-align:left;}
+.sbtn:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--border);}
+.sbtn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--border);}
+.sbtn .ico{font-size:18px;}.sbtn .nm{font-size:12px;line-height:1.2;}.sbtn .tp{font-size:9px;opacity:.6;font-weight:700;text-transform:uppercase;}
+.sbtn-reset{background:#f0f0f0;justify-content:center;font-family:'Bangers',cursive;font-size:14px;letter-spacing:1px;}
+
+/* ── CENTRE ── */
+.center-col{display:flex;flex-direction:column;gap:8px;min-height:0;}
+.top-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex-shrink:0;}
+
+/* character box */
+.char-box{background:var(--panel);border:2px solid var(--border);border-radius:12px;box-shadow:var(--shadow);position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:6px 8px 5px;}
+.char-row{display:flex;align-items:flex-end;gap:8px;width:100%;}
+.char-wrap{display:inline-block;}
+.char-wrap.shake{animation:cShake .4s ease infinite;}
+.char-wrap.tremble{animation:cTremble .15s ease infinite;}
+@keyframes cShake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-3px) rotate(-2deg)}75%{transform:translateX(3px) rotate(2deg)}}
+@keyframes cTremble{0%,100%{transform:translateX(0)}50%{transform:translateX(2px)}}
+.bubble{flex:1;background:#fff;border:2px solid var(--border);border-radius:9px;padding:5px 9px;font-size:11px;font-weight:700;line-height:1.4;min-height:36px;position:relative;box-shadow:2px 2px 0 var(--border);align-self:flex-start;margin-bottom:4px;}
+.bubble::before{content:'';position:absolute;left:-9px;top:12px;border:4px solid transparent;border-right-color:var(--border);}
+.bubble::after{content:'';position:absolute;left:-6px;top:13px;border:3px solid transparent;border-right-color:#fff;z-index:1;}
+.cortisol-meter{width:100%;margin-top:3px;}
+.cortisol-label{display:flex;justify-content:space-between;font-size:10px;font-weight:800;margin-bottom:2px;}
+.cortisol-label span:first-child{color:var(--purple);}
+.cbar-track{height:12px;background:#e8e8e8;border:2px solid var(--border);border-radius:6px;overflow:hidden;}
+.cbar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#9b59b6,var(--purple));width:0%;transition:width 1s cubic-bezier(.34,1.56,.64,1);}
+.badge-row{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px;width:100%;}
+.badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;border:1.5px solid var(--border);opacity:0;transform:translateY(3px);transition:opacity .3s,transform .3s;}
+.badge.show{opacity:1;transform:translateY(0);}
+.badge-s{background:#ffe0b2;}.badge-a{background:#ffcdd2;}.badge-c{background:#e1bee7;}.badge-h{background:#c8e6c9;}
+.flash-layer{position:absolute;inset:0;pointer-events:none;}
+.flash{position:absolute;inset:0;background:var(--yellow);opacity:0;animation:flashAnim .5s ease;border-radius:10px;}
+@keyframes flashAnim{0%{opacity:.5}100%{opacity:0}}
+.danger-ring{position:absolute;inset:-2px;border-radius:12px;pointer-events:none;opacity:0;box-shadow:inset 0 0 0 3px var(--red);transition:opacity .4s;}
+.danger-ring.on{opacity:1;animation:dangerPulse 1s ease infinite;}
+@keyframes dangerPulse{0%,100%{box-shadow:inset 0 0 0 3px var(--red)}50%{box-shadow:inset 0 0 0 5px #ff6b6b}}
+
+/* organ rows */
+.orow{display:flex;align-items:center;gap:5px;padding:3px 2px;border-bottom:1px dashed #e0e0e0;font-size:11px;opacity:.2;filter:grayscale(80%);transition:opacity .4s,filter .4s;cursor:pointer;border-radius:4px;}
+.orow:last-child{border:none;}
+.orow.on{opacity:1;filter:grayscale(0%);}
+.orow:hover{background:#f5f5f5;}
+.orow .oi{font-size:15px;width:20px;text-align:center;}
+.orow .on2{font-weight:700;min-width:58px;font-size:10px;}
+.orow .arr{font-weight:800;}.arr-up{color:var(--red);}.arr-dn{color:var(--blue);}
+.orow .oe{color:var(--muted);font-size:10px;}
+.orow .qmark{margin-left:auto;font-size:11px;color:var(--blue);font-weight:800;opacity:.5;}
+.orow.on .qmark{opacity:1;}
+
+/* flow diagram */
+.flow-panel{flex:1;min-height:0;}
+.fn{opacity:.2;transition:opacity .4s,filter .4s;filter:grayscale(80%);}
+.fn.on{opacity:1;filter:grayscale(0%);}
+.fn.clickable{cursor:pointer;}
+.fn.clickable:hover rect,.fn.clickable:hover ellipse{filter:brightness(0.92);}
+.fa{opacity:.1;transition:opacity .4s;}.fa.on{opacity:1;}
+.fl{opacity:.1;transition:opacity .4s;font-family:'Nunito',sans-serif;font-weight:800;}.fl.on{opacity:1;}
+@keyframes nodePulse{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 5px #7b2d8b)}}
+.fn.pulse{animation:nodePulse 1.2s ease infinite;}
+
+/* right panel */
+.phase-card{border:2px solid var(--border);border-radius:8px;padding:7px 9px;margin-bottom:6px;opacity:.2;filter:grayscale(70%);transition:opacity .5s,filter .5s,box-shadow .3s,transform .3s;position:relative;}
+.phase-card::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;border-radius:2px;}
+.phase-card.on{opacity:1;filter:grayscale(0%);box-shadow:2px 2px 0 var(--border);transform:translateX(2px);}
+.pc-schnell{background:#fff8f0;}.pc-schnell::before{background:var(--orange);}
+.pc-langsam{background:#faf0ff;}.pc-langsam::before{background:var(--purple);}
+.pc-dauer{background:#fff0f0;}.pc-dauer::before{background:var(--red);}
+.pc-title{font-family:'Bangers',cursive;font-size:14px;letter-spacing:.5px;margin-bottom:1px;display:flex;align-items:center;gap:6px;}
+.pc-time{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.55;margin-bottom:3px;}
+.pc-text{font-size:11px;line-height:1.4;}
+.chips{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;}
+.chip{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;border:1.5px solid var(--border);}
+.chip-o{background:#ffe5cc;}.chip-p{background:#ecdeff;}.chip-r{background:#ffd6d6;}
+.pc-qbtn{margin-left:auto;background:var(--blue);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .1s;}
+.pc-qbtn:hover{transform:scale(1.2);}
+.info-box{background:#f8f8f8;border:2px solid var(--border);border-radius:8px;padding:6px 9px;font-size:11px;line-height:1.5;display:none;margin-top:4px;}
+.info-box strong{font-size:13px;font-family:'Bangers',cursive;letter-spacing:.5px;display:block;margin-bottom:2px;}
+
+/* ── POPUP OVERLAY ── */
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.popup-overlay.show{opacity:1;pointer-events:all;}
+.popup-box{background:#fff;border:3px solid var(--border);border-radius:16px;box-shadow:6px 6px 0 var(--border);max-width:420px;width:90%;padding:20px 22px;position:relative;transform:scale(.92);transition:transform .2s;}
+.popup-overlay.show .popup-box{transform:scale(1);}
+.popup-close{position:absolute;top:10px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;line-height:1;}
+.popup-title{font-family:'Bangers',cursive;font-size:22px;letter-spacing:1px;margin-bottom:4px;}
+.popup-sub{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;}
+.popup-body{font-size:13px;line-height:1.6;margin-bottom:10px;}
+.popup-section{background:#f8f8f8;border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:8px 12px;font-size:12px;line-height:1.5;margin-top:8px;}
+.popup-section.red{border-color:var(--red);background:#fff5f5;}
+.popup-section.purple{border-color:var(--purple);background:#faf5ff;}
+.popup-section.green{border-color:var(--green);background:#f0fff8;}
+.popup-section-title{font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+
+/* ── TEST MODE ── */
+#testMode{display:none;flex:1;flex-direction:column;gap:8px;padding:0 8px 8px;min-height:0;}
+
+.test-layout{display:grid;grid-template-columns:1fr 260px;gap:8px;flex:1;min-height:0;}
+
+/* drag area */
+.test-flow-panel{background:var(--panel);border:2px solid var(--border);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+
+/* word bank */
+.word-bank{background:var(--panel);border:2px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:flex;flex-direction:column;gap:8px;}
+.word-bank-title{font-family:'Bangers',cursive;font-size:16px;letter-spacing:1px;border-bottom:2px solid var(--border);padding-bottom:6px;margin-bottom:2px;}
+.word-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.wchip{padding:5px 12px;border:2px solid var(--border);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:#f8f8f8;box-shadow:2px 2px 0 var(--border);transition:transform .1s,box-shadow .1s,opacity .2s;}
+.wchip:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--border);}
+.wchip.used{opacity:.3;pointer-events:none;}
+.wchip.correct{background:#d4f7e7;border-color:var(--green);color:var(--green);}
+.wchip.wrong{background:#ffd6d6;border-color:var(--red);color:var(--red);opacity:1;pointer-events:all;}
+
+/* blank fields in SVG */
+.blank-field{cursor:pointer;}
+.blank-field rect{transition:fill .2s;}
+.blank-field:hover rect{fill:#e8f4ff !important;}
+.blank-field.filled rect{fill:#e8f4ff !important;}
+.blank-field.correct rect{fill:#d4f7e7 !important;}
+.blank-field.wrong rect{fill:#ffd6d6 !important;}
+
+/* score panel */
+.score-panel{background:var(--panel);border:2px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:8px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.score-num{font-family:'Bangers',cursive;font-size:28px;color:var(--purple);}
+.score-label{font-size:11px;font-weight:700;color:var(--muted);}
+.score-feedback{font-size:12px;font-weight:700;flex:1;text-align:right;}
+.test-btn{padding:6px 14px;border:2px solid var(--border);border-radius:8px;font-family:'Bangers',cursive;font-size:14px;letter-spacing:.5px;cursor:pointer;box-shadow:2px 2px 0 var(--border);transition:transform .1s;}
+.test-btn:hover{transform:translate(-1px,-1px);}
+.test-btn:active{transform:translate(1px,1px);box-shadow:0 0 0;}
+.test-btn-check{background:#ffd166;}
+.test-btn-reset{background:#f0f0f0;}
+
+/* selected word for placing */
+.selected-chip{outline:3px solid var(--blue);outline-offset:2px;}
+
+/* comic pop */
+.cpop{position:fixed;font-family:'Bangers',cursive;font-size:42px;letter-spacing:2px;pointer-events:none;z-index:999;animation:cpopAnim .9s ease-out forwards;text-shadow:3px 3px 0 #2d2d2d;}
+@keyframes cpopAnim{0%{opacity:1;transform:scale(.5) rotate(-10deg)}30%{opacity:1;transform:scale(1.2) rotate(4deg)}100%{opacity:0;transform:scale(1.4) translateY(-50px) rotate(-3deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⚡ STRESSREAKTION</h1>
+    <h1><span>Klick auf Stressreize, Knoten im Signalweg oder Fragezeichen zum Erkunden</span></h1>
+  </div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btnExplore" onclick="setMode('explore')">🔬 Erkunden</button>
+    <button class="mode-btn" id="btnTest" onclick="setMode('test')">🧪 Testen</button>
+  </div>
+</header>
+
+<!-- ══════════════ EXPLORE MODE ══════════════ -->
+<div class="grid" id="exploreMode">
+
+<!-- LEFT: stressors -->
+<div class="panel">
+  <div class="ph">💥 Stressreize</div>
+  <div class="pb">
+    <button class="sbtn" style="background:#fff5cc" onclick="go('pruefung')"><span class="ico">📝</span><span><span class="nm">Mathe-Klausur</span><br><span class="tp">Psychischer Stress</span></span></button>
+    <button class="sbtn" style="background:#ffe0e0" onclick="go('monster')"><span class="ico">👹</span><span><span class="nm">Wildes Tier!</span><br><span class="tp">Akute Bedrohung</span></span></button>
+    <button class="sbtn" style="background:#e8f4ff" onclick="go('chef')"><span class="ico">😤</span><span><span class="nm">Wütender Chef</span><br><span class="tp">Sozialer Stress</span></span></button>
+    <button class="sbtn" style="background:#f5e8ff" onclick="go('laerm')"><span class="ico">🔊</span><span><span class="nm">Extremer Lärm</span><br><span class="tp">Physischer Stress</span></span></button>
+    <button class="sbtn" style="background:#e0fff4" onclick="go('sport')"><span class="ico">🏃</span><span><span class="nm">Sprint-Alarm!</span><br><span class="tp">Eustress (positiv)</span></span></button>
+    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:center;margin:3px 0">⏱ Länger ausgesetzt…</div>
+    <button class="sbtn" style="background:#ffe8e8;border-color:var(--red)" onclick="go('dauer')"><span class="ico">😩</span><span><span class="nm">Dauerstress!</span><br><span class="tp">Chronisch · HHN erschöpft</span></span></button>
+    <button class="sbtn sbtn-reset" onclick="doReset()">🌿 Entspannen</button>
+  </div>
+</div>
+
+<!-- CENTRE -->
+<div class="center-col">
+  <div class="top-row">
+    <!-- Character -->
+    <div class="char-box">
+      <div class="danger-ring" id="dring"></div>
+      <div class="flash-layer" id="flashLayer"></div>
+      <div class="char-row">
+        <div class="char-wrap" id="charWrap">
+          <svg id="charSvg" width="80" height="104" viewBox="0 0 90 116"></svg>
+        </div>
+        <div class="bubble" id="bubble">Alles cool hier 😎</div>
+      </div>
+      <div class="cortisol-meter">
+        <div class="cortisol-label"><span>🟣 Cortisolspiegel</span><span id="cortPct">0%</span></div>
+        <div class="cbar-track"><div class="cbar-fill" id="cortBar"></div></div>
+      </div>
+      <div class="badge-row">
+        <span class="badge badge-s" id="bSym">⚡ Sympathikus</span>
+        <span class="badge badge-a" id="bAdr">🔴 Adrenalin↑</span>
+        <span class="badge badge-c" id="bCor">🟣 Cortisol↑</span>
+        <span class="badge badge-h" id="bHHN">🔁 HHN-Achse</span>
+      </div>
+    </div>
+
+    <!-- Organs -->
+    <div class="panel">
+      <div class="ph">🫀 Organreaktionen <span style="font-family:'Nunito';font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0">· ? = Details</span></div>
+      <div class="pb">
+        <div class="orow" id="or-herz" onclick="showOrganPopup('herz')"><span class="oi">❤️</span><span class="on2">Herz</span><span class="arr arr-up">↑↑</span><span class="oe">Herzfrequenz &amp; Blutdruck</span><span class="qmark">?</span></div>
+        <div class="orow" id="or-lunge" onclick="showOrganPopup('lunge')"><span class="oi">🫁</span><span class="on2">Lunge</span><span class="arr arr-up">↑</span><span class="oe">Bronchien weiten sich</span><span class="qmark">?</span></div>
+        <div class="orow" id="or-leber" onclick="showOrganPopup('leber')"><span class="oi">🟤</span><span class="on2">Leber</span><span class="arr arr-up">↑</span><span class="oe">Glykogen→Glukose</span><span class="qmark">?</span></div>
+        <div class="orow" id="or-muskel" onclick="showOrganPopup('muskel')"><span class="oi">💪</span><span class="on2">Muskeln</span><span class="arr arr-up">↑</span><span class="oe">Energie &amp; Durchblutung↑</span><span class="qmark">?</span></div>
+        <div class="orow" id="or-darm" onclick="showOrganPopup('darm')"><span class="oi">🌀</span><span class="on2">Verdauung</span><span class="arr arr-dn">↓</span><span class="oe">Gedrosselt</span><span class="qmark">?</span></div>
+        <div class="orow" id="or-immun" onclick="showOrganPopup('immun')"><span class="oi">🛡️</span><span class="on2">Immunsystem</span><span class="arr arr-dn">↓</span><span class="oe">Cortisol hemmt Entzündungen</span><span class="qmark">?</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flow diagram -->
+  <div class="panel flow-panel">
+    <div class="ph">🧠 Signalweg <span style="font-family:'Nunito';font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0">· Knoten anklicken für Details</span></div>
+    <div class="pb" style="padding:5px">
+<svg id="flow-svg" viewBox="0 0 480 280" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="mo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#f4831f" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="mp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#7b2d8b" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="mr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#e63946" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="mg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#06d6a0" stroke-width="2" stroke-linecap="round"/></marker>
+  </defs>
+  <g class="fn clickable" id="fn-str" onclick="showNodePopup('stressor')"><rect x="165" y="4" width="150" height="28" rx="14" fill="#ffd166" stroke="#2d2d2d" stroke-width="2"/><text x="240" y="22" text-anchor="middle" font-family="Bangers,cursive" font-size="14" letter-spacing="1">STRESSREIZ</text></g>
+  <line class="fa" id="fa-1" x1="240" y1="32" x2="240" y2="52" stroke="#f4831f" stroke-width="2" marker-end="url(#mo)"/>
+  <g class="fn clickable" id="fn-hypo" onclick="showNodePopup('hypothalamus')"><rect x="155" y="54" width="170" height="30" rx="7" fill="#ffe5b4" stroke="#2d2d2d" stroke-width="2"/><text x="240" y="69" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12" font-weight="800">Hypothalamus</text><text x="240" y="79" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#666">bewertet Stressreiz</text></g>
+  <line class="fa" id="fa-2a" x1="155" y1="69" x2="104" y2="69" stroke="#f4831f" stroke-width="2" marker-end="url(#mo)"/>
+  <line class="fa" id="fa-2b" x1="325" y1="69" x2="370" y2="69" stroke="#7b2d8b" stroke-width="2" marker-end="url(#mp)"/>
+  <text class="fl" id="fl-crh" x="332" y="63" font-size="9" fill="#7b2d8b">CRH</text>
+  <g class="fn clickable" id="fn-sym" onclick="showNodePopup('sympathikus')"><rect x="14" y="54" width="90" height="30" rx="7" fill="#ffe0b2" stroke="#2d2d2d" stroke-width="2"/><text x="59" y="69" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="800">Sympathikus</text><text x="59" y="79" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#666">Nerv. Steuerung</text></g>
+  <line class="fa" id="fa-3a" x1="59" y1="84" x2="59" y2="118" stroke="#f4831f" stroke-width="2" marker-end="url(#mo)"/>
+  <g class="fn clickable" id="fn-nnm" onclick="showNodePopup('nnmark')"><rect x="10" y="120" width="98" height="28" rx="7" fill="#ffd6a5" stroke="#2d2d2d" stroke-width="2"/><text x="59" y="134" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="800">Nebennierenmark</text><text x="59" y="144" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#666">+ Organe direkt</text></g>
+  <line class="fa" id="fa-4a" x1="59" y1="148" x2="59" y2="180" stroke="#e63946" stroke-width="2" marker-end="url(#mr)"/>
+  <g class="fn clickable" id="fn-adr" onclick="showNodePopup('adrenalin')"><rect x="4" y="182" width="110" height="26" rx="7" fill="#ffcdd2" stroke="#2d2d2d" stroke-width="2"/><text x="59" y="199" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="800" fill="#c62828">Adrenalin / Noradren.</text></g>
+  <path class="fa" id="fa-5a" d="M59 208 Q59 238 128 244" stroke="#e63946" stroke-width="2" fill="none" marker-end="url(#mr)"/>
+  <g class="fn clickable" id="fn-hyph" onclick="showNodePopup('hypophyse')"><rect x="370" y="54" width="104" height="30" rx="7" fill="#e8d5f5" stroke="#2d2d2d" stroke-width="2"/><text x="422" y="69" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="800">Hypophyse</text><text x="422" y="79" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#666">Hirnanhangsdrüse</text></g>
+  <line class="fa" id="fa-3b" x1="422" y1="84" x2="422" y2="118" stroke="#7b2d8b" stroke-width="2" marker-end="url(#mp)"/>
+  <text class="fl" id="fl-acth" x="426" y="108" font-size="9" fill="#7b2d8b">ACTH</text>
+  <g class="fn clickable" id="fn-nnr" onclick="showNodePopup('nnrinde')"><rect x="368" y="120" width="108" height="28" rx="7" fill="#e1bee7" stroke="#2d2d2d" stroke-width="2"/><text x="422" y="134" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="800">Nebennierenrinde</text><text x="422" y="144" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#666">produziert Cortisol</text></g>
+  <line class="fa" id="fa-4b" x1="422" y1="148" x2="422" y2="180" stroke="#7b2d8b" stroke-width="2" marker-end="url(#mp)"/>
+  <g class="fn clickable" id="fn-cor" onclick="showNodePopup('cortisol')"><rect x="368" y="182" width="108" height="26" rx="7" fill="#ce93d8" stroke="#2d2d2d" stroke-width="2"/><text x="422" y="200" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="#4a148c">CORTISOL</text></g>
+  <path class="fa" id="fa-5b" d="M422 208 Q422 238 356 244" stroke="#7b2d8b" stroke-width="2" fill="none" marker-end="url(#mp)"/>
+  <path class="fa" id="fa-fb" d="M476 195 Q492 140 472 84" stroke="#06d6a0" stroke-width="1.5" stroke-dasharray="4 3" fill="none" marker-end="url(#mg)"/>
+  <text class="fl" id="fl-fb" x="477" y="148" font-size="9" fill="#06d6a0">neg.</text>
+  <text class="fl" id="fl-fb2" x="475" y="159" font-size="9" fill="#06d6a0">RK</text>
+  <g class="fn clickable" id="fn-schnell" onclick="showNodePopup('sofort')"><rect x="116" y="234" width="118" height="36" rx="7" fill="#fff3e0" stroke="#f4831f" stroke-width="2"/><text x="175" y="249" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="800" fill="#e65100">Sofort-Reaktion</text><text x="175" y="261" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#666">Herz↑ Bronchien↑ Darm↓</text><text x="175" y="270" text-anchor="middle" font-family="Nunito,sans-serif" font-size="8" fill="#999">(Sekunden)</text></g>
+  <g class="fn clickable" id="fn-langsam" onclick="showNodePopup('langzeit')"><rect x="244" y="234" width="118" height="36" rx="7" fill="#f3e5f5" stroke="#7b2d8b" stroke-width="2"/><text x="303" y="249" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="800" fill="#4a148c">Langzeit-Reaktion</text><text x="303" y="261" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#666">Energie↑ Immun↓</text><text x="303" y="270" text-anchor="middle" font-family="Nunito,sans-serif" font-size="8" fill="#999">(Minuten–Stunden)</text></g>
+</svg>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT: phase cards -->
+<div class="panel">
+  <div class="ph">📋 Was passiert?</div>
+  <div class="pb">
+    <div id="phaseContainer">
+      <div class="phase-card pc-schnell" id="pc-schnell">
+        <div class="pc-title" style="color:var(--orange)">⚡ Schnelle Reaktion<button class="pc-qbtn" onclick="showPhasePopup('schnell')">?</button></div>
+        <div class="pc-time">Sekunden · nervös</div>
+        <div class="pc-text"><b>Sympathikus</b> feuert direkt. <b>Nebennierenmark</b> → Adrenalin &amp; Noradrenalin → sofortige Alarmbereitschaft.</div>
+        <div class="chips"><span class="chip chip-o">Noradrenalin</span><span class="chip chip-o">Adrenalin</span></div>
+      </div>
+      <div class="phase-card pc-langsam" id="pc-langsam">
+        <div class="pc-title" style="color:var(--purple)">🔁 HHN-Achse<button class="pc-qbtn" onclick="showPhasePopup('langsam')" style="background:var(--purple)">?</button></div>
+        <div class="pc-time">Minuten–Stunden · hormonell</div>
+        <div class="pc-text"><b>Hypothalamus→CRH→Hypophyse→ACTH→Nebennierenrinde→Cortisol</b>. Negative Rückkopplung bremst normalerweise.</div>
+        <div class="chips"><span class="chip chip-p">CRH</span><span class="chip chip-p">ACTH</span><span class="chip chip-p">Cortisol</span></div>
+      </div>
+      <div class="phase-card pc-dauer" id="pc-dauer">
+        <div class="pc-title" style="color:var(--red)">😩 Dauerstress<button class="pc-qbtn" onclick="showPhasePopup('dauer')" style="background:var(--red)">?</button></div>
+        <div class="pc-time">Wochen–Monate · chronisch</div>
+        <div class="pc-text">Rückkopplung versagt. Cortisol dauerhaft hoch → Körper im Alarmzustand.</div>
+        <div class="chips"><span class="chip chip-r">Cortisol chronisch ↑↑</span></div>
+      </div>
+    </div>
+    <div class="info-box" id="infoBox"><strong id="infoTitle"></strong><span id="infoText"></span></div>
+  </div>
+</div>
+
+</div><!-- end explore grid -->
+
+
+<!-- ══════════════ TEST MODE ══════════════ -->
+<div id="testMode">
+  <div class="test-layout">
+
+    <!-- Flow with blanks -->
+    <div class="test-flow-panel">
+      <div class="ph">🧪 Fülle den Signalweg aus – klick zuerst einen Begriff, dann das leere Feld</div>
+      <div class="pb" style="padding:8px">
+<svg id="test-svg" viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="tmo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></marker>
+  </defs>
+  <!-- static arrows -->
+  <line x1="260" y1="36" x2="260" y2="58" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <line x1="175" y1="74" x2="120" y2="74" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <line x1="345" y1="74" x2="390" y2="74" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <line x1="74" y1="96" x2="74" y2="128" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <line x1="74" y1="164" x2="74" y2="196" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <line x1="74" y1="230" x2="74" y2="256" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <line x1="440" y1="96" x2="440" y2="128" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <line x1="440" y1="164" x2="440" y2="196" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <line x1="440" y1="230" x2="440" y2="256" stroke="#aaa" stroke-width="2" marker-end="url(#tmo)"/>
+  <path d="M74 270 Q74 298 148 302" stroke="#aaa" stroke-width="2" fill="none" marker-end="url(#tmo)"/>
+  <path d="M440 270 Q440 298 374 302" stroke="#aaa" stroke-width="2" fill="none" marker-end="url(#tmo)"/>
+  <path d="M496 260 Q512 190 494 100" stroke="#06d6a0" stroke-width="1.5" stroke-dasharray="4 3" fill="none" marker-end="url(#tmo)"/>
+  <text x="498" y="192" font-size="9" fill="#06d6a0" font-family="Nunito,sans-serif" font-weight="800">neg.</text>
+  <text x="496" y="203" font-size="9" fill="#06d6a0" font-family="Nunito,sans-serif" font-weight="800">RK</text>
+  <!-- CRH / ACTH labels -->
+  <text x="352" y="68" font-size="9" fill="#7b2d8b" font-family="Nunito,sans-serif" font-weight="800">CRH</text>
+  <text x="444" y="118" font-size="9" fill="#7b2d8b" font-family="Nunito,sans-serif" font-weight="800">ACTH</text>
+
+  <!-- BLANK 1: STRESSREIZ (static, shown) -->
+  <g><rect x="180" y="6" width="160" height="28" rx="14" fill="#ffd166" stroke="#2d2d2d" stroke-width="2"/><text x="260" y="24" text-anchor="middle" font-family="Bangers,cursive" font-size="14" letter-spacing="1">STRESSREIZ</text></g>
+
+  <!-- BLANK 2: Hypothalamus -->
+  <g class="blank-field" id="tb-hypo" onclick="placeWord('hypo')" data-answer="Hypothalamus">
+    <rect x="175" y="60" width="170" height="30" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="260" y="80" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-hypo">① ?</text>
+  </g>
+
+  <!-- BLANK 3: Sympathikus -->
+  <g class="blank-field" id="tb-sym" onclick="placeWord('sym')" data-answer="Sympathikus">
+    <rect x="24" y="60" width="100" height="30" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="74" y="80" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-sym">② ?</text>
+  </g>
+
+  <!-- BLANK 4: Hypophyse -->
+  <g class="blank-field" id="tb-hyph" onclick="placeWord('hyph')" data-answer="Hypophyse">
+    <rect x="390" y="60" width="100" height="30" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="440" y="80" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-hyph">③ ?</text>
+  </g>
+
+  <!-- BLANK 5: Nebennierenmark -->
+  <g class="blank-field" id="tb-nnm" onclick="placeWord('nnm')" data-answer="Nebennierenmark">
+    <rect x="24" y="130" width="100" height="28" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="74" y="149" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-nnm">④ ?</text>
+  </g>
+
+  <!-- BLANK 6: Nebennierenrinde -->
+  <g class="blank-field" id="tb-nnr" onclick="placeWord('nnr')" data-answer="Nebennierenrinde">
+    <rect x="390" y="130" width="100" height="28" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="440" y="149" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-nnr">⑤ ?</text>
+  </g>
+
+  <!-- BLANK 7: Adrenalin/Noradrenalin -->
+  <g class="blank-field" id="tb-adr" onclick="placeWord('adr')" data-answer="Adrenalin">
+    <rect x="14" y="196" width="120" height="28" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="74" y="215" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-adr">⑥ ?</text>
+  </g>
+
+  <!-- BLANK 8: Cortisol -->
+  <g class="blank-field" id="tb-cor" onclick="placeWord('cor')" data-answer="Cortisol">
+    <rect x="390" y="196" width="100" height="28" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="440" y="215" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-cor">⑦ ?</text>
+  </g>
+
+  <!-- BLANK 9: Sofort-Reaktion -->
+  <g class="blank-field" id="tb-sofort" onclick="placeWord('sofort')" data-answer="Sofort-Reaktion">
+    <rect x="134" y="256" width="118" height="34" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="193" y="278" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-sofort">⑧ ?</text>
+  </g>
+
+  <!-- BLANK 10: Langzeit-Reaktion -->
+  <g class="blank-field" id="tb-lang" onclick="placeWord('lang')" data-answer="Langzeit-Reaktion">
+    <rect x="262" y="256" width="118" height="34" rx="7" fill="#f0f0f0" stroke="#aaa" stroke-width="2" stroke-dasharray="5 3"/>
+    <text x="321" y="278" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#aaa" id="tbl-lang">⑨ ?</text>
+  </g>
+</svg>
+      </div>
+    </div>
+
+    <!-- Word bank + score -->
+    <div style="display:flex;flex-direction:column;gap:8px;min-height:0;">
+      <div class="word-bank">
+        <div class="word-bank-title">📦 Begriffe</div>
+        <div class="word-chips" id="wordBank">
+          <span class="wchip" id="wc-hypo" onclick="selectWord('hypo','Hypothalamus')">Hypothalamus</span>
+          <span class="wchip" id="wc-sym" onclick="selectWord('sym','Sympathikus')">Sympathikus</span>
+          <span class="wchip" id="wc-hyph" onclick="selectWord('hyph','Hypophyse')">Hypophyse</span>
+          <span class="wchip" id="wc-nnm" onclick="selectWord('nnm','Nebennierenmark')">Nebennierenmark</span>
+          <span class="wchip" id="wc-nnr" onclick="selectWord('nnr','Nebennierenrinde')">Nebennierenrinde</span>
+          <span class="wchip" id="wc-adr" onclick="selectWord('adr','Adrenalin')">Adrenalin</span>
+          <span class="wchip" id="wc-cor" onclick="selectWord('cor','Cortisol')">Cortisol</span>
+          <span class="wchip" id="wc-sofort" onclick="selectWord('sofort','Sofort-Reaktion')">Sofort-Reaktion</span>
+          <span class="wchip" id="wc-lang" onclick="selectWord('lang','Langzeit-Reaktion')">Langzeit-Reaktion</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:4px;">① Klick auf Begriff → ② Klick auf Feld</div>
+      </div>
+
+      <div class="score-panel">
+        <div><div class="score-num" id="testScore">0/9</div><div class="score-label">Richtig</div></div>
+        <div style="flex:1">
+          <div class="score-feedback" id="scoreFeedback"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;">
+        <button class="test-btn test-btn-check" onclick="checkAll()" style="flex:1">✓ Alle prüfen</button>
+        <button class="test-btn test-btn-reset" onclick="resetTest()">↺ Neu</button>
+      </div>
+
+      <!-- Hint area -->
+      <div class="panel" style="flex:1;min-height:0;">
+        <div class="ph" style="font-size:14px">💡 Hinweise</div>
+        <div class="pb" style="font-size:11px;line-height:1.5;color:var(--muted);" id="testHints">
+          Klicke auf einen Begriff in der Begriffe-Box, dann auf das passende leere Feld im Signalweg.<br><br>
+          Wenn du dir nicht sicher bist – wechsle kurz zu <b>Erkunden</b> und schau dir den Signalweg an!
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════ POPUP OVERLAY ══════════════ -->
+<div class="popup-overlay" id="popupOverlay" onclick="closePopup(event)">
+  <div class="popup-box" id="popupBox">
+    <button class="popup-close" onclick="closePopupDirect()">✕</button>
+    <div class="popup-title" id="popTitle"></div>
+    <div class="popup-sub" id="popSub"></div>
+    <div class="popup-body" id="popBody"></div>
+    <div id="popExtra"></div>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════
+// POPUP DATA
+// ══════════════════════════════════════════
+const nodePopups = {
+  stressor:{title:'Stressreiz',sub:'Was ist ein Stressreiz?',body:'Ein Stressreiz (Stressor) ist jeder Reiz, den das Gehirn als Bedrohung oder Herausforderung bewertet – körperlich (Verletzung, Lärm), psychisch (Prüfung, Sorgen) oder sozial (Konflikte). Wichtig: Es ist <b>nicht der Reiz selbst</b>, der Stress macht, sondern die <b>Bewertung</b> durch das Gehirn.',extra:[{cls:'',title:'Arten von Stressoren',text:'Physisch: Kälte, Schmerz, Lärm<br>Psychisch: Prüfungen, Zeitdruck<br>Sozial: Konflikte, Isolation<br>Eustress: Sport, Verliebtheit – positiver Stress!'},{cls:'red',title:'Wenn der Stressor nicht aufhört…',text:'Dauerhafter Stress ohne Erholungsphasen erschöpft das gesamte Regulationssystem. Der Körper findet keinen Weg zurück zur Homöostase.'}]},
+  hypothalamus:{title:'Hypothalamus',sub:'Schaltzentrale des Stresssystems',body:'Der Hypothalamus ist eine kleine Hirnstruktur, die das vegetative Nervensystem und das Hormonsystem koordiniert. Er empfängt Signale aus Sinnesorganen und Großhirn, bewertet sie und entscheidet: Alarm oder nicht? Er aktiviert <b>zwei parallele Wege</b> gleichzeitig: den schnellen Sympathikus-Weg und die langsame HHN-Achse.',extra:[{cls:'purple',title:'CRH – der Startschuss der HHN-Achse',text:'Bei anhaltendem Stress schüttet der Hypothalamus CRH (Corticotropin-Releasing-Hormon) ins Blut aus – das Signal an die Hypophyse, ACTH zu produzieren.'},{cls:'red',title:'Was passiert wenn der Hypothalamus gestört ist?',text:'Fehlfunktionen können zu dauerhafter Über- oder Unterstimulation der Stressachse führen – mit Folgen für Schlaf, Stimmung, Immunsystem und Stoffwechsel.'}]},
+  sympathikus:{title:'Sympathikus',sub:'Das schnelle Nervensystem – Millisekunden',body:'Der Sympathikus ist Teil des vegetativen (autonomen) Nervensystems. Er verbindet das Gehirn direkt über Nervenfasern mit Herz, Lunge, Blutgefäßen und Verdauungsorganen. Seine Botenstoffe an den Zielorganen sind <b>Noradrenalin</b> (als Neurotransmitter). Der Effekt tritt in Millisekunden ein – viel schneller als jedes Hormon.',extra:[{cls:'',title:'Sympathikus vs. Parasympathikus',text:'Der Parasympathikus ist der Gegenspieler: Er aktiviert Erholung und Verdauung (\"Rest and Digest\"). Im Stress überwiegt der Sympathikus; in Ruhe übernimmt der Parasympathikus.'},{cls:'green',title:'Rückkehr zur Ruhe',text:'Sobald der Stressor endet, dämpft der Parasympathikus die Stressreaktion. Regelmäßige Entspannung trainiert diesen Umschaltmechanismus.'}]},
+  nnmark:{title:'Nebennierenmark',sub:'Hormonelle Verstärkung der Nervenreaktion',body:'Das Nebennierenmark (die innere Schicht der Nebenniere) ist embryologisch aus Nervengewebe entstanden – es ist quasi ein umgewandeltes Nervenknoten. Auf Signal des Sympathikus schüttet es <b>Adrenalin und Noradrenalin</b> direkt ins Blut aus. Diese wirken wie der Sympathikus, aber systemisch im ganzen Körper und länger anhaltend (Minuten).',extra:[{cls:'',title:'Adrenalin vs. Noradrenalin',text:'Adrenalin wirkt vor allem auf Herz und Stoffwechsel (Herzfrequenz↑, Glukose↑). Noradrenalin verengt stärker die Blutgefäße und erhöht den Blutdruck besonders stark.'},{cls:'red',title:'Ausschüttung bei Gefahr',text:'Bei akuter Bedrohung kann die Adrenalinausschüttung innerhalb von Sekunden die Herzfrequenz verdoppeln und die Muskelkraft deutlich steigern.'}]},
+  adrenalin:{title:'Adrenalin & Noradrenalin',sub:'Die Stresshormone der schnellen Reaktion',body:'Adrenalin und Noradrenalin sind Katecholamine – sie binden an adrenerge Rezeptoren in verschiedenen Organen und lösen dort unterschiedliche Reaktionen aus: Herz schlägt schneller und kräftiger, Bronchien weiten sich für mehr Sauerstoff, Muskelgefäße weiten sich, Darmgefäße verengen sich, Leber gibt Glukose ab.',extra:[{cls:'',title:'Warum weitet sich die Pupille?',text:'Adrenalin stimuliert den Musculus dilatator pupillae – die Pupille erweitert sich, um im Notfall mehr Licht ins Auge zu lassen und die Umgebung besser wahrzunehmen.'},{cls:'green',title:'Halbwertszeit',text:'Adrenalin ist nach ca. 2–3 Minuten im Blut abgebaut. Deshalb klingt die akute Stressreaktion schnell ab – sofern der Stressor endet.'}]},
+  hypophyse:{title:'Hypophyse',sub:'Hirnanhangsdrüse – Hormonsteuerzentrale',body:'Die Hypophyse (Hirnanhangsdrüse) sitzt direkt unterhalb des Hypothalamus und empfängt dessen Releasing-Hormone. Im Stress reagiert sie auf CRH mit der Ausschüttung von <b>ACTH</b> (Adrenocorticotropes Hormon) ins Blut. ACTH gelangt über den Blutkreislauf zur Nebennierenrinde.',extra:[{cls:'purple',title:'ACTH – Kurier zur Nebennierenrinde',text:'ACTH bindet an Rezeptoren der Nebennierenrinde und stimuliert dort die Synthese und Freisetzung von Cortisol. Je mehr ACTH, desto mehr Cortisol.'},{cls:'red',title:'Negative Rückkopplung',text:'Steigt der Cortisolspiegel im Blut, hemmt Cortisol selbst die Hypophyse (und den Hypothalamus) – ein klassischer negativer Regelkreis, der die Cortisolproduktion begrenzt.'}]},
+  nnrinde:{title:'Nebennierenrinde',sub:'Cortisol-Fabrik des Körpers',body:'Die Nebennierenrinde (äußere Schicht der Nebenniere) produziert auf ACTH-Signal das Steroidhormon <b>Cortisol</b>. Als fettlösliches Hormon kann Cortisol die Zellmembran direkt durchdringen und im Zellkern die Genexpression verändern – es wirkt tief in den Zellstoffwechsel ein.',extra:[{cls:'purple',title:'Warum dauert es Minuten?',text:'Cortisol ist ein Steroidhormon und muss erst synthetisiert werden – das dauert Minuten bis Stunden. Adrenalin wirkt dagegen sofort, weil es bereits gespeichert vorliegt.'},{cls:'red',title:'Erschöpfung bei Dauerstress',text:'Bei chronischem Stress kann die Nebennierenrinde überfordert werden. Die Cortisolproduktion sinkt langfristig ab – mit Folgen: Erschöpfung, geschwächtes Immunsystem, Entzündungsneigung.'}]},
+  cortisol:{title:'Cortisol',sub:'Das Langzeit-Stresshormon',body:'Cortisol ist ein Steroidhormon aus der Nebennierenrinde. Es wirkt über intrazelluläre Rezeptoren direkt auf die DNA – und verändert, welche Gene abgelesen werden. Es mobilisiert Energiereserven (Glukoneogenese in der Leber), dämpft das Immunsystem und erhöht die Wachheit. Cortisol folgt einem <b>Tagesrhythmus</b>: morgens hoch, abends niedrig.',extra:[{cls:'purple',title:'Negative Rückkopplung',text:'Cortisol hemmt Hypothalamus und Hypophyse – ein Sicherheitsmechanismus der verhindert, dass der Spiegel unkontrolliert steigt. Bei Dauerstress versagt dieses Feedback.'},{cls:'red',title:'Folgen chronisch erhöhten Cortisolspiegels',text:'Immunsuppression → häufige Infekte<br>Glukosestoffwechsel gestört → Diabetes-Risiko↑<br>Blutdruck dauerhaft erhöht → Herzinfarktrisiko↑<br>Hippocampus schrumpft → Gedächtnisschäden möglich'}]},
+  sofort:{title:'Sofort-Reaktion',sub:'Fight or Flight – in Sekunden',body:'Die Sofort-Reaktion ist das Ergebnis des Sympathikus und der Adrenalinausschüttung. Sie versetzt den Körper innerhalb von Sekunden in maximale Leistungsbereitschaft: Herz pumpt mehr Blut zu Muskeln und Gehirn, Bronchien öffnen sich für mehr O₂, Verdauung wird gestoppt (Energie wird woanders gebraucht), Leber gibt Glukose ab.',extra:[{cls:'',title:'Evolutionärer Ursprung',text:'Diese Reaktion ist für den Steinzeitmenschen optimiert: Angriff oder Flucht. Im modernen Alltag kann die mobilisierte Energie oft nicht durch körperliche Aktivität abgebaut werden – das ist das Problem.'},{cls:'green',title:'Sport als Ausweg',text:'Körperliche Bewegung verbraucht das ausgeschüttete Adrenalin und baut die Muskelspannung ab. Deshalb hilft Sport nachweislich beim Stressabbau.'}]},
+  langzeit:{title:'Langzeit-Reaktion',sub:'Cortisol hält den Körper in Bereitschaft',body:'Die Langzeit-Reaktion über die HHN-Achse sorgt dafür, dass der Körper auch nach Stunden noch leistungsbereit ist. Cortisol veranlasst die Leber zur Neubildung von Glukose (Gluconeogenese), baut Eiweiße und Fette ab, dämpft das Immunsystem und erhöht die Aufmerksamkeit im ZNS.',extra:[{cls:'purple',title:'Zusammenspiel mit Sofort-Reaktion',text:'Adrenalin wirkt sofort aber kurz. Cortisol setzt später ein aber hält länger an – es verlängert und vertieft die Stressreaktion für anhaltende Belastungen.'},{cls:'red',title:'Wenn die Rückkopplung versagt',text:'Bei Dauerstress desensibilisieren die Cortisol-Rezeptoren in Hypothalamus und Hypophyse – die Bremse greift nicht mehr. Der Spiegel bleibt dauerhaft erhöht.'}]}
+};
+
+const organPopups = {
+  herz:{title:'❤️ Herz',sub:'Mehr Druck, mehr Durchblutung',body:'Noradrenalin (vom Sympathikus) und Adrenalin (vom Nebennierenmark) binden an β1-Adrenorezeptoren im Herzen. Herzfrequenz und Schlagvolumen steigen – mehr Blut pro Minute wird zu Muskeln und Gehirn gepumpt.',extra:[{cls:'red',title:'Dauerstress und Herz',text:'Chronisch erhöhter Blutdruck schädigt die Gefäßwände und fördert Arteriosklerose. Cortisol begünstigt Fettablagerungen in Blutgefäßen → Herzinfarktrisiko steigt deutlich.'}]},
+  lunge:{title:'🫁 Lunge',sub:'Mehr Sauerstoff für die Muskeln',body:'Adrenalin und Noradrenalin stimulieren β2-Adrenorezeptoren in der Bronchialmuskulatur. Die Bronchien weiten sich (Bronchodilatation) – der Luftwiderstand sinkt, mehr Sauerstoff gelangt in die Lunge und damit ins Blut.',extra:[{cls:'',title:'Medizinische Nutzung',text:'Dieser Mechanismus wird therapeutisch genutzt: Asthma-Sprays enthalten β2-Agonisten, die denselben Effekt erzeugen – sie imitieren die bronchienerweiternde Wirkung des Adrenalins.'}]},
+  leber:{title:'🟤 Leber',sub:'Glukose auf Abruf',body:'In der Leber aktiviert Adrenalin die Glykogenolyse: gespeichertes Glykogen wird zu Glukose abgebaut und ins Blut abgegeben – der Blutzuckerspiegel steigt. Cortisol geht noch weiter: es stimuliert die Gluconeogenese, also die Neubildung von Glukose aus Aminosäuren und Glycerin.',extra:[{cls:'purple',title:'Warum Cortisol Muskeln abbaut',text:'Für die Gluconeogenese braucht die Leber Aminosäuren – Cortisol fördert den Proteinabbau in der Muskulatur. Bei Dauerstress verliert man daher Muskelmasse.'}]},
+  muskel:{title:'💪 Muskeln',sub:'Alles für Flucht oder Kampf',body:'Die Blutgefäße in der Skelettmuskulatur werden durch Adrenalin weit gestellt (β2-Rezeptoren). Gleichzeitig aktiviert Adrenalin lokal die Glykogenolyse in den Muskelfasern selbst – Glukose für schnelle Energiefreisetzung steht sofort zur Verfügung.',extra:[{cls:'green',title:'Warum zittern wir unter Stress?',text:'Die erhöhte Muskelbereitschaft äußert sich manchmal als Zittern – die Muskeln sind aktiviert, aber die Bewegung findet nicht statt. Körperliche Aktivität baut diese Spannung ab.'},{cls:'red',title:'Chronische Muskelverspannung',text:'Bei Dauerstress bleibt die Muskelanspannung dauerhaft erhöht. Das führt zu Rücken-, Nacken- und Kopfschmerzen.'}]},
+  darm:{title:'🌀 Verdauung',sub:'Abschalten in der Notlage',body:'Der Sympathikus verengt die Blutgefäße im Darm – Blut wird umgeleitet zu Herz, Lunge und Muskeln. Gleichzeitig verlangsamt sich die Darmbewegung (Peristaltik). Verdauen kostet Energie, die in der Notlage woanders gebraucht wird.',extra:[{cls:'red',title:'Verdauungsprobleme durch Stress',text:'Chronischer Stress stört die Darmfunktion dauerhaft: Bauchschmerzen, Reizdarm, veränderte Darmflora. Der Darm hat sein eigenes Nervensystem (enterisches NS) – er reagiert extrem sensibel auf Stress.'}]},
+  immun:{title:'🛡️ Immunsystem',sub:'Kurzfristig aktiviert, langfristig geschwächt',body:'Cortisol hemmt die Produktion von Entzündungsmediatoren (Zytokinen) und reduziert die Aktivität von Immunzellen. Kurzfristig sinnvoll – Entzündungsreaktionen kosten Energie. Aber chronisch erhöhtes Cortisol führt zu dauerhafter Immunsuppression: Der Körper wird anfälliger für Infekte und heilt schlechter.',extra:[{cls:'purple',title:'Medizinische Nutzung',text:'Synthetische Cortisol-Abkömmlinge (Kortison) werden als entzündungshemmende Medikamente eingesetzt – z.B. bei Asthma, Allergien oder Rheuma.'},{cls:'red',title:'Dauerstress und Krebs',text:'Ein dauerhaft geschwächtes Immunsystem kann entartete Zellen schlechter erkennen und eliminieren. Chronischer Stress gilt als Risikofaktor für verschiedene Erkrankungen.'}]}
+};
+
+const phasePopups = {
+  schnell:{title:'⚡ Schnelle Stressreaktion',sub:'Nervöse Steuerung – Sekunden',body:'Der Sympathikus aktiviert direkt über Nervenfasern die Zielorgane – ohne Umweg über das Blut. Gleichzeitig stimuliert er das Nebennierenmark zur Ausschüttung von Adrenalin und Noradrenalin. Beide Signalwege verstärken sich gegenseitig.',extra:[{cls:'',title:'Ablauf im Detail',text:'1. Stressreiz → Sinnesorgane → Hypothalamus (ms)<br>2. Hypothalamus → Sympathikus aktiviert (ms)<br>3. Noradrenalin an Organen freigesetzt (ms–s)<br>4. Nebennierenmark → Adrenalin ins Blut (s–min)'},{cls:'green',title:'Evolutionärer Sinn',text:'Diese blitzschnelle Reaktion ermöglichte Überleben: Flucht vor Raubtieren, Kampf um Ressourcen. Der Körper hat Sekunden, nicht Stunden.'}]},
+  langsam:{title:'🔁 HHN-Achse',sub:'Hormonelle Steuerung – Minuten bis Stunden',body:'Die Hypothalamus-Hypophysen-Nebennierenrinden-Achse ist der zweite, langsamere Stressweg. Cortisol als Endprodukt wirkt tief in den Zellstoffwechsel ein – es verändert die Genexpression. Die negative Rückkopplung ist ein eleganter Selbstregulationsmechanismus.',extra:[{cls:'purple',title:'Warum zwei Systeme?',text:'Das Nervensystem ist schnell aber kurzlebig. Das Hormonsystem ist langsam aber nachhaltig. Zusammen decken sie alle Zeitskalen ab: von Sekunden bis Stunden.'},{cls:'red',title:'Wenn die Bremse versagt',text:'Bei Dauerstress werden die Cortisol-Rezeptoren desensibilisiert. Die Rückkopplung greift nicht mehr – ein Kernelement der Entstehung von Burnout und chronischen Stressfolgeerkrankungen.'}]},
+  dauer:{title:'😩 Dauerstress',sub:'Chronische Überbelastung',body:'Beim Dauerstress bleibt die HHN-Achse dauerhaft aktiv. Die negative Rückkopplung versagt – Cortisol bleibt chronisch erhöht. Langfristig erschöpft sich die Nebennierenrinde, der Cortisolspiegel sinkt paradoxerweise unter das Normalmaß (Burnout-Erschöpfungsphase).',extra:[{cls:'red',title:'Folgen auf einen Blick',text:'Immunsystem geschwächt → Infekte<br>Schlafstörungen (Cortisol hemmt Melatonin)<br>Gedächtnisschäden (Hippocampus schrumpft)<br>Herzinfarktrisiko↑, Diabetes-Risiko↑<br>Psychische Erkrankungen (Depression, Burnout)'},{cls:'green',title:'Was hilft?',text:'Regelmäßige Entspannung trainiert den Parasympathikus. Sport baut Stresshormone ab. Schlaf ist essentiell für die Regeneration der HHN-Achse. Soziale Unterstützung puffert Stressreaktionen.'}]}
+};
+
+// ══════════════════════════════════════════
+// POPUP LOGIC
+// ══════════════════════════════════════════
+function showPopup(data){
+  document.getElementById('popTitle').innerHTML=data.title;
+  document.getElementById('popSub').textContent=data.sub;
+  document.getElementById('popBody').innerHTML=data.body;
+  const ex=document.getElementById('popExtra');
+  ex.innerHTML='';
+  if(data.extra){
+    data.extra.forEach(e=>{
+      const d=document.createElement('div');
+      d.className='popup-section '+(e.cls||'');
+      d.innerHTML=`<div class="popup-section-title">${e.title}</div>${e.text}`;
+      ex.appendChild(d);
+    });
+  }
+  document.getElementById('popupOverlay').classList.add('show');
+}
+function showNodePopup(key){showPopup(nodePopups[key]);}
+function showOrganPopup(key){showPopup(organPopups[key]);}
+function showPhasePopup(key){showPopup(phasePopups[key]);}
+function closePopup(e){if(e.target===document.getElementById('popupOverlay'))closePopupDirect();}
+function closePopupDirect(){document.getElementById('popupOverlay').classList.remove('show');}
+
+// ══════════════════════════════════════════
+// CHARACTER
+// ══════════════════════════════════════════
+const variants=[
+  {f:false,skin:'#f4c896',skin2:'#e8a96e',hair:'#3d2b1f',shirt:'#3a86ff',shirt2:'#2970e8'},
+  {f:false,skin:'#c68642',skin2:'#a0652a',hair:'#1a0f0a',shirt:'#e63946',shirt2:'#c1121f'},
+  {f:false,skin:'#e0ac69',skin2:'#c68642',hair:'#2c1810',shirt:'#2dc653',shirt2:'#25a244'},
+  {f:false,skin:'#fde0c0',skin2:'#f4c896',hair:'#8b3a3a',shirt:'#7b2d8b',shirt2:'#5e1a6e'},
+  {f:false,skin:'#8d5524',skin2:'#6b3e1a',hair:'#1a0c05',shirt:'#f4831f',shirt2:'#d4691a'},
+  {f:true, skin:'#fde0c0',skin2:'#f4c896',hair:'#1a0f0a',shirt:'#e63946',shirt2:'#c1121f'},
+  {f:true, skin:'#c68642',skin2:'#a0652a',hair:'#3d2b1f',shirt:'#3a86ff',shirt2:'#2970e8'},
+  {f:true, skin:'#f4c896',skin2:'#e8a96e',hair:'#8b3a3a',shirt:'#2dc653',shirt2:'#25a244'},
+  {f:true, skin:'#8d5524',skin2:'#6b3e1a',hair:'#1a0c05',shirt:'#ffd166',shirt2:'#e6b800'},
+  {f:true, skin:'#e0ac69',skin2:'#c68642',hair:'#4a1942',shirt:'#7b2d8b',shirt2:'#5e1a6e'},
+];
+let v;
+function buildChar(eye){
+  const s=v,stressed=eye==='stressed',tired=eye==='tired';
+  let eL,eR,bL,bR,mouth;
+  if(stressed){
+    eL=`<circle cx="33" cy="38" r="9" fill="white"/><circle cx="33" cy="38" r="5.5" fill="#1a1a1a"/><circle cx="31" cy="36" r="2" fill="white"/><line x1="24" y1="32" x2="20" y2="27" stroke="#ff6b6b" stroke-width="1.2" stroke-linecap="round"/>`;
+    eR=`<circle cx="57" cy="38" r="9" fill="white"/><circle cx="57" cy="38" r="5.5" fill="#1a1a1a"/><circle cx="55" cy="36" r="2" fill="white"/><line x1="66" y1="32" x2="70" y2="27" stroke="#ff6b6b" stroke-width="1.2" stroke-linecap="round"/>`;
+    bL=`<path d="M24 29 Q33 34 42 29" stroke="${s.hair}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    bR=`<path d="M48 29 Q57 34 66 29" stroke="${s.hair}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    mouth=`<ellipse cx="45" cy="56" rx="8" ry="6" fill="#1a1a1a"/>`;
+  } else if(tired){
+    eL=`<line x1="26" y1="38" x2="40" y2="38" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>`;
+    eR=`<line x1="50" y1="38" x2="64" y2="38" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>`;
+    bL=`<path d="M24 31 Q33 28 42 31" stroke="${s.hair}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    bR=`<path d="M48 31 Q57 28 66 31" stroke="${s.hair}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    mouth=`<path d="M36 56 Q45 52 54 56" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  } else {
+    eL=`<circle cx="33" cy="38" r="7" fill="white"/><circle cx="34" cy="39" r="4" fill="#1a1a1a"/><circle cx="33" cy="37" r="1.5" fill="white"/>`;
+    eR=`<circle cx="57" cy="38" r="7" fill="white"/><circle cx="58" cy="39" r="4" fill="#1a1a1a"/><circle cx="57" cy="37" r="1.5" fill="white"/>`;
+    bL=`<path d="M26 30 Q33 26 40 30" stroke="${s.hair}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    bR=`<path d="M50 30 Q57 26 64 30" stroke="${s.hair}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    mouth=`<path d="M36 54 Q45 62 54 54" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  }
+  const sweat=stressed?`<ellipse cx="70" cy="32" rx="3.5" ry="5" fill="#74c0fc" transform="rotate(-20 70 32)"/><ellipse cx="75" cy="42" rx="2.5" ry="3.5" fill="#74c0fc" transform="rotate(15 75 42)"/>`:'';
+  const blush=`<ellipse cx="20" cy="46" rx="8" ry="5" fill="#ff9999" opacity="0" id="blushL"/><ellipse cx="70" cy="46" rx="8" ry="5" fill="#ff9999" opacity="0" id="blushR"/>`;
+  let hairBehind;
+  if(s.f){
+    hairBehind=`<ellipse cx="45" cy="12" rx="28" ry="15" fill="${s.hair}"/><ellipse cx="14" cy="44" rx="10" ry="28" fill="${s.hair}"/><ellipse cx="76" cy="44" rx="10" ry="28" fill="${s.hair}"/>`;
+  } else {
+    hairBehind=`<ellipse cx="45" cy="14" rx="26" ry="13" fill="${s.hair}"/><ellipse cx="21" cy="28" rx="8" ry="14" fill="${s.hair}"/><ellipse cx="69" cy="28" rx="8" ry="14" fill="${s.hair}"/>`;
+  }
+  return `
+    <ellipse cx="45" cy="113" rx="24" ry="4" fill="rgba(0,0,0,.1)"/>
+    <rect x="22" y="60" width="46" height="40" rx="8" fill="${s.shirt}"/>
+    <rect x="37" y="60" width="16" height="20" rx="4" fill="${s.shirt2}"/>
+    <rect x="6" y="60" width="18" height="9" rx="4.5" fill="${s.shirt}"/>
+    <rect x="66" y="60" width="18" height="9" rx="4.5" fill="${s.shirt}"/>
+    <circle cx="8" cy="64" r="6" fill="${s.skin}"/>
+    <circle cx="82" cy="64" r="6" fill="${s.skin}"/>
+    <rect x="27" y="96" width="16" height="22" rx="6" fill="${s.shirt2}"/>
+    <rect x="47" y="96" width="16" height="22" rx="6" fill="${s.shirt2}"/>
+    <ellipse cx="35" cy="117" rx="10" ry="5" fill="#1a1a1a"/>
+    <ellipse cx="55" cy="117" rx="10" ry="5" fill="#1a1a1a"/>
+    <rect x="37" y="52" width="16" height="12" rx="3" fill="${s.skin}"/>
+    ${hairBehind}
+    <ellipse cx="45" cy="38" rx="26" ry="28" fill="${s.skin}"/>
+    <ellipse cx="19" cy="38" rx="6" ry="8" fill="${s.skin}"/>
+    <ellipse cx="71" cy="38" rx="6" ry="8" fill="${s.skin}"/>
+    <ellipse cx="19" cy="38" rx="4" ry="6" fill="${s.skin2}"/>
+    <ellipse cx="71" cy="38" rx="4" ry="6" fill="${s.skin2}"/>
+    ${bL}${bR}${eL}${eR}${blush}${mouth}${sweat}`;
+}
+function setChar(eye){document.getElementById('charSvg').innerHTML=buildChar(eye);}
+
+// ══════════════════════════════════════════
+// EXPLORE MODE
+// ══════════════════════════════════════════
+const stressData={
+  pruefung:{speech:'Ohh nein... die Prüfung! 😰',pop:'PANIK!',popCol:'#3a86ff',anim:'shake',cortisol:55,eye:'stressed',blush:false,phases:['schnell','langsam'],organs:['herz','lunge','leber','muskel','darm'],title:'📝 Mathe-Klausur',text:'Prüfungsangst aktiviert dieselbe Achse wie körperliche Gefahr. Der Hypothalamus unterscheidet nicht – Stress ist Stress!'},
+  monster:{speech:'AAAAH! FLIEHEN!! 😱',pop:'DANGER!',popCol:'#e63946',anim:'shake',cortisol:85,eye:'stressed',blush:false,phases:['schnell','langsam'],organs:['herz','lunge','muskel','darm','leber'],title:'👹 Wildes Tier!',text:'Maximale Alarmreaktion – Fight or Flight. Adrenalin flutet den Körper. Evolutionäres Steinzeitprogramm auf Hochtouren!'},
+  chef:{speech:'Ich bin doch kein Roboter... 😤',pop:'STRESS!',popCol:'#f4831f',anim:'tremble',cortisol:60,eye:'stressed',blush:true,phases:['schnell','langsam'],organs:['herz','darm','immun'],title:'😤 Wütender Chef',text:'Sozialer Druck löst echten biologischen Stress aus. Tückisch: Man darf nicht weglaufen – die mobilisierte Energie bleibt ungenutzt!'},
+  laerm:{speech:'WAS?! ICH VERSTEH NICHTS!! 🔊',pop:'BOOM!',popCol:'#7b2d8b',anim:'shake',cortisol:20,eye:'stressed',blush:false,phases:['schnell'],organs:['herz','lunge','muskel'],title:'🔊 Extremer Lärm',text:'Lärm aktiviert direkt den Sympathikus. Kurzer Adrenalinstoß – kein anhaltender Cortisol-Anstieg, da der Reiz abrupt endet.'},
+  sport:{speech:'Los! Ich kann das! 💪',pop:'GO GO GO!',popCol:'#06d6a0',anim:'shake',cortisol:30,eye:'stressed',blush:false,phases:['schnell','langsam'],organs:['herz','lunge','muskel','leber'],title:'🏃 Sprint-Alarm!',text:'Eustress: Die Stressreaktion wird konstruktiv genutzt. Adrenalin wird verbraucht – deshalb baut körperliche Aktivität Stress ab!'},
+  dauer:{speech:'Ich kann nicht mehr... 😶',pop:'BURNOUT',popCol:'#888',anim:'tremble',cortisol:90,eye:'tired',blush:false,phases:['schnell','langsam','dauer'],organs:['herz','leber','muskel','darm','immun','lunge'],title:'😩 Dauerstress',text:'Negative Rückkopplung versagt. Cortisol dauerhaft erhöht → Immunsystem geschwächt, Nebennierenrinde erschöpft, Herzinfarktrisiko steigt.'},
+};
+const phaseOrder={schnell:0,langsam:1,dauer:2};
+let tids=[];
+function clearTids(){tids.forEach(clearTimeout);tids=[];}
+function later(fn,ms){tids.push(setTimeout(fn,ms));}
+
+function go(type){
+  clearTids();
+  const d=stressData[type];
+  v=variants[Math.floor(Math.random()*variants.length)];
+  setChar(d.eye);
+  document.getElementById('charWrap').className='char-wrap '+d.anim;
+  later(()=>{
+    const bl=document.getElementById('blushL'),br=document.getElementById('blushR');
+    if(bl)bl.style.opacity=d.blush?'0.6':'0';
+    if(br)br.style.opacity=d.blush?'0.6':'0';
+  },50);
+  document.getElementById('bubble').textContent=d.speech;
+  document.getElementById('dring').className='danger-ring'+(d.cortisol>60?' on':'');
+  const fl=document.createElement('div');fl.className='flash';
+  document.getElementById('flashLayer').appendChild(fl);
+  later(()=>fl.remove(),600);
+  const hasCort=d.phases.includes('langsam')||d.phases.includes('dauer');
+  const pct=hasCort?d.cortisol:Math.round(d.cortisol*0.25);
+  document.getElementById('cortBar').style.width='0%';
+  document.getElementById('cortPct').textContent='0%';
+  later(()=>{document.getElementById('cortBar').style.width=pct+'%';document.getElementById('cortPct').textContent=pct+'%';},80);
+  const bs=d.phases.includes('schnell');
+  ['bSym','bAdr'].forEach(b=>document.getElementById(b).classList.toggle('show',bs));
+  ['bCor','bHHN'].forEach(b=>document.getElementById(b).classList.toggle('show',hasCort));
+  ['schnell','langsam','dauer'].forEach(p=>{
+    const el=document.getElementById('pc-'+p);
+    const isOn=d.phases.includes(p);
+    el.classList.toggle('on',isOn);
+    el.style.order=isOn?phaseOrder[p]:phaseOrder[p]+10;
+  });
+  ['herz','lunge','leber','muskel','darm','immun'].forEach(o=>{
+    document.getElementById('or-'+o).classList.toggle('on',d.organs.includes(o));
+  });
+  document.getElementById('infoBox').style.display='block';
+  document.getElementById('infoTitle').textContent=d.title;
+  document.getElementById('infoText').textContent=d.text;
+  runFlow(d.phases);
+  spawnPop(d.pop,d.popCol);
+}
+
+function runFlow(phases){
+  document.querySelectorAll('.fn,.fa,.fl').forEach(e=>e.classList.remove('on','pulse'));
+  on('fn-str',0);on('fa-1',150);on('fn-hypo',300);
+  if(phases.includes('schnell')){on('fa-2a',480);on('fn-sym',620);on('fa-3a',860);on('fn-nnm',1000);on('fa-4a',1220);on('fn-adr',1360);on('fa-5a',1580);on('fn-schnell',1720);}
+  if(phases.includes('langsam')||phases.includes('dauer')){on('fa-2b',480);on('fl-crh',480);on('fn-hyph',680);on('fa-3b',920);on('fl-acth',920);on('fn-nnr',1060);on('fa-4b',1280);on('fn-cor',1420);on('fa-5b',1640);on('fn-langsam',1780);on('fa-fb',2000);on('fl-fb',2000);on('fl-fb2',2000);}
+  if(phases.includes('dauer')){later(()=>{const e=document.getElementById('fn-cor');if(e)e.classList.add('pulse');},1500);}
+}
+function on(id,delay){later(()=>{const e=document.getElementById(id);if(e)e.classList.add('on');},delay);}
+
+function doReset(){
+  clearTids();
+  v=variants[Math.floor(Math.random()*variants.length)];
+  setChar('normal');
+  document.getElementById('charWrap').className='char-wrap';
+  document.getElementById('bubble').textContent='Alles cool hier 😎';
+  document.getElementById('dring').className='danger-ring';
+  document.getElementById('cortBar').style.width='0%';
+  document.getElementById('cortPct').textContent='0%';
+  ['bSym','bAdr','bCor','bHHN'].forEach(b=>document.getElementById(b).classList.remove('show'));
+  ['schnell','langsam','dauer'].forEach(p=>{const el=document.getElementById('pc-'+p);el.classList.remove('on');el.style.order=phaseOrder[p]+10;});
+  ['herz','lunge','leber','muskel','darm','immun'].forEach(o=>document.getElementById('or-'+o).classList.remove('on'));
+  document.getElementById('infoBox').style.display='none';
+  document.querySelectorAll('.fn,.fa,.fl').forEach(e=>e.classList.remove('on','pulse'));
+  spawnPop('😌 RELAX','#06d6a0');
+}
+
+function spawnPop(txt,col){
+  const el=document.createElement('div');el.className='cpop';el.textContent=txt;el.style.color=col;
+  el.style.left=(25+Math.random()*40)+'%';el.style.top=(15+Math.random()*15)+'%';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),950);
+}
+
+// ══════════════════════════════════════════
+// TEST MODE
+// ══════════════════════════════════════════
+const answers={hypo:'Hypothalamus',sym:'Sympathikus',hyph:'Hypophyse',nnm:'Nebennierenmark',nnr:'Nebennierenrinde',adr:'Adrenalin',cor:'Cortisol',sofort:'Sofort-Reaktion',lang:'Langzeit-Reaktion'};
+const hints={
+  hypo:'Tipp: Die Bewertungszentrale im Gehirn – sie entscheidet, ob ein Reiz gefährlich ist.',
+  sym:'Tipp: Teil des vegetativen Nervensystems – verbindet Gehirn direkt mit Organen (links im Diagramm).',
+  hyph:'Tipp: Die Hirnanhangsdrüse – empfängt CRH und gibt ACTH weiter (rechts im Diagramm).',
+  nnm:'Tipp: Innere Schicht der Nebenniere – embryologisch aus Nervengewebe, schüttet Adrenalin aus.',
+  nnr:'Tipp: Äußere Schicht der Nebenniere – produziert auf ACTH-Signal das Steroidhormon.',
+  adr:'Tipp: Das Katecholamin der schnellen Reaktion – bindet an adrenerge Rezeptoren in Herz und Muskeln.',
+  cor:'Tipp: Steroidhormon – fettlöslich, wirkt direkt im Zellkern, Langzeit-Stresshormon.',
+  sofort:'Tipp: Das Ergebnis des linken Weges – tritt in Sekunden ein (Sympathikus + Adrenalin).',
+  lang:'Tipp: Das Ergebnis des rechten Weges – tritt in Minuten bis Stunden ein (HHN-Achse + Cortisol).',
+};
+
+let selectedWord=null;
+let selectedKey=null;
+let placed={};
+let correctCount=0;
+
+function selectWord(key,label){
+  // deselect previous
+  document.querySelectorAll('.wchip').forEach(c=>c.classList.remove('selected-chip'));
+  if(selectedKey===key){selectedKey=null;selectedWord=null;document.getElementById('testHints').innerHTML='Klicke auf einen Begriff, dann auf ein leeres Feld.';return;}
+  selectedKey=key;selectedWord=label;
+  document.getElementById('wc-'+key).classList.add('selected-chip');
+  document.getElementById('testHints').innerHTML='<b>Gewählt: '+label+'</b><br><br>'+hints[key];
+}
+
+function placeWord(fieldKey){
+  if(!selectedWord){
+    document.getElementById('testHints').innerHTML='← Erst einen Begriff auswählen!';
+    return;
+  }
+  // if this field was previously filled by another chip, free that chip again
+  if(placed[fieldKey]){
+    const oldKey=Object.keys(answers).find(k=>answers[k]===placed[fieldKey]||placed[fieldKey]===answers[k]||placed[fieldKey]===document.getElementById('wc-'+k)?.dataset.label);
+    // find chip whose label matches the previously placed word
+    document.querySelectorAll('.wchip').forEach(c=>{
+      if(c.dataset.label===placed[fieldKey]&&!c.classList.contains('correct')){
+        c.classList.remove('used');
+      }
+    });
+  }
+  // place it
+  placed[fieldKey]=selectedWord;
+  const lbl=document.getElementById('tbl-'+fieldKey);
+  if(lbl){lbl.textContent=selectedWord;lbl.setAttribute('font-size','9');}
+  const field=document.getElementById('tb-'+fieldKey);
+  if(field){field.classList.add('filled');field.classList.remove('correct','wrong');}
+  // mark chip as tentatively used (but keep pointer-events via 'placed' class, not 'used')
+  const chip=document.getElementById('wc-'+selectedKey);
+  chip.classList.add('used');
+  chip.dataset.label=selectedWord;
+  chip.classList.remove('selected-chip');
+  selectedWord=null;selectedKey=null;
+  document.getElementById('testHints').innerHTML='Gut! Wähle den nächsten Begriff.';
+  updateScore();
+}
+
+function checkAll(){
+  let correct=0;
+  Object.keys(answers).forEach(k=>{
+    const field=document.getElementById('tb-'+k);
+    if(!field)return;
+    if(placed[k]===undefined){
+      field.classList.remove('correct','wrong');
+    } else if(placed[k]===answers[k]){
+      field.classList.add('correct');field.classList.remove('wrong');correct++;
+      // lock the correct chip permanently
+      document.querySelectorAll('.wchip').forEach(c=>{
+        if(c.dataset.label===placed[k]){c.classList.add('correct','used');c.classList.remove('wrong');}
+      });
+    } else {
+      field.classList.add('wrong');field.classList.remove('correct');
+      // show wrong answer in field with X
+      const lbl=document.getElementById('tbl-'+k);
+      if(lbl)lbl.textContent=placed[k]+' \u2717';
+      // re-enable the wrong chip so it can be reused
+      document.querySelectorAll('.wchip').forEach(c=>{
+        if(c.dataset.label===placed[k]&&!c.classList.contains('correct')){
+          c.classList.remove('used');
+          c.classList.add('wrong');
+        }
+      });
+      // clear the placement so the field can be filled again
+      placed[k]=undefined;
+      field.classList.remove('filled');
+      setTimeout(()=>{
+        const lbl2=document.getElementById('tbl-'+k);
+        const num={'hypo':'\u2460','sym':'\u2461','hyph':'\u2462','nnm':'\u2463','nnr':'\u2464','adr':'\u2465','cor':'\u2466','sofort':'\u2467','lang':'\u2468'};
+        if(lbl2){lbl2.textContent=(num[k]||'?')+' ?';lbl2.setAttribute('font-size','11');}
+        field.classList.remove('wrong');
+      },1200);
+    }
+  });
+  correctCount=correct;
+  document.getElementById('testScore').textContent=correct+'/9';
+  const fb=document.getElementById('scoreFeedback');
+  if(correct===9){fb.textContent='\uD83C\uDF89 Perfekt!';fb.style.color='var(--green)';spawnPop('PERFEKT!','#06d6a0');}
+  else if(correct>=6){fb.textContent='\uD83D\uDC4D Fast! Noch '+(9-correct)+' falsch.';fb.style.color='var(--orange)';}
+  else{fb.textContent='Probiere nochmal \u2013 '+correct+' von 9 richtig.';fb.style.color='var(--red)';}
+  document.getElementById('testHints').innerHTML='Gr\u00FCn = richtig \u2713 &nbsp; Rot = falsch \u2717<br><br>Die falsch platzierten Begriffe sind wieder verf\u00FCgbar \u2013 probiere es erneut!';
+}
+
+function updateScore(){
+  let c=0;
+  Object.keys(answers).forEach(k=>{if(placed[k]===answers[k])c++;});
+  document.getElementById('testScore').textContent=c+'/9';
+}
+
+function resetTest(){
+  placed={};correctCount=0;selectedWord=null;selectedKey=null;
+  Object.keys(answers).forEach(k=>{
+    const f=document.getElementById('tb-'+k);if(f){f.classList.remove('correct','wrong','filled');}
+    const l=document.getElementById('tbl-'+k);
+    if(l){
+      const num={'hypo':'①','sym':'②','hyph':'③','nnm':'④','nnr':'⑤','adr':'⑥','cor':'⑦','sofort':'⑧','lang':'⑨'};
+      l.textContent=(num[k]||'?')+' ?';
+      l.setAttribute('font-size','11');
+    }
+    const c=document.getElementById('wc-'+k);if(c){c.classList.remove('used','correct','wrong','selected-chip');c.dataset.label='';}
+  });
+  document.getElementById('testScore').textContent='0/9';
+  document.getElementById('scoreFeedback').textContent='';
+  document.getElementById('testHints').innerHTML='Klicke auf einen Begriff in der Begriffe-Box, dann auf das passende leere Feld im Signalweg.<br><br>Wenn du dir nicht sicher bist – wechsle kurz zu <b>Erkunden</b>!';
+}
+
+// ══════════════════════════════════════════
+// MODE SWITCH
+// ══════════════════════════════════════════
+function setMode(m){
+  const isExplore=m==='explore';
+  document.getElementById('exploreMode').style.display=isExplore?'grid':'none';
+  document.getElementById('testMode').style.display=isExplore?'none':'flex';
+  document.getElementById('btnExplore').classList.toggle('active',isExplore);
+  document.getElementById('btnTest').classList.toggle('active',!isExplore);
+}
+
+// ── INIT ──
+v=variants[Math.floor(Math.random()*variants.length)];
+setChar('normal');
+['schnell','langsam','dauer'].forEach(p=>{document.getElementById('pc-'+p).style.order=phaseOrder[p]+10;});
+</script>
+</body>
+</html>
