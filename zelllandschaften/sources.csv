@@ -1,0 +1,73 @@
+local_path,original_url
+assets/adhesion/base.jpg,https://media.cellsignal.com/www/images/science/landscapes/adhesion/adhesion_44_mainColor.jpg
+assets/adhesion/grey.jpg,https://media.cellsignal.com/www/images/science/landscapes/adhesion/adhesion_44_greyPlate.jpg
+assets/adhesion/pathways/adherens_junction_formation.jpg,https://media.cellsignal.com/www/images/science/landscapes/adhesion/adhesion_44_sectionLabels_02ajf.jpg
+assets/adhesion/pathways/adherens_junction_maintenance.jpg,https://media.cellsignal.com/www/images/science/landscapes/adhesion/adhesion_44_sectionLabels_02ajm.jpg
+assets/adhesion/pathways/cell_structure.jpg,https://media.cellsignal.com/www/images/science/landscapes/adhesion/adhesion_44_sectionLabels_02cs.jpg
+assets/mitochondria/base.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/fullQ60.jpg
+assets/mitochondria/grey.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/background_grey_40Q.jpg
+assets/mitochondria/pathways/apoptosis.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/apoptosis_full_color.jpg
+assets/mitochondria/pathways/cytoskeleton.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/cytoskeleton_full_color.jpg
+assets/mitochondria/pathways/electron_transport.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/elecTrans_full_color.jpg
+assets/mitochondria/pathways/heat_shock_proteins.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/hsp_full_color.jpg
+assets/mitochondria/pathways/import_export.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/mitoImportExport_full_color.jpg
+assets/mitochondria/pathways/krebs_cycle.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/krebs_full_color.jpg
+assets/mitochondria/pathways/membranes.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/membrane_full_color.jpg
+assets/mitochondria/pathways/mitochondrial_genetics.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/mitoGenetics_full_color.jpg
+assets/mitochondria/pathways/proteolysis.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/proteolysis_full_color.jpg
+assets/mitochondria/pathways/translation.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/translation_full_color.jpg
+assets/mitochondria/pathways/vesicle_trafficking.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/vesicleTrafficking_full_color.jpg
+assets/mitochondria/pathways/warburg_effect.jpg,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/warburg_full_color.jpg
+assets/protein/base.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_main.jpg
+assets/protein/grey.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_greyPlate.jpg
+assets/protein/pathways/angiogenesis.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_angiogenesis.jpg
+assets/protein/pathways/autophagy.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_autophagy.jpg
+assets/protein/pathways/calcium_signaling.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_Ca_signaling.jpg
+assets/protein/pathways/epigenetics.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_epigenetics.jpg
+assets/protein/pathways/transcription.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_transcription.jpg
+assets/protein/pathways/translation_eif2_regulation.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_trans_extras_eif2reg.jpg
+assets/protein/pathways/translation_eif4_regulation.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_trans_extras_eif4reg.jpg
+assets/protein/pathways/translation_mtor.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_trans_extras_mtor.jpg
+assets/protein/pathways/translation_overview.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_trans_extras_overview.jpg
+assets/protein/pathways/wnt_nuclear_receptors.jpg,https://media.cellsignal.com/www/images/science/landscapes/protein-synthesis/cst1202_nuc2_web1024_wnt_nucR.jpg
+assets/rtk/base.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/fullRTK.jpg
+assets/rtk/grey.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk_grey.jpg
+assets/rtk/pathways/adhesion.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-adhesion.jpg
+assets/rtk/pathways/akt.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-akt.jpg
+assets/rtk/pathways/c_kit.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-ckit.jpg
+assets/rtk/pathways/death_receptor.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-disc.jpg
+assets/rtk/pathways/ecm.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-ecm.jpg
+assets/rtk/pathways/egf.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-egf.jpg
+assets/rtk/pathways/endocytosis.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-endocytosis.jpg
+assets/rtk/pathways/il6.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-il6.jpg
+assets/rtk/pathways/insulin.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-insulin.jpg
+assets/rtk/pathways/toll_like_receptors.jpg,https://media.cellsignal.com/www/images/science/landscapes/rtk/rtk-toll.jpg
+assets/vesicle/base.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_color.jpg
+assets/vesicle/grey.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_grey.jpg
+assets/vesicle/pathways/alzheimers.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_alzheimers.jpg
+assets/vesicle/pathways/cytoskeleton.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_cytoskeleton.jpg
+assets/vesicle/pathways/endo_lysosomal.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_endo-lysosomal_compartment.jpg
+assets/vesicle/pathways/er_golgi.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_ER-Golgi_trafficking.jpg
+assets/vesicle/pathways/golgi_exit.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_Golgi_exit.jpg
+assets/vesicle/pathways/microtubule_dynamics.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_microtubule_dynamics.jpg
+assets/vesicle/pathways/post_translational_modification.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_post-translational_modification.jpg
+assets/vesicle/pathways/protein_folding.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_protein_folding.jpg
+assets/vesicle/pathways/transit_vesicles.jpg,https://media.cellsignal.com/www/images/science/landscapes/vesicle-trafficking/cst1203_v31_paths1k_transit_vesicles.jpg
+assets/adhesion/structures/membranes.png,https://media.cellsignal.com/www/images/science/landscapes/adhesion/acHero_86.png
+assets/adhesion/structures/membranes_frame.png,derived locally: assets/adhesion/grey.jpg + assets/adhesion/structures/membranes.png
+assets/mitochondria/structures/mitochondrial_outer_membrane.png,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/membrane_mito_color.png
+assets/mitochondria/structures/mitochondrial_outer_membrane_frame.png,derived locally: assets/mitochondria/grey.jpg + assets/mitochondria/structures/mitochondrial_outer_membrane.png
+assets/mitochondria/structures/cristae_membrane.png,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/membrane_cristae_color.png
+assets/mitochondria/structures/cristae_membrane_frame.png,derived locally: assets/mitochondria/grey.jpg + assets/mitochondria/structures/cristae_membrane.png
+assets/mitochondria/structures/nuclear_membrane.png,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/membrane_nuclear_color.png
+assets/mitochondria/structures/nuclear_membrane_frame.png,derived locally: assets/mitochondria/grey.jpg + assets/mitochondria/structures/nuclear_membrane.png
+assets/mitochondria/structures/vesicle_membranes.png,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/membrane_vesicles_color.png
+assets/mitochondria/structures/vesicle_membranes_frame.png,derived locally: assets/mitochondria/grey.jpg + assets/mitochondria/structures/vesicle_membranes.png
+assets/mitochondria/structures/mitochondrial_dna.png,https://media.cellsignal.com/www/images/science/landscapes/mitochondria/mitoDNA_color.png
+assets/mitochondria/structures/mitochondrial_dna_frame.png,derived locally: assets/mitochondria/grey.jpg + assets/mitochondria/structures/mitochondrial_dna.png
+assets/rtk/structures/glut4_vesicles.png,https://media.cellsignal.com/www/images/science/landscapes/rtk/Glut4-vesicles.png
+assets/rtk/structures/glut4_vesicles_frame.png,derived locally: assets/rtk/grey.jpg + assets/rtk/structures/glut4_vesicles.png
+assets/rtk/structures/lipid_raft.png,https://media.cellsignal.com/www/images/science/landscapes/rtk/Lipid-raft.png
+assets/rtk/structures/lipid_raft_frame.png,derived locally: assets/rtk/grey.jpg + assets/rtk/structures/lipid_raft.png
+assets/intro/Zelle3D_silent.mp4,user-supplied: Zelle3D.mp4; audio track removed locally
+assets/intro/Zelle3D_poster.jpg,derived locally from user-supplied: Zelle3D.mp4
