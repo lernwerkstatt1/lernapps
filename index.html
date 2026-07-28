@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Übersicht der Lernapps">
+  <title>Lernapps</title>
+
+  <style>
+    body {
+      max-width: 48rem;
+      margin: 3rem auto;
+      padding: 0 1.25rem;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      color: #1f2933;
+      background: #fff;
+    }
+
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+
+    #status {
+      color: #52606d;
+    }
+
+    ul {
+      padding-left: 1.4rem;
+    }
+
+    li {
+      margin: 0.75rem 0;
+    }
+
+    a {
+      color: #075985;
+      font-size: 1.1rem;
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.45rem 0.75rem;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .error {
+      color: #9b1c1c;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Lernapps</h1>
+    <p>Eine Anwendung auswählen:</p>
+
+    <p id="status">Apps werden gesucht …</p>
+    <ul id="app-list" hidden></ul>
+
+    <button id="reload" type="button" hidden>Liste neu laden</button>
+
+    <noscript>
+      <p class="error">
+        Für die automatische App-Liste muss JavaScript aktiviert sein.
+      </p>
+    </noscript>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const OWNER = "lernwerkstatt1";
+      const REPOSITORY = "lernapps";
+      const BRANCH = "main";
+
+      const API_URL =
+        `https://api.github.com/repos/${OWNER}/${REPOSITORY}` +
+        `/git/trees/${encodeURIComponent(BRANCH)}?recursive=1`;
+
+      const CACHE_KEY = `${OWNER}/${REPOSITORY}:app-index`;
+      const CACHE_MAX_AGE = 10 * 60 * 1000;
+
+      const statusElement = document.getElementById("status");
+      const listElement = document.getElementById("app-list");
+      const reloadButton = document.getElementById("reload");
+
+      function readableName(folderName) {
+        return folderName
+          .replace(/[-_]+/g, " ")
+          .replace(/\b\p{L}/gu, letter => letter.toUpperCase());
+      }
+
+      function encodePath(path) {
+        return path
+          .split("/")
+          .map(segment => encodeURIComponent(segment))
+          .join("/");
+      }
+
+      function findApps(tree) {
+        const appsByFolder = new Map();
+
+        for (const item of tree) {
+          if (item.type !== "blob") continue;
+
+          /*
+           * Es werden nur Apps erkannt, deren Startdatei direkt in einem
+           * Unterordner liegt:
+           *
+           * app-name/index.html
+           * app-name/index.htm
+           */
+          const match = item.path.match(/^([^/]+)\/(index\.html?)$/i);
+          if (!match) continue;
+
+          const folder = match[1];
+          if (folder.startsWith(".") || folder.startsWith("_")) continue;
+
+          const existing = appsByFolder.get(folder);
+
+          /*
+           * Falls beide Varianten existieren, wird index.html bevorzugt.
+           */
+          if (!existing || item.path.toLowerCase().endsWith("index.html")) {
+            appsByFolder.set(folder, {
+              folder,
+              indexPath: item.path
+            });
+          }
+        }
+
+        return [...appsByFolder.values()].sort((a, b) =>
+          a.folder.localeCompare(b.folder, "de", { sensitivity: "base" })
+        );
+      }
+
+      async function readPageTitle(indexPath, fallbackTitle) {
+        try {
+          const response = await fetch(`./${encodePath(indexPath)}`, {
+            cache: "no-cache"
+          });
+
+          if (!response.ok) return fallbackTitle;
+
+          const html = await response.text();
+          const documentCopy = new DOMParser().parseFromString(html, "text/html");
+          const title = documentCopy.querySelector("title")?.textContent?.trim();
+
+          return title || fallbackTitle;
+        } catch {
+          return fallbackTitle;
+        }
+      }
+
+      async function addTitles(apps) {
+        return Promise.all(
+          apps.map(async app => ({
+            ...app,
+            title: await readPageTitle(
+              app.indexPath,
+              readableName(app.folder)
+            )
+          }))
+        );
+      }
+
+      function render(apps, sourceMessage = "") {
+        listElement.replaceChildren();
+
+        for (const app of apps) {
+          const listItem = document.createElement("li");
+          const link = document.createElement("a");
+
+          link.href = `./${encodeURIComponent(app.folder)}/${app.indexPath
+            .split("/")
+            .pop()}`;
+          link.textContent = app.title;
+
+          listItem.appendChild(link);
+          listElement.appendChild(listItem);
+        }
+
+        listElement.hidden = false;
+        reloadButton.hidden = false;
+
+        if (apps.length === 0) {
+          statusElement.textContent =
+            "Es wurden keine Unterordner mit index.html oder index.htm gefunden.";
+          return;
+        }
+
+        statusElement.textContent =
+          `${apps.length} ${apps.length === 1 ? "App" : "Apps"} gefunden` +
+          (sourceMessage ? ` (${sourceMessage})` : "") +
+          ".";
+      }
+
+      function readCache() {
+        try {
+          const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+          if (!cached || !Array.isArray(cached.apps)) return null;
+          return cached;
+        } catch {
+          return null;
+        }
+      }
+
+      function writeCache(apps) {
+        try {
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              savedAt: Date.now(),
+              apps
+            })
+          );
+        } catch {
+          // Die Seite funktioniert auch ohne lokalen Speicher.
+        }
+      }
+
+      async function fetchApps({ ignoreCache = false } = {}) {
+        statusElement.classList.remove("error");
+        statusElement.textContent = "Apps werden gesucht …";
+        reloadButton.disabled = true;
+
+        const cached = readCache();
+        const cacheIsCurrent =
+          cached && Date.now() - cached.savedAt < CACHE_MAX_AGE;
+
+        if (!ignoreCache && cacheIsCurrent) {
+          render(cached.apps, "zwischengespeichert");
+          reloadButton.disabled = false;
+          return;
+        }
+
+        try {
+          const response = await fetch(API_URL, {
+            headers: {
+              Accept: "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28"
+            },
+            cache: "no-cache"
+          });
+
+          if (!response.ok) {
+            throw new Error(`GitHub-API: HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!Array.isArray(data.tree)) {
+            throw new Error("Die GitHub-API lieferte keine Dateiliste.");
+          }
+
+          const apps = await addTitles(findApps(data.tree));
+          writeCache(apps);
+          render(apps);
+        } catch (error) {
+          if (cached) {
+            render(cached.apps, "ältere gespeicherte Liste");
+            statusElement.textContent +=
+              " Die aktuelle GitHub-Liste konnte gerade nicht geladen werden.";
+          } else {
+            statusElement.classList.add("error");
+            statusElement.textContent =
+              "Die App-Liste konnte nicht geladen werden. " +
+              "Bitte die Seite später erneut öffnen.";
+            reloadButton.hidden = false;
+          }
+
+          console.error(error);
+        } finally {
+          reloadButton.disabled = false;
+        }
+      }
+
+      reloadButton.addEventListener("click", () => {
+        fetchApps({ ignoreCache: true });
+      });
+
+      fetchApps();
+    })();
+  </script>
+</body>
+</html>
