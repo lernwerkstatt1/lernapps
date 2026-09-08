@@ -80,9 +80,13 @@
 
       const API_URL =
         `https://api.github.com/repos/${OWNER}/${REPOSITORY}` +
-        `/git/trees/${encodeURIComponent(BRANCH)}?recursive=1`;
+        `/git/trees/${BRANCH}?recursive=1`;
 
-      const CACHE_KEY = `${OWNER}/${REPOSITORY}:app-index-v2`;
+      /*
+       * Neue Cache-Version, damit eine eventuell fehlerhafte
+       * alte Liste nicht weiter benutzt wird.
+       */
+      const CACHE_KEY = `${OWNER}/${REPOSITORY}:app-index-v3`;
       const CACHE_MAX_AGE = 10 * 60 * 1000;
 
       const statusElement = document.getElementById("status");
@@ -109,16 +113,15 @@
           if (item.type !== "blob") continue;
 
           /*
-           * Gesucht werden HTML-Dateien direkt in einem Unterordner:
+           * HTML-Dateien direkt in einem Unterordner erkennen.
+           *
+           * Beispiele:
            *
            * Blutzuckerregulationssimulator/
            *   blutzuckerregulationssimulator.html
            *
            * Bruchrechnen/
            *   index.html
-           *
-           * Vokabeltrainer/
-           *   vokabeltrainer.htm
            */
           const match = item.path.match(
             /^([^/]+)\/([^/]+\.html?)$/i
@@ -129,7 +132,6 @@
           const folder = match[1];
           const fileName = match[2];
 
-          // Versteckte/interne Ordner ignorieren
           if (
             folder.startsWith(".") ||
             folder.startsWith("_")
@@ -153,11 +155,11 @@
         for (const [folder, files] of filesByFolder) {
 
           /*
-           * Falls mehrere HTML-Dateien in einem Ordner liegen:
+           * Auswahl, falls mehrere HTML-Dateien existieren:
            *
-           * 1. index.html bevorzugen
-           * 2. Datei mit gleichem Namen wie der Ordner bevorzugen
-           * 3. ansonsten erste HTML-Datei alphabetisch nehmen
+           * 1. index.html / index.htm
+           * 2. Datei mit gleichem Namen wie der Ordner
+           * 3. erste HTML-Datei alphabetisch
            */
 
           let selectedFile = files.find(file =>
@@ -166,7 +168,9 @@
 
           if (!selectedFile) {
             const normalizedFolder =
-              folder.toLowerCase().replace(/[-_\s]/g, "");
+              folder
+                .toLowerCase()
+                .replace(/[-_\s]/g, "");
 
             selectedFile = files.find(file => {
               const fileWithoutExtension =
@@ -203,10 +207,7 @@
         );
       }
 
-      async function readPageTitle(
-        indexPath,
-        fallbackTitle
-      ) {
+      async function readPageTitle(indexPath, fallbackTitle) {
         try {
           const response = await fetch(
             `./${encodePath(indexPath)}`,
@@ -244,7 +245,6 @@
         return Promise.all(
           apps.map(async app => ({
             ...app,
-
             title: await readPageTitle(
               app.indexPath,
               readableName(app.folder)
@@ -253,26 +253,14 @@
         );
       }
 
-      function render(
-        apps,
-        sourceMessage = ""
-      ) {
+      function render(apps, sourceMessage = "") {
         listElement.replaceChildren();
 
         for (const app of apps) {
-          const listItem =
-            document.createElement("li");
+          const listItem = document.createElement("li");
+          const link = document.createElement("a");
 
-          const link =
-            document.createElement("a");
-
-          /*
-           * Verwendet direkt den von GitHub
-           * gefundenen Dateipfad.
-           */
-          link.href =
-            `./${encodePath(app.indexPath)}`;
-
+          link.href = `./${encodePath(app.indexPath)}`;
           link.textContent = app.title;
 
           listItem.appendChild(link);
@@ -285,30 +273,21 @@
         if (apps.length === 0) {
           statusElement.textContent =
             "Es wurden keine Unterordner mit HTML-Dateien gefunden.";
-
           return;
         }
 
         statusElement.textContent =
           `${apps.length} ${
-            apps.length === 1
-              ? "App"
-              : "Apps"
+            apps.length === 1 ? "App" : "Apps"
           } gefunden` +
-          (
-            sourceMessage
-              ? ` (${sourceMessage})`
-              : ""
-          ) +
+          (sourceMessage ? ` (${sourceMessage})` : "") +
           ".";
       }
 
       function readCache() {
         try {
           const cached =
-            JSON.parse(
-              localStorage.getItem(CACHE_KEY)
-            );
+            JSON.parse(localStorage.getItem(CACHE_KEY));
 
           if (
             !cached ||
@@ -333,9 +312,8 @@
               apps
             })
           );
-
         } catch {
-          // Seite funktioniert auch ohne localStorage.
+          // Funktioniert auch ohne localStorage.
         }
       }
 
@@ -356,10 +334,7 @@
           Date.now() - cached.savedAt <
             CACHE_MAX_AGE;
 
-        if (
-          !ignoreCache &&
-          cacheIsCurrent
-        ) {
+        if (!ignoreCache && cacheIsCurrent) {
           render(
             cached.apps,
             "zwischengespeichert"
@@ -370,17 +345,17 @@
         }
 
         try {
+
+          /*
+           * WICHTIG:
+           * Keine zusätzlichen GitHub-Header setzen.
+           *
+           * Insbesondere X-GitHub-Api-Version würde
+           * im Browser ein CORS-Problem verursachen.
+           */
           const response = await fetch(
             API_URL,
             {
-              headers: {
-                Accept:
-                  "application/vnd.github+json",
-
-                "X-GitHub-Api-Version":
-                  "2022-11-28"
-              },
-
               cache: "no-cache"
             }
           );
@@ -399,16 +374,15 @@
             );
           }
 
-          const foundApps =
-            findApps(data.tree);
-
-          const apps =
-            await addTitles(foundApps);
+          const foundApps = findApps(data.tree);
+          const apps = await addTitles(foundApps);
 
           writeCache(apps);
           render(apps);
 
         } catch (error) {
+
+          console.error(error);
 
           if (cached) {
             render(
@@ -420,18 +394,13 @@
               " Die aktuelle GitHub-Liste konnte gerade nicht geladen werden.";
 
           } else {
-            statusElement.classList.add(
-              "error"
-            );
+            statusElement.classList.add("error");
 
             statusElement.textContent =
-              "Die App-Liste konnte nicht geladen werden. " +
-              "Bitte die Seite später erneut öffnen.";
+              "Die App-Liste konnte nicht geladen werden.";
 
             reloadButton.hidden = false;
           }
-
-          console.error(error);
 
         } finally {
           reloadButton.disabled = false;
