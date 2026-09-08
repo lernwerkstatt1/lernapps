@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Der Regelkreis — Blutzucker</title>
+<style>
+  :root{
+    --insulin:#2E6F8E;
+    --insulin-d:#1b4459;
+    --glukagon:#B85042;
+    --glukagon-d:#7a3229;
+    --hg:#f4f1ea;
+    --flaeche:#ffffff;
+    --text:#1d2327;
+    --rand:#c9c2b3;
+    --ziel:#8fbf7a;
+    --warn:#d9a441;
+    --gefahr:#b8433a;
+    --radius:12px;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:var(--hg); color:var(--text);
+    font-family:"MS PGothic","MS Pゴシック","Hiragino Sans","Yu Gothic",sans-serif;
+    font-size:17px; -webkit-user-select:none; user-select:none;
+  }
+  #app{ position:fixed; inset:0; display:flex; flex-direction:column; }
+
+  /* ================= Startbildschirm ================= */
+  #start-screen{ flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:20px;
+    background:radial-gradient(circle at 12% 0%, #fff6dd 0%, var(--hg) 60%); }
+  .start-wrap{ max-width:720px; margin:auto; width:100%; }
+  .start-wrap h1{ font-size:27px; margin:0 0 4px; }
+  .start-unter{ font-size:16px; color:#4a4438; margin:0 0 16px; }
+  .regel-liste{ list-style:none; margin:0 0 16px; padding:0; display:flex; flex-direction:column; gap:7px; }
+  .regel-liste li{ background:#fff; border:1px solid var(--rand); border-radius:10px; padding:9px 13px; font-size:15.5px; }
+  .regel-liste b{ color:var(--insulin-d); }
+  .start-fuss{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  #btn-start{ font-size:21px; font-weight:bold; padding:15px 34px; border-radius:14px; border:none;
+    background:var(--insulin); color:#fff; cursor:pointer; box-shadow:0 3px 0 var(--insulin-d); }
+  #btn-start:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--insulin-d); }
+  .start-highscore{ font-size:16px; font-weight:bold; color:#8a6d00; }
+
+  /* ================= Spielbildschirm ================= */
+  #spiel-screen{ flex:1; display:none; flex-direction:column; min-height:0; position:relative; }
+  #kopf{ display:flex; align-items:center; gap:7px; padding:5px 8px; background:#e7e1d2;
+    border-bottom:1px solid var(--rand); flex-shrink:0; flex-wrap:wrap; }
+  #kopf button{ min-height:34px; padding:5px 11px; border-radius:8px; border:1px solid var(--rand);
+    background:#fff; font-size:14px; cursor:pointer; touch-action:manipulation; }
+  #kopf .uhr{ font-size:18px; font-weight:bold; min-width:60px; }
+  .tempo-box{ display:flex; align-items:center; gap:6px; font-size:13px; color:#4a4438; }
+  #tempo-regler{ width:110px; height:30px; touch-action:manipulation; }
+  #tempo-wert{ min-width:74px; font-size:13px; }
+  #score-anzeige{ margin-left:auto; font-size:17px; font-weight:bold; background:#fff;
+    border:1px solid var(--warn); border-radius:8px; padding:4px 10px; color:#8a6d00;
+    transition:transform .12s ease; }
+  #score-anzeige.puls{ transform:scale(1.16); }
+
+  #inhalt{ flex:1; display:flex; flex-direction:column; min-height:0; gap:5px; padding:5px 7px 7px; }
+
+  #chart-box{ flex:1 1 auto; min-height:200px; background:var(--flaeche);
+    border:1px solid var(--rand); border-radius:var(--radius); overflow:hidden; }
+  #chart{ width:100%; height:100%; display:block; touch-action:none; }
+
+  #mitte{ flex:0 0 158px; display:flex; gap:6px; min-height:0; }
+  #leisten{ flex:1; min-width:0; background:var(--flaeche); border:1px solid var(--rand);
+    border-radius:var(--radius); padding:7px 9px; overflow:hidden; }
+  .hgruppe{ margin-bottom:7px; }
+  .hkopf{ display:flex; justify-content:space-between; font-size:13.5px; font-weight:bold; margin-bottom:3px; }
+  .hzeile{ display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+  .hcap{ width:50px; font-size:12px; color:#6b6455; flex-shrink:0; }
+  .hbar{ flex:1; background:#e9e4d8; border:1px solid var(--rand); border-radius:4px; height:9px; overflow:hidden; }
+  .hbar.dick{ height:13px; }
+  .hfill{ height:100%; width:0%; border-radius:3px 0 0 3px; }
+
+  #buehne{ flex:0 0 366px; display:flex; gap:6px; min-width:0; }
+  #blase-box{ flex:1; min-width:0; background:var(--flaeche); border:1px solid var(--rand);
+    border-radius:var(--radius); padding:9px 11px; display:flex; align-items:center; position:relative; }
+  #blase-text{ font-size:14.5px; line-height:1.35; }
+  #blase-box::after{ content:""; position:absolute; right:-9px; top:50%; margin-top:-8px;
+    border-top:8px solid transparent; border-bottom:8px solid transparent; border-left:9px solid var(--flaeche); }
+  #figur-box{ flex:0 0 180px; background:var(--flaeche); border:1px solid var(--rand);
+    border-radius:var(--radius); overflow:hidden; }
+  #figur{ width:100%; height:100%; display:block; touch-action:none; }
+
+  #steuerung{ flex:0 0 96px; display:flex; gap:8px; }
+  .dose-btn{
+    flex:1; border-radius:var(--radius); border:none; color:#fff; position:relative; overflow:hidden;
+    touch-action:none; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    padding-top:9px; cursor:pointer;
+  }
+  .dose-btn.insulin{ background:var(--insulin-d); }
+  .dose-btn.glukagon{ background:var(--glukagon-d); }
+  .dose-fuellung{ position:absolute; left:0; right:0; bottom:0; opacity:.92; }
+  .dose-btn.insulin .dose-fuellung{ background:var(--insulin); }
+  .dose-btn.glukagon .dose-fuellung{ background:var(--glukagon); }
+  .dose-label{ position:relative; z-index:2; font-size:17px; font-weight:bold; line-height:1.25;
+    text-align:center; text-shadow:0 1px 3px rgba(0,0,0,.65); }
+  .dose-sub{ position:relative; z-index:2; font-size:12px; opacity:.9; text-shadow:0 1px 3px rgba(0,0,0,.65); }
+  .dose-rate{ position:absolute; left:7px; right:7px; bottom:6px; height:7px;
+    background:rgba(0,0,0,.3); border-radius:4px; overflow:hidden; z-index:2; }
+  .dose-rate-fill{ position:absolute; left:0; top:0; bottom:0; width:0%; background:#fff; }
+  @keyframes dosePuls{ 0%{ transform:scale(1); } 50%{ transform:scale(.975); } 100%{ transform:scale(1); } }
+  .dose-btn.haelt{ animation:dosePuls .42s ease-in-out infinite;
+    box-shadow:0 0 0 4px rgba(255,255,255,.45), inset 0 0 30px 8px rgba(255,255,255,.3); }
+  .dose-btn.leer{ filter:saturate(.35) brightness(.8); }
+
+  /* ================= Modal (Game Over) ================= */
+  #modal-hg{ position:absolute; inset:0; background:rgba(24,20,18,.62); display:none;
+    align-items:center; justify-content:center; padding:18px; z-index:50; }
+  #modal-hg.an{ display:flex; animation:einblenden .35s ease; }
+  @keyframes einblenden{ from{ opacity:0; } to{ opacity:1; } }
+  .modal-karte{ background:#fffdf8; border-radius:16px; max-width:520px; width:100%;
+    max-height:100%; overflow-y:auto; padding:18px 20px; border-top:9px solid var(--go,#b8433a);
+    box-shadow:0 12px 40px rgba(0,0,0,.45); }
+  .modal-karte h2{ margin:0 0 8px; font-size:24px; color:var(--go,#b8433a); }
+  .modal-karte p{ font-size:15.5px; line-height:1.45; margin:0 0 10px; }
+  .modal-karte h3{ font-size:16px; margin:12px 0 6px; }
+  .modal-karte ul{ margin:0; padding-left:20px; font-size:15px; line-height:1.55; }
+  .modal-punkte{ margin:12px 0; background:#f2ecdd; border-radius:9px; padding:8px 12px;
+    font-size:16px; font-weight:bold; }
+
+  /* ================= Auswertung ================= */
+  #ende-screen{ flex:1; display:none; overflow-y:auto; padding:16px; }
+  .ende-wrap{ max-width:760px; margin:0 auto; }
+  .ende-wrap h1{ font-size:24px; margin:0 0 8px; }
+  .punktezeile{ font-size:18px; font-weight:bold; margin-bottom:12px; }
+  .neuer-hs{ display:inline-block; color:#8a6d00; background:#fff8df; border:1px solid var(--warn);
+    border-radius:9px; padding:7px 12px; font-size:18px; font-weight:bold; margin-bottom:12px; }
+  .kennzahlen{ display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:9px; margin:12px 0; }
+  .kennzahl{ background:#fff; border:1px solid var(--rand); border-radius:10px; padding:9px; }
+  .kennzahl .wert{ font-size:21px; font-weight:bold; }
+  .kennzahl .lab{ font-size:12.5px; color:#5a5346; }
+  #ereignisse{ font-size:14px; max-height:170px; overflow-y:auto; background:#fff;
+    border:1px solid var(--rand); border-radius:10px; padding:8px 12px; }
+  #ende-chart-box{ height:270px; background:#fff; border:1px solid var(--rand);
+    border-radius:var(--radius); margin-bottom:12px; }
+  #ende-chart{ width:100%; height:100%; display:block; }
+  .aktionen{ display:flex; gap:9px; flex-wrap:wrap; margin-top:12px; }
+  .aktionen button{ min-height:46px; padding:10px 18px; font-size:16px; border-radius:10px;
+    border:1px solid var(--rand); background:#fff; cursor:pointer; }
+  .aktionen button.prim{ background:var(--insulin); color:#fff; border-color:var(--insulin-d); }
+
+  @media (max-width:820px){
+    #buehne{ flex:0 0 280px; }
+    #figur-box{ flex:0 0 124px; }
+    #blase-text{ font-size:13.5px; }
+  }
+  @media (orientation:portrait){
+    #steuerung{ flex:0 0 104px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ========== START ========== -->
+  <div id="start-screen">
+    <div class="start-wrap">
+      <h1>🩸 Der Regelkreis — Blutzucker</h1>
+      <p class="start-unter">Du bist die Bauchspeicheldrüse. Ein ganzer Schultag, und du entscheidest,
+        wann Insulin und wann Glukagon ins Blut geht.</p>
+      <ul class="regel-liste">
+        <li>🍽️ Jede Mahlzeit treibt den Blutzucker nach oben. <b>Ohne Insulin geht er durch die Decke.</b></li>
+        <li>🏃 Sport und lange Pausen ziehen ihn nach unten. <b>Dann brauchst du Glukagon.</b></li>
+        <li>⏳ <b>Beide Hormone wirken erst nach etwa 20–30 Minuten.</b> Wer auf den aktuellen Wert reagiert,
+            reagiert zu spät — und schießt übers Ziel hinaus.</li>
+        <li>🎯 Punkte gibt es für jede Minute im Zielbereich (70–110 mg/dl), halbe Punkte bis 140 mg/dl.</li>
+        <li>💀 Unter 30 mg/dl oder ab 600 mg/dl ist der Tag vorbei.</li>
+      </ul>
+      <div class="start-fuss">
+        <button id="btn-start">▶︎ Tag starten</button>
+        <span class="start-highscore" id="start-highscore"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SPIEL ========== -->
+  <div id="spiel-screen">
+    <div id="kopf">
+      <button id="btn-play">▶︎ Los</button>
+      <div class="tempo-box">
+        <span>Tempo</span>
+        <input type="range" id="tempo-regler" min="2" max="12" step="1" value="4">
+        <span id="tempo-wert">4 Min/Sek</span>
+      </div>
+      <span class="uhr" id="uhr">06:00</span>
+      <span id="score-anzeige">⭐ 0</span>
+      <button id="btn-abbrechen">Abbrechen</button>
+    </div>
+
+    <div id="inhalt">
+      <div id="chart-box"><canvas id="chart"></canvas></div>
+
+      <div id="mitte">
+        <div id="leisten"></div>
+        <div id="buehne">
+          <div id="blase-box"><div id="blase-text"></div></div>
+          <div id="figur-box"><canvas id="figur"></canvas></div>
+        </div>
+      </div>
+
+      <div id="steuerung">
+        <button class="dose-btn insulin" id="btn-insulin">
+          <div class="dose-fuellung" id="fuell-insulin" style="height:100%"></div>
+          <span class="dose-label">💉 INSULIN</span>
+          <span class="dose-sub">senkt — gedrückt halten</span>
+          <div class="dose-rate"><div class="dose-rate-fill" id="rate-insulin"></div></div>
+        </button>
+        <button class="dose-btn glukagon" id="btn-glukagon">
+          <div class="dose-fuellung" id="fuell-glukagon" style="height:100%"></div>
+          <span class="dose-label">🍬 GLUKAGON</span>
+          <span class="dose-sub">hebt — gedrückt halten</span>
+          <div class="dose-rate"><div class="dose-rate-fill" id="rate-glukagon"></div></div>
+        </button>
+      </div>
+    </div>
+
+    <div id="modal-hg"><div class="modal-karte" id="modal-karte"></div></div>
+  </div>
+
+  <!-- ========== AUSWERTUNG ========== -->
+  <div id="ende-screen"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =====================================================================
+   PARAM — alle Modellgroessen an einer Stelle.
+   Fuer die Lehrkraft: Diese Werte bestimmen das Verhalten der Simulation.
+   Sie sind so kalibriert, dass
+     * eine Mahlzeit OHNE Insulin weit ueber 250 mg/dl treibt,
+     * Sport und lange Pausen ohne Glukagon in die Unterzuckerung fuehren,
+     * und die Verzoegerung zwischen Ausschuettung und Wirkung sich als
+       Ueberschwingen bemerkbar macht.
+   Der Selbsttest testeKalibrierung() unten prueft die Eckwerte automatisch
+   und schreibt das Ergebnis in die Browser-Konsole.
+   ===================================================================== */
+const PARAM = {
+  dt: 0.25,                  // Integrationsschritt [Simulationsminuten]
+
+  // Verteilungsvolumina
+  V_G: 96,                   // Glukose [dl]  (1,6 dl/kg * 60 kg)
+  V_I: 12,                   // Insulin [l]
+  V_P: 12,                   // Glukagon [l]
+
+  // Kohlenhydrate: Magen (D1) -> Darm (D2) -> Blut
+  tau_m: 30,                 // Magenentleerung [min]
+  k_abs: 0.020,              // Resorption Darm -> Blut [1/min]
+  f_glu: 1.0,                // Anteil der KH, der als Glukose im Blut ankommt
+  anteil_fluessig: 0.6,      // Anteil einer FLUESSIGEN Mahlzeit, der den Magen ueberspringt
+
+  // Insulin: Plasma (I) -> Wirkung im Gewebe (X)
+  I_basal: 10,               // basales Plasmainsulin [mE/l]
+  n_i: 0.14,                 // Abklingrate von I [1/min]
+  p2: 0.03,                  // Abklingrate der Insulinwirkung X [1/min] -> Zeitkonstante ca. 33 min
+  p3: 1.3e-3,                // Kopplung Plasmainsulin -> Wirkung X
+
+  // Glukagon: Plasma (Pg) -> Wirkung (Y)
+  P_basal: 60,               // basales Plasmaglukagon [ng/l]
+  n_p: 0.10,                 // Abklingrate von Pg [1/min]
+  q2: 0.020,                 // Abklingrate der Glukagonwirkung Y [1/min]
+  q3: 0.1,                   // Kopplung Plasmaglukagon -> Wirkung Y
+
+  // Leber
+  EGP_basal: 0.44,           // Glukoseabgabe der Leber ohne Glukagonreiz [mg/dl/min].
+                             // Bewusst etwas KLEINER als der Grundverbrauch p1*90:
+                             // ohne Glukagon sackt der Blutzucker langsam ab — genau
+                             // dafuer gibt es im Koerper den Glukagon-Grundtonus.
+  k_gluk: 0.05,              // Verstaerkung der Leberabgabe durch Glukagonwirkung Y
+  LG_max: 100,               // maximaler Glykogenspeicher [g]
+  LG_start: 80,              // Startfuellung [g]
+  anteil_glyk: 0.6,          // Anteil der Leberabgabe, der aus Glykogen stammt
+  k_speicher: 0.020,         // Einspeicherung bei Insulinwirkung und hohem Blutzucker
+
+  // Abbau von Glukose
+  p1: 0.006,                 // insulinUNabhaengige Aufnahme [1/min] — klein, deshalb
+                             // ist der Koerper ohne Insulin einer Mahlzeit hilflos ausgeliefert
+  k_ren: 0.003,              // Ausscheidung ueber die Niere oberhalb der Schwelle
+  nierenschwelle: 180,       // [mg/dl]
+
+  U_sport: 1.0,              // zusaetzlicher, insulinunabhaengiger Verbrauch bei Sport [mg/dl/min]
+
+  // Ausschuettung durch die Spielenden. Der Vorrat wird in SIMULATIONSminuten
+  // verbraucht, nicht in Echtzeit — eine volle Ausschuettung kostet also immer
+  // dieselbe Dosis, egal bei welchem Tempo gespielt wird.
+  S_MAX_INSULIN: 6,          // [mE/min] bei voll gedrueckter Taste
+  S_MAX_GLUKAGON: 40,        // [ng/min] bei voll gedrueckter Taste
+  VORRAT_LEER_SIMMIN: 16,    // Simulationsminuten Dauerdruck bis der Vorrat leer ist
+  VORRAT_FUELL_SIMMIN: 90,   // Simulationsminuten bis der Vorrat wieder voll ist
+  RAMPE_S: 0.8,              // Echtzeit-Sekunden bis zum vollen Ausschlag
+
+  koma_hypo: 30,             // [mg/dl] darunter: Unterzucker-Koma, Spiel vorbei
+  koma_hyper: 600,           // [mg/dl] ab hier: hyperosmolares Koma, Spiel vorbei
+
+  // Nur fuer den Referenzlauf "gesunde Bauchspeicheldruese im Automatikmodus"
+  // (Selbsttest T1/T2; im Spiel dosieren die Lernenden selbst).
+  // k_secr_d_auto ist die "erste Phase" der Insulinantwort: echte Beta-Zellen
+  // reagieren auch auf die ANSTIEGSGESCHWINDIGKEIT, nicht nur auf die Hoehe.
+  k_secr_i_auto: 0.006,
+  k_secr_d_auto: 0.8,
+  k_secr_g_auto: 1.0,
+  gluk_schwelle_auto: 88
+};
+
+const ZIEL_MIN = 70, ZIEL_MAX = 110, TOLERANZ_MAX = 140;
+const TAG_DAUER = 16*60, TAG_START = 6*60;
+const EFFEKT_DAUER = 14;   // Simulationsminuten, die eine Ess-/Trinkanimation laeuft
+
+/* =====================================================================
+   SIMULATIONSKERN
+   ===================================================================== */
+function neuerZustand(){
+  return { G:90, I:PARAM.I_basal, X:0, Pg:PARAM.P_basal, Y:0,
+           D1:0, D2:0, LG:PARAM.LG_start, t:0, dG:0 };
+}
+
+function simSchritt(z, opts){
+  opts = opts || {};
+  const P = PARAM, dt = P.dt;
+
+  const dD1 = -z.D1 / P.tau_m;
+  const dD2 = z.D1 / P.tau_m - z.D2 / P.tau_m;
+  const Ra  = P.k_abs * z.D2 / P.V_G;
+
+  let S_insulin = opts.insulin || 0;
+  let S_glukagon = opts.glukagon || 0;
+  if (opts.autoPankreas) S_insulin += P.k_secr_i_auto*Math.max(0, z.G-90) + P.k_secr_d_auto*Math.max(0, z.dG);
+  if (opts.autoGlukagon) S_glukagon += P.k_secr_g_auto*Math.max(0, P.gluk_schwelle_auto - z.G);
+
+  const dI = -P.n_i*(z.I - P.I_basal) + S_insulin/P.V_I;
+  const dX = -P.p2*z.X + P.p3*Math.max(0, z.I - P.I_basal);
+  const dPg = -P.n_p*(z.Pg - P.P_basal) + S_glukagon/P.V_P;
+  const dY = -P.q2*z.Y + P.q3*Math.max(0, z.Pg - P.P_basal);
+
+  const leerLeber = z.LG > 0 ? 1 : 0.25;
+  const EGP = P.EGP_basal + P.k_gluk*z.Y*leerLeber;
+  const U_ren = P.k_ren*Math.max(0, z.G - P.nierenschwelle);
+  const sport = opts.sport ? P.U_sport*(opts.sportIntensitaet||1) : 0;
+
+  const dG = Ra + EGP - (P.p1 + z.X)*z.G - U_ren - sport;
+  // Glykogen: Einspeicherung, wenn Insulin wirkt und der Zucker hoch ist;
+  // Abbau proportional zu der Glukose, die die Leber gerade abgibt.
+  const dLG = P.k_speicher*z.X*Math.max(0, z.G-100)/100
+            - (z.LG > 0 ? P.anteil_glyk*EGP*P.V_G/1000 : 0);
+
+  z.D1 += dD1*dt; z.D2 += dD2*dt;
+  z.I += dI*dt;   z.X += dX*dt;
+  z.Pg += dPg*dt; z.Y += dY*dt;
+  z.G += dG*dt;   z.LG += dLG*dt;
+  if (z.LG < 0) z.LG = 0; if (z.LG > P.LG_max) z.LG = P.LG_max;
+  if (z.D1 < 0) z.D1 = 0; if (z.D2 < 0) z.D2 = 0;
+  z.dG = dG; z.t += dt;
+  return z;
+}
+
+function isst(z, gramm, fluessig){
+  const mg = gramm*1000*PARAM.f_glu;
+  if (fluessig){ z.D2 += mg*PARAM.anteil_fluessig; z.D1 += mg*(1-PARAM.anteil_fluessig); }
+  else { z.D1 += mg; }
+}
+
+/* =====================================================================
+   SELBSTTEST der fachlichen Eckwerte (Ausgabe in der Konsole)
+   ===================================================================== */
+function testeKalibrierung(){
+  function lauf(minuten, vorbereiten, schrittFn){
+    const z = neuerZustand(); vorbereiten(z);
+    let minG=z.G, maxG=z.G, peakT=0, peakV=z.G; const spur={};
+    for (let t=0; t<=minuten; t+=PARAM.dt){
+      schrittFn(z, t);
+      if (z.G<minG) minG=z.G;
+      if (z.G>maxG) maxG=z.G;
+      if (z.G>peakV){ peakV=z.G; peakT=t; }
+      spur[Math.round(t)] = z.G;
+    }
+    return {z:z, minG:minG, maxG:maxG, peakT:peakT, peakV:peakV, spur:spur};
+  }
+  const r1 = lauf(200, z=>isst(z,60), z=>simSchritt(z,{autoPankreas:true, autoGlukagon:true}));
+  const r2 = lauf(480, ()=>{},        z=>simSchritt(z,{autoPankreas:true, autoGlukagon:true}));
+  const r3 = lauf(180, z=>isst(z,60), z=>simSchritt(z,{}));
+  // Doppelt zu hohe Ausschuettung zu einer 40-g-Mahlzeit
+  const r4 = lauf(150, z=>isst(z,40), (z,t)=>simSchritt(z,{
+    insulin: (t < 2*PARAM.VORRAT_LEER_SIMMIN) ? PARAM.S_MAX_INSULIN : 0 }));
+  const rd = x => Math.round(x*10)/10;
+  console.log("[Eckwerte] T1 gesunde Regulation, 60 g: Gipfel "+rd(r1.peakV)+" mg/dl nach "+rd(r1.peakT)+
+              " min (Ziel 140–160 @ 40–60), nach 120 min "+rd(r1.spur[120])+" (<140), nach 180 min "+rd(r1.spur[180])+" (85–95)");
+  console.log("[Eckwerte] T2 8 h ohne Nahrung: "+rd(r2.minG)+"–"+rd(r2.maxG)+" mg/dl (Ziel 70–92), Glykogen "+
+              PARAM.LG_start+" -> "+rd(r2.z.LG)+" g");
+  console.log("[Eckwerte] T3 Mahlzeit ohne jedes Insulin: max "+rd(r3.maxG)+" mg/dl (Ziel >250), nach 180 min "+
+              rd(r3.spur[180])+" (Ziel >200)");
+  console.log("[Eckwerte] T4 doppelte Insulingabe zu 40 g: tiefster Wert "+rd(r4.minG)+" mg/dl (Ziel <50)");
+}
+
+/* =====================================================================
+   HILFSFUNKTIONEN
+   ===================================================================== */
+function uhrzeit(min){
+  let m = Math.round(min)%1440; if (m<0) m+=1440;
+  const h = Math.floor(m/60), r = m%60;
+  return (h<10?"0":"")+h+":"+(r<10?"0":"")+r;
+}
+function clamp(v,lo,hi){ return v<lo?lo:(v>hi?hi:v); }
+function zufall(a,b){ return a + Math.random()*(b-a); }
+function ganz(a,b){ return Math.round(zufall(a,b)); }
+function waehle(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function canvasDPR(canvas){
+  const dpr = window.devicePixelRatio || 1;
+  const r = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+  if (canvas._w===w && canvas._h===h && canvas._d===dpr) return canvas.getContext("2d");
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas._w=w; canvas._h=h; canvas._d=dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+function lesen(k, f){ try{ const v=localStorage.getItem(k); return v===null?f:JSON.parse(v); }catch(e){ return f; } }
+function schreiben(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function highscore(){ return lesen("rk_highscore", 0); }
+function highscoreSetzen(p){ if (p>highscore()){ schreiben("rk_highscore", p); return true; } return false; }
+
+/* =====================================================================
+   ZUFAELLIGER SCHULTAG
+   Grundgeruest steht, Zeiten und Mengen wackeln, dazu kommen zwei bis drei
+   zufaellige Ereignisse aus dem Topf.
+   ===================================================================== */
+const EXTRAS = [
+  { art:"essen", label:"Cola in der Pause", icon:"🥤", g:[30,42], fluessig:true, fenster:[150,560] },
+  { art:"essen", label:"Schokoriegel",      icon:"🍫", g:[20,30], fenster:[150,700] },
+  { art:"essen", label:"Apfel",             icon:"🍎", g:[14,20], fenster:[150,700] },
+  { art:"essen", label:"Geburtstagskuchen", icon:"🎂", g:[38,55], fenster:[200,560] },
+  { art:"essen", label:"Eis auf dem Heimweg", icon:"🍦", g:[25,35], fenster:[520,720] },
+  { art:"sport", label:"Bus verpasst — rennen!", kurz:"Rennen", icon:"🏃", dauer:[10,16], intensitaet:1.5, fenster:[120,700] },
+  { art:"sport", label:"Spaziergang mit dem Hund", kurz:"Hund", icon:"🐕", dauer:[25,40], intensitaet:0.6, fenster:[700,880] },
+  { art:"sport", label:"Fahrrad zum Training", kurz:"Fahrrad", icon:"🚲", dauer:[18,28], intensitaet:1.1, fenster:[520,760] }
+];
+
+function erzeugeTag(){
+  const mahlzeiten = [
+    { t:ganz(45,75),   g:ganz(45,65), label:"Frühstück",   icon:"🥐" },
+    { t:ganz(205,245), g:ganz(20,35), label:"Pausenbrot",  icon:"🥪" },
+    { t:ganz(420,480), g:ganz(65,90), label:"Mittagessen", icon:"🍝" },
+    { t:ganz(750,810), g:ganz(40,60), label:"Abendessen",  icon:"🍲" }
+  ];
+  const sport = [
+    { t0:0, t1:0, label:"Sportunterricht", kurz:"Sport", icon:"🏃", intensitaet:1 }
+  ];
+  const s0 = ganz(590,650); sport[0].t0 = s0; sport[0].t1 = s0 + ganz(40,60);
+
+  // zwei bis drei Zufallsereignisse, die sich nicht zu sehr draengeln
+  const anzahl = ganz(2,3);
+  const genommen = [];
+  let versuche = 0;
+  while (genommen.length < anzahl && versuche < 40){
+    versuche++;
+    const e = waehle(EXTRAS);
+    if (genommen.indexOf(e) >= 0) continue;
+    const t = ganz(e.fenster[0], e.fenster[1]);
+    let zuNah = false;
+    mahlzeiten.forEach(m => { if (Math.abs(m.t - t) < 55) zuNah = true; });
+    if (t > sport[0].t0-40 && t < sport[0].t1+30) zuNah = true;
+    if (zuNah) continue;
+    genommen.push(e);
+    if (e.art === "essen"){
+      mahlzeiten.push({ t:t, g:ganz(e.g[0], e.g[1]), label:e.label, icon:e.icon,
+                        fluessig:!!e.fluessig, extra:true });
+    } else {
+      const d = ganz(e.dauer[0], e.dauer[1]);
+      sport.push({ t0:t, t1:t+d, label:e.label, kurz:e.kurz, icon:e.icon, intensitaet:e.intensitaet, extra:true });
+    }
+  }
+  mahlzeiten.sort((a,b)=>a.t-b.t);
+  sport.sort((a,b)=>a.t0-b.t0);
+  return { mahlzeiten, sport };
+}
+
+/* =====================================================================
+   SPIELZUSTAND
+   ===================================================================== */
+const S = {
+  tag:null, z:null, laeuft:false, tempo:4, punkte:0, punkteAnzeige:0,
+  verlauf:[], ereignisse:[], achsenMax:300,
+  vorratI:1, vorratG:1, haltI:0, haltG:0, rateI:0, rateG:0,
+  mahlzeitFertig:null, sportFertig:null, sportAktiv:false, sportVorher:false,
+  letzterStempel:null, restSim:0, beendet:false,
+  komaArt:null, komaStart:0, modalOffen:false,
+  spruch:"", spruchBis:0, spruchQuelle:"",
+  effekt:null, effektBis:0, effektIcon:"", effektArt:""
+};
+
+const el = {
+  start:  document.getElementById("start-screen"),
+  spiel:  document.getElementById("spiel-screen"),
+  ende:   document.getElementById("ende-screen"),
+  chart:  document.getElementById("chart"),
+  figur:  document.getElementById("figur"),
+  leisten:document.getElementById("leisten"),
+  uhr:    document.getElementById("uhr"),
+  score:  document.getElementById("score-anzeige"),
+  blase:  document.getElementById("blase-text"),
+  play:   document.getElementById("btn-play"),
+  tempo:  document.getElementById("tempo-regler"),
+  tempoW: document.getElementById("tempo-wert"),
+  modalHG:document.getElementById("modal-hg"),
+  modal:  document.getElementById("modal-karte"),
+  btnI:   document.getElementById("btn-insulin"),
+  btnG:   document.getElementById("btn-glukagon"),
+  startHS:document.getElementById("start-highscore")
+};
+
+/* =====================================================================
+   START / SPIELSTART
+   ===================================================================== */
+function zeigeStart(){
+  S.laeuft = false;
+  el.spiel.style.display = "none";
+  el.ende.style.display = "none";
+  el.start.style.display = "flex";
+  const hs = highscore();
+  el.startHS.textContent = hs > 0 ? ("🏆 Dein Bestwert: "+hs+" Punkte") : "";
+}
+
+function starteTag(){
+  S.tag = erzeugeTag();
+  S.z = neuerZustand();
+  S.laeuft = false; S.punkte = 0; S.punkteAnzeige = 0;
+  S.verlauf = [{t:0, G:S.z.G}];
+  S.ereignisse = [];
+  S.achsenMax = 300;
+  S.vorratI = 1; S.vorratG = 1; S.haltI = 0; S.haltG = 0; S.rateI = 0; S.rateG = 0;
+  S.mahlzeitFertig = S.tag.mahlzeiten.map(()=>false);
+  S.sportFertig = S.tag.sport.map(()=>false);
+  S.sportGestartet = S.tag.sport.map(()=>false);
+  S.sportAktiv = false; S.sportVorher = false;
+  S.letzterStempel = null; S.restSim = 0; S.beendet = false;
+  S.komaArt = null; S.komaStart = 0; S.modalOffen = false;
+  S.spruch = ""; S.spruchBis = 0; S.spruchQuelle = "";
+  S.effekt = null; S.effektBis = 0;
+
+  el.start.style.display = "none";
+  el.ende.style.display = "none";
+  el.spiel.style.display = "flex";
+  el.modalHG.classList.remove("an");
+  el.play.textContent = "▶︎ Los";
+  baueLeisten();
+  neuerSpruch(true);
+  requestAnimationFrame(()=>{ canvasDPR(el.chart); canvasDPR(el.figur); zeichneAlles(); });
+}
+
+document.getElementById("btn-start").addEventListener("click", starteTag);
+document.getElementById("btn-abbrechen").addEventListener("click", zeigeStart);
+
+el.play.addEventListener("click", ()=>{
+  if (S.beendet) return;
+  S.laeuft = !S.laeuft;
+  el.play.textContent = S.laeuft ? "⏸ Pause" : "▶︎ Weiter";
+  S.letzterStempel = null;
+});
+el.tempo.addEventListener("input", ()=>{
+  S.tempo = parseInt(el.tempo.value, 10);
+  el.tempoW.textContent = S.tempo + " Min/Sek";
+});
+
+/* =====================================================================
+   HORMONLEISTEN
+   ===================================================================== */
+function baueLeisten(){
+  el.leisten.innerHTML =
+    gruppe("💉 Insulin", "I", "X", "var(--insulin)", "var(--insulin-d)") +
+    gruppe("🍬 Glukagon", "Pg", "Y", "var(--glukagon)", "var(--glukagon-d)") +
+    '<div class="hgruppe"><div class="hkopf"><span>🥖 Leberspeicher (Glykogen)</span>'+
+      '<span id="wert-LG"></span></div>'+
+      '<div class="hzeile"><span class="hcap"></span>'+
+      '<div class="hbar dick"><div class="hfill" id="bar-LG" style="background:#7a5c00"></div></div></div></div>';
+}
+function gruppe(titel, kBlut, kWirkt, farbeHell, farbeDunkel){
+  return '<div class="hgruppe"><div class="hkopf"><span>'+titel+'</span><span id="wert-'+kBlut+'"></span></div>'+
+    '<div class="hzeile"><span class="hcap">im Blut</span>'+
+      '<div class="hbar"><div class="hfill" id="bar-'+kBlut+'" style="background:'+farbeHell+'"></div></div></div>'+
+    '<div class="hzeile"><span class="hcap">wirkt</span>'+
+      '<div class="hbar"><div class="hfill" id="bar-'+kWirkt+'" style="background:'+farbeDunkel+'"></div></div></div></div>';
+}
+const MAXW = { I:45, X:0.10, Pg:500, Y:250 };
+function aktualisiereLeisten(){
+  const z = S.z;
+  const setz = (id, wert, max) => {
+    const b = document.getElementById("bar-"+id);
+    if (b) b.style.width = clamp(wert/max*100, 0, 100)+"%";
+  };
+  setz("I", z.I, MAXW.I); setz("X", z.X, MAXW.X);
+  setz("Pg", z.Pg, MAXW.Pg); setz("Y", z.Y, MAXW.Y);
+  setz("LG", z.LG/PARAM.LG_max*100, 100);
+  const wI = document.getElementById("wert-I"); if (wI) wI.textContent = Math.round(z.I)+" mE/l";
+  const wP = document.getElementById("wert-Pg"); if (wP) wP.textContent = Math.round(z.Pg)+" ng/l";
+  const wL = document.getElementById("wert-LG"); if (wL) wL.textContent = Math.round(z.LG/PARAM.LG_max*100)+" %";
+}
+
+/* =====================================================================
+   TASTEN
+   ===================================================================== */
+function bindeTaste(knopf, haltKey){
+  const start = ev => { ev.preventDefault(); if (S.beendet) return;
+    S[haltKey] = performance.now(); knopf.classList.add("haelt");
+    if (knopf.setPointerCapture && ev.pointerId != null){ try{ knopf.setPointerCapture(ev.pointerId); }catch(e){} } };
+  const ende = ev => { ev.preventDefault(); S[haltKey] = 0; knopf.classList.remove("haelt"); };
+  knopf.addEventListener("pointerdown", start);
+  knopf.addEventListener("pointerup", ende);
+  knopf.addEventListener("pointercancel", ende);
+  knopf.addEventListener("pointerleave", ende);
+}
+bindeTaste(el.btnI, "haltI");
+bindeTaste(el.btnG, "haltG");
+
+function aktualisiereVorraete(simMin){
+  const mach = (vorratKey, haltKey, rateId, fuellId, knopf) => {
+    let rate = 0;
+    if (S[haltKey] && S[vorratKey] > 0){
+      const gehalten = (performance.now() - S[haltKey])/1000;
+      rate = clamp(gehalten/PARAM.RAMPE_S, 0, 1);
+      S[vorratKey] = clamp(S[vorratKey] - rate*simMin/PARAM.VORRAT_LEER_SIMMIN, 0, 1);
+    } else {
+      S[vorratKey] = clamp(S[vorratKey] + simMin/PARAM.VORRAT_FUELL_SIMMIN, 0, 1);
+    }
+    const rEl = document.getElementById(rateId); if (rEl) rEl.style.width = (rate*100)+"%";
+    const fEl = document.getElementById(fuellId); if (fEl) fEl.style.height = (S[vorratKey]*100)+"%";
+    knopf.classList.toggle("leer", S[vorratKey] <= 0.02);
+    return rate;
+  };
+  S.rateI = mach("vorratI","haltI","rate-insulin","fuell-insulin", el.btnI);
+  S.rateG = mach("vorratG","haltG","rate-glukagon","fuell-glukagon", el.btnG);
+}
+
+/* =====================================================================
+   HAUPTSCHLEIFE
+   ===================================================================== */
+function rahmen(ts){
+  requestAnimationFrame(rahmen);
+  if (el.spiel.style.display === "none") return;
+  if (S.letzterStempel === null) S.letzterStempel = ts;
+  const echtS = Math.min(0.5, (ts - S.letzterStempel)/1000);
+  S.letzterStempel = ts;
+
+  const simMin = (S.laeuft && !S.beendet) ? echtS*S.tempo : 0;
+  aktualisiereVorraete(simMin);
+
+  if (simMin > 0){
+    S.restSim += simMin;
+    while (S.restSim >= PARAM.dt){
+      schrittMachen();
+      S.restSim -= PARAM.dt;
+      if (S.beendet) break;
+    }
+  }
+  if (S.komaArt && !S.modalOffen && performance.now() - S.komaStart > 1800) zeigeKomaModal();
+  zeichneAlles();
+}
+
+function schrittMachen(){
+  const z = S.z, tag = S.tag;
+
+  tag.mahlzeiten.forEach((m,i)=>{
+    if (!S.mahlzeitFertig[i] && z.t >= m.t){
+      S.mahlzeitFertig[i] = true;
+      isst(z, m.g, m.fluessig);
+      S.ereignisse.push({t:z.t, icon:m.icon, text:m.label+" ("+m.g+" g)"});
+      S.effekt = m.fluessig ? "trinken" : "essen";
+      S.effektIcon = m.icon; S.effektBis = z.t + EFFEKT_DAUER;
+      setzeSpruch(waehle(m.fluessig ? SPRUECHE.trinken : SPRUECHE.essen), z.t+10, "ereignis");
+    }
+  });
+
+  let sportAktiv = false, intensitaet = 1;
+  tag.sport.forEach((s,i)=>{
+    if (z.t >= s.t0 && z.t <= s.t1){ sportAktiv = true; intensitaet = s.intensitaet||1; }
+    if (!S.sportGestartet[i] && z.t >= s.t0){
+      S.sportGestartet[i] = true;
+      S.ereignisse.push({t:s.t0, icon:s.icon, text:s.label+" beginnt"});
+      setzeSpruch(waehle(SPRUECHE.sport), z.t+16, "ereignis");
+    }
+    if (!S.sportFertig[i] && z.t > s.t1){
+      S.sportFertig[i] = true;
+      S.ereignisse.push({t:s.t1, icon:"🏁", text:s.label+" vorbei"});
+    }
+  });
+  S.sportAktiv = sportAktiv;
+
+  const vorher = z.G;
+  simSchritt(z, {
+    insulin: S.rateI*PARAM.S_MAX_INSULIN,
+    glukagon: S.rateG*PARAM.S_MAX_GLUKAGON,
+    sport: sportAktiv, sportIntensitaet: intensitaet
+  });
+  pruefeSchwellen(vorher, z.G, z.t);
+  S.verlauf.push({t:z.t, G:z.G});
+
+  if (z.G >= ZIEL_MIN && z.G <= ZIEL_MAX) S.punkte += PARAM.dt;
+  else if (z.G > ZIEL_MAX && z.G <= TOLERANZ_MAX) S.punkte += PARAM.dt*0.5;
+  else if (z.G < ZIEL_MIN || z.G > PARAM.nierenschwelle) S.punkte = Math.max(0, S.punkte - PARAM.dt*0.5);
+
+  if (z.G > 280 && S.achsenMax < 400) S.achsenMax = 400;
+  if (z.G > 380 && S.achsenMax < 600) S.achsenMax = 600;
+  if (z.G > 570 && S.achsenMax < 900) S.achsenMax = 900;
+
+  if (z.G < PARAM.koma_hypo){ komaAusloesen("hypo"); return; }
+  if (z.G >= PARAM.koma_hyper){ komaAusloesen("hyper"); return; }
+  if (z.t >= TAG_DAUER){ S.beendet = true; S.laeuft = false; tagAuswerten(); }
+}
+
+function pruefeSchwellen(vor, nach, t){
+  const ab = (grenze, icon, text) => { if (vor>=grenze && nach<grenze) S.ereignisse.push({t:t, icon:icon, text:text}); };
+  const auf = (grenze, icon, text) => { if (vor<grenze && nach>=grenze) S.ereignisse.push({t:t, icon:icon, text:text}); };
+  ab(70,  "😟", "Unterzuckerung beginnt (< 70 mg/dl)");
+  ab(50,  "🥴", "Gehirn unterversorgt (< 50 mg/dl)");
+  ab(40,  "🚨", "Kritisch niedrig (< 40 mg/dl)");
+  auf(180,"🚰", "Nierenschwelle überschritten (> 180 mg/dl)");
+  auf(250,"🤢", "Ketoazidose-Bereich (> 250 mg/dl)");
+  auf(500,"🚨", "Kritisch hoch (> 500 mg/dl)");
+}
+
+function komaAusloesen(art){
+  S.beendet = true; S.laeuft = false;
+  S.komaArt = art; S.komaStart = performance.now();
+  S.haltI = 0; S.haltG = 0;
+  el.btnI.classList.remove("haelt"); el.btnG.classList.remove("haelt");
+  S.ereignisse.push({t:S.z.t, icon:"💀", text: art==="hypo" ? "Unterzucker-Koma" : "Hyperosmolares Koma"});
+}
+requestAnimationFrame(rahmen);
+
+document.addEventListener("visibilitychange", ()=>{
+  if (document.hidden && S.laeuft){ S.laeuft = false; el.play.textContent = "▶︎ Weiter"; }
+});
+
+/* =====================================================================
+   SPRUECHE — ausschliesslich Aussagen der Figur ueber ihr Befinden
+   oder ihren Tag. Keine Spielhinweise, keine Ratschlaege.
+   ===================================================================== */
+const SPRUECHE = {
+  normal: ["Alles gut bei mir.","Was für ein Tag...","Ich hab Bock auf einen Döner mit alles!",
+           "Mathe war heute echt lang.","Mir geht's gut, ehrlich.","Ich glaub, ich hör gleich Musik.",
+           "Morgen ist Freitag, oder?","Ich fühl mich fit."],
+  essen:   ["Mmmh, lecker!","Das musste jetzt sein.","Nachschlag?","Schmeckt!"],
+  trinken: ["Zisch! Das kribbelt.","Ahhh, tut das gut.","Süß, aber lecker."],
+  sport:   ["Puh, Sport...","Ich bin gleich außer Puste!","Wer hat sich das ausgedacht?","Seitenstechen!"],
+  hoch:    ["Ich bin so müde...","Mir fallen fast die Augen zu.","Ich hab schon wieder Durst.",
+            "Irgendwie bin ich schlapp."],
+  durst:   ["Ich könnte einen ganzen See leer trinken!","Mein Mund ist wie Sandpapier.",
+            "Ich muss dauernd aufs Klo.","Mir ist so komisch heiß."],
+  keto:    ["Mir ist sooo übel...","Bäääh!","Mein Bauch tut richtig weh.","Ich glaub, ich muss gleich..."],
+  tief:    ["Mir ist irgendwie flau.","Ich krieg plötzlich Hunger.","Hm, das fühlt sich komisch an."],
+  autonom: ["Ich zittere am ganzen Körper!","Mir ist kalt und ich schwitze gleichzeitig!",
+            "Mein Herz rast wie verrückt!","Ich brauch sofort was Süßes!"],
+  neuro:   ["Ich... äh... was war die Frage?","Alles verschwommen...","Mir ist so schwindelig...",
+            "Ich krieg die Wörter nicht raus."]
+};
+
+function stufe(G){
+  if (G >= PARAM.koma_hyper) return "koma_hyper";
+  if (G >= 250) return "keto";
+  if (G >= 180) return "durst";
+  if (G > ZIEL_MAX) return "hoch";
+  if (G >= ZIEL_MIN) return "normal";
+  if (G >= 60) return "tief";
+  if (G >= 50) return "autonom";
+  if (G >= PARAM.koma_hypo) return "neuro";
+  return "koma_hypo";
+}
+
+function setzeSpruch(text, bisT, quelle){
+  S.spruch = text; S.spruchBis = bisT; S.spruchQuelle = quelle||"";
+}
+function neuerSpruch(sofort){
+  const st = stufe(S.z ? S.z.G : 90);
+  const topf = SPRUECHE[st] || SPRUECHE.normal;
+  if (sofort || S.z.t >= S.spruchBis){
+    const t = waehle(topf);
+    if (t !== S.spruch) setzeSpruch(t, (S.z?S.z.t:0) + ganz(25,45), "zustand");
+  }
+}
+function aktualisiereBlase(){
+  if (!S.z) return;
+  if (S.komaArt){ el.blase.textContent = S.komaArt==="hypo" ? "..." : "Mir wird schwarz vor Augen..."; return; }
+  if (S.z.t >= S.spruchBis) neuerSpruch(false);
+  // Zustandswechsel sofort kommentieren
+  const st = stufe(S.z.G);
+  if (S.spruchQuelle === "zustand" && S._letzteStufe !== st){ setzeSpruch(waehle(SPRUECHE[st]||SPRUECHE.normal), S.z.t+ganz(25,45), "zustand"); }
+  S._letzteStufe = st;
+  el.blase.textContent = S.spruch;
+}
+
+/* =====================================================================
+   ZEICHNEN
+   ===================================================================== */
+function zeichneAlles(){
+  if (el.spiel.style.display === "none") return;
+  zeichneDiagramm(el.chart, S.verlauf, S.achsenMax);
+  aktualisiereLeisten();
+  zeichneFigur();
+  aktualisiereBlase();
+  el.uhr.textContent = uhrzeit(TAG_START + S.z.t);
+  const p = Math.round(S.punkte);
+  el.score.textContent = "⭐ "+p;
+  if (p !== S.punkteAnzeige){
+    el.score.classList.add("puls");
+    setTimeout(()=>el.score.classList.remove("puls"), 130);
+    S.punkteAnzeige = p;
+  }
+}
+
+function zeichneDiagramm(canvas, verlauf, achsenMax){
+  const ctx = canvasDPR(canvas);
+  const w = canvas._w, h = canvas._h;
+  ctx.clearRect(0,0,w,h);
+  ctx.font = "13px 'MS PGothic', sans-serif";
+
+  const padL=50, padR=24, padT=72, padB=42;
+  const pw = Math.max(10, w-padL-padR), ph = Math.max(10, h-padT-padB);
+  const xOf = t => padL + t/TAG_DAUER*pw;
+  const yOf = g => padT + (1 - g/achsenMax)*ph;
+
+  ctx.fillStyle = "rgba(143,191,122,0.35)";
+  ctx.fillRect(padL, yOf(ZIEL_MAX), pw, yOf(ZIEL_MIN)-yOf(ZIEL_MAX));
+
+  const schritt = achsenMax<=400?50:(achsenMax<=600?100:150);
+  ctx.textAlign="right"; ctx.textBaseline="middle";
+  for (let g=0; g<=achsenMax; g+=schritt){
+    const y = yOf(g);
+    ctx.strokeStyle="#e5e0d3"; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+pw,y); ctx.stroke();
+    ctx.strokeStyle="#999"; ctx.beginPath(); ctx.moveTo(padL-5,y); ctx.lineTo(padL,y); ctx.stroke();
+    ctx.fillStyle="#333"; ctx.fillText(String(g), padL-8, y);
+  }
+  ctx.textAlign="center"; ctx.textBaseline="top";
+  for (let t=0; t<=TAG_DAUER; t+=60){
+    const x = xOf(t);
+    ctx.strokeStyle="#efece2"; ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,padT+ph); ctx.stroke();
+    ctx.strokeStyle="#999"; ctx.beginPath(); ctx.moveTo(x,padT+ph); ctx.lineTo(x,padT+ph+5); ctx.stroke();
+    ctx.fillStyle="#333"; ctx.fillText(uhrzeit(TAG_START+t), x, padT+ph+7);
+  }
+  ctx.strokeStyle="#555"; ctx.beginPath();
+  ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+ph); ctx.lineTo(padL+pw,padT+ph); ctx.stroke();
+
+  ctx.fillStyle="#333"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+  ctx.save(); ctx.translate(15, padT+ph/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText("Blutzuckerkonzentration in mg/dl", 0, 0); ctx.restore();
+  ctx.fillText("Uhrzeit", padL+pw/2, h-12);
+
+  function schwelle(g, text, farbe, wo){
+    if (g > achsenMax) return;
+    const y = yOf(g);
+    ctx.save(); ctx.strokeStyle=farbe; ctx.setLineDash([6,4]); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+pw,y); ctx.stroke(); ctx.restore();
+    ctx.fillStyle=farbe; ctx.textAlign="right"; ctx.font="13px sans-serif";
+    if (wo==="unten"){ ctx.textBaseline="top"; ctx.fillText(g+" mg/dl — "+text, padL+pw-4, y+3); }
+    else { ctx.textBaseline="bottom"; ctx.fillText(g+" mg/dl — "+text, padL+pw-4, y-3); }
+    ctx.font="13px 'MS PGothic', sans-serif";
+  }
+  schwelle(180, "Nierenschwelle", "#a06a00", "oben");
+  schwelle(70, "Unterzuckerung beginnt", "#b8433a", "oben");
+  schwelle(50, "Gehirn unterversorgt", "#7a1f1f", "unten");
+
+  // Ereignismarker — zwei Zeilen, damit sich enge Ereignisse nicht ueberschreiben
+  ctx.textAlign="left"; ctx.font="13px sans-serif"; ctx.textBaseline="alphabetic";
+  const zeilenY = [26, 43, 60];
+  const belegtBis = [padL-100, padL-100, padL-100];
+  const marker = []
+    .concat(S.tag.mahlzeiten.map(m=>({ x:xOf(m.t), farbe:"#5a5346", form:"dreieck",
+                                       text:m.icon+" "+m.g+" g" })))
+    .concat(S.tag.sport.map(s=>({ x:xOf(s.t0), farbe:"#2E6F8E", form:"punkt",
+                                  text:s.icon+" "+(s.kurz||s.label) })))
+    .sort((a,b)=>a.x-b.x);
+  marker.forEach(mk=>{
+    const breite = ctx.measureText(mk.text).width + 14;
+    let zeile = zeilenY.length - 1;
+    for (let i=0; i<zeilenY.length; i++){ if (mk.x >= belegtBis[i]){ zeile = i; break; } }
+    const y = zeilenY[zeile];
+    belegtBis[zeile] = mk.x + breite;
+    ctx.fillStyle = mk.farbe;
+    if (mk.form === "dreieck"){
+      ctx.beginPath(); ctx.moveTo(mk.x,y-7); ctx.lineTo(mk.x-5,y+2); ctx.lineTo(mk.x+5,y+2); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(mk.x, y-3, 4, 0, 7); ctx.fill();
+    }
+    ctx.fillText(mk.text, mk.x+6, y);
+  });
+
+  ctx.beginPath(); ctx.strokeStyle="#1d2327"; ctx.lineWidth=2.8;
+  verlauf.forEach((p,i)=>{
+    const x=xOf(p.t), y=yOf(clamp(p.G,0,achsenMax*3));
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  if (verlauf.length){
+    const l = verlauf[verlauf.length-1];
+    ctx.fillStyle="#1d2327"; ctx.beginPath();
+    ctx.arc(xOf(l.t), yOf(clamp(l.G,0,achsenMax*3)), 5, 0, 7); ctx.fill();
+    ctx.font="bold 15px 'MS PGothic', sans-serif"; ctx.textAlign="left"; ctx.fillStyle="#1d2327";
+    const bx = clamp(xOf(l.t)+9, padL, padL+pw-70);
+    ctx.fillText(Math.round(l.G)+" mg/dl", bx, yOf(clamp(l.G,0,achsenMax*3))-9);
+  }
+
+  ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.font="13px sans-serif";
+  ctx.fillStyle="rgba(143,191,122,0.9)"; ctx.fillRect(padL, 6, 14, 9);
+  ctx.fillStyle="#333"; ctx.fillText("Zielbereich ("+ZIEL_MIN+"–"+ZIEL_MAX+" mg/dl)", padL+18, 11);
+}
+
+/* ---------------- Figur ---------------- */
+function zeichneFigur(){
+  const c = el.figur, ctx = canvasDPR(c);
+  const w = c._w, h = c._h;
+  ctx.clearRect(0,0,w,h);
+  if (!S.z) return;
+
+  const z = S.z, t = performance.now()/1000;
+  const st = S.komaArt ? (S.komaArt==="hypo"?"koma_hypo":"koma_hyper") : stufe(z.G);
+  const essend = S.effekt==="essen" && z.t < S.effektBis;
+  const trinkend = S.effekt==="trinken" && z.t < S.effektBis;
+  const sportend = S.sportAktiv;
+
+  const gr = Math.min(w, h)*0.78;      // Grundgroesse
+  const cx = w/2, boden = h*0.90;
+
+  // Zustandsabhaengige Merkmale
+  let zittern = 0, blass = false, gruen = false, schwitzt = false, rot = false;
+  if (st==="tief"){ zittern = 1.2; }
+  if (st==="autonom"){ zittern = 3.2; blass = true; schwitzt = true; }
+  if (st==="neuro"){ zittern = 5.0; blass = true; schwitzt = true; }
+  if (st==="keto"){ gruen = true; }
+  if (st==="durst"){ rot = true; schwitzt = true; }
+  if (sportend){ schwitzt = true; rot = true; }
+
+  // Umkippen beim Koma
+  let kippWinkel = 0;
+  if (S.komaArt){
+    const p = clamp((performance.now()-S.komaStart)/1200, 0, 1);
+    const w0 = (S.komaArt==="hypo" ? 1 : -1) * Math.PI/2;
+    kippWinkel = w0 * (1 - Math.pow(1-p, 3));   // weiches Ausklingen
+  }
+
+  ctx.save();
+  ctx.translate(cx, boden);
+  if (kippWinkel){
+    // Beim Umkippen wandert die Figur zur Seite — zurueckschieben und leicht
+    // verkleinern, damit sie im Kasten bleibt.
+    ctx.translate(-Math.sin(kippWinkel)*gr*0.34, 0);
+    ctx.scale(0.88, 0.88);
+    ctx.rotate(kippWinkel);
+  }
+  if (zittern) ctx.translate(Math.sin(t*22)*zittern, 0);
+  if (!S.komaArt && !sportend) ctx.translate(0, Math.sin(t*1.6)*gr*0.012);   // ruhiges Atmen
+  if (sportend) ctx.translate(0, -Math.abs(Math.sin(t*7))*gr*0.05);          // Huepfen
+
+  const haut = gruen ? "#bcd68f" : (blass ? "#e6dccf" : (rot ? "#f6bd96" : "#f3ca9d"));
+  const shirt = gruen ? "#6f8f4d" : "#5b7f9e";
+
+  // Bewegungslinien beim Sport
+  if (sportend && !S.komaArt){
+    ctx.strokeStyle="rgba(46,111,142,0.35)"; ctx.lineWidth=3; ctx.lineCap="round";
+    for (let i=0;i<3;i++){
+      const yy = -gr*(0.22+i*0.13), len = gr*(0.18+0.06*Math.sin(t*9+i));
+      ctx.beginPath(); ctx.moveTo(-gr*0.30, yy); ctx.lineTo(-gr*0.30-len, yy); ctx.stroke();
+    }
+  }
+
+  // Beine
+  ctx.strokeStyle="#3b5568"; ctx.lineWidth=gr*0.075; ctx.lineCap="round";
+  if (sportend){
+    const s1 = Math.sin(t*11), s2 = Math.sin(t*11+Math.PI);
+    ctx.beginPath(); ctx.moveTo(-gr*0.06,-gr*0.16); ctx.lineTo(-gr*0.06+s1*gr*0.16, -gr*0.02); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( gr*0.06,-gr*0.16); ctx.lineTo( gr*0.06+s2*gr*0.16, -gr*0.02); ctx.stroke();
+  } else {
+    const wack = (st==="neuro") ? Math.sin(t*6)*gr*0.03 : 0;
+    ctx.beginPath(); ctx.moveTo(-gr*0.06,-gr*0.16); ctx.lineTo(-gr*0.08+wack, -gr*0.01); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( gr*0.06,-gr*0.16); ctx.lineTo( gr*0.08+wack, -gr*0.01); ctx.stroke();
+  }
+
+  // Rumpf
+  ctx.fillStyle = shirt;
+  ctx.beginPath(); ctx.ellipse(0, -gr*0.30, gr*0.175, gr*0.175, 0, 0, 7); ctx.fill();
+
+  // Arme
+  ctx.strokeStyle = shirt; ctx.lineWidth = gr*0.068; ctx.lineCap="round";
+  const armY = -gr*0.34;
+  if (sportend){
+    const a1 = Math.sin(t*11+Math.PI)*0.9, a2 = Math.sin(t*11)*0.9;
+    ctx.beginPath(); ctx.moveTo(-gr*0.15,armY); ctx.lineTo(-gr*0.24, armY+a1*gr*0.12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( gr*0.15,armY); ctx.lineTo( gr*0.24, armY+a2*gr*0.12); ctx.stroke();
+  } else if (st==="keto"){
+    ctx.beginPath(); ctx.moveTo(-gr*0.15,armY); ctx.quadraticCurveTo(0,-gr*0.19, gr*0.15,armY); ctx.stroke();
+  } else if (st==="durst"){
+    const f = Math.sin(t*9)*gr*0.06;
+    ctx.beginPath(); ctx.moveTo(-gr*0.15,armY); ctx.lineTo(-gr*0.26,armY-gr*0.10+f); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( gr*0.15,armY); ctx.lineTo( gr*0.23,armY+gr*0.05); ctx.stroke();
+  } else if (essend || trinkend){
+    ctx.beginPath(); ctx.moveTo( gr*0.15,armY); ctx.lineTo( gr*0.22,armY-gr*0.17); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-gr*0.15,armY); ctx.lineTo(-gr*0.22,armY+gr*0.05); ctx.stroke();
+  } else if (st==="autonom"){
+    const z2 = Math.sin(t*20)*gr*0.03;
+    ctx.beginPath(); ctx.moveTo(-gr*0.15,armY); ctx.lineTo(-gr*0.24,armY-gr*0.06+z2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( gr*0.15,armY); ctx.lineTo( gr*0.24,armY-gr*0.06-z2); ctx.stroke();
+  } else {
+    const sw = Math.sin(t*1.6)*gr*0.02;
+    ctx.beginPath(); ctx.moveTo(-gr*0.15,armY); ctx.lineTo(-gr*0.23,armY+gr*0.10+sw); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( gr*0.15,armY); ctx.lineTo( gr*0.23,armY+gr*0.10-sw); ctx.stroke();
+  }
+
+  // Kopf
+  const kopfY = -gr*0.62, kopfR = gr*0.225;
+  const kopfNeigung = trinkend ? -0.35 : (st==="neuro" ? Math.sin(t*3)*0.18 : 0);
+  ctx.save(); ctx.translate(0, kopfY); ctx.rotate(kopfNeigung);
+  ctx.fillStyle = haut;
+  ctx.beginPath(); ctx.arc(0, 0, kopfR, 0, 7); ctx.fill();
+  ctx.strokeStyle = "rgba(0,0,0,.12)"; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Haare (kleiner Schopf, damit die Figur "jemand" ist)
+  ctx.fillStyle = "#4a3b2e";
+  ctx.beginPath(); ctx.arc(0, -kopfR*0.72, kopfR*0.72, Math.PI*1.05, Math.PI*1.95); ctx.fill();
+
+  // Wangen
+  if (!S.komaArt && (sportend || rot || st==="normal")){
+    ctx.fillStyle = sportend||rot ? "rgba(226,110,90,.45)" : "rgba(226,150,140,.32)";
+    [-1,1].forEach(s=>{ ctx.beginPath(); ctx.ellipse(s*kopfR*0.62, kopfR*0.30, kopfR*0.22, kopfR*0.15, 0, 0, 7); ctx.fill(); });
+  }
+
+  // Augen
+  const ax = kopfR*0.42, ay = -kopfR*0.05, ar = kopfR*0.29;
+  const blinzelt = (Math.sin(t*0.9) > 0.985);
+  ctx.fillStyle = "#fff"; ctx.strokeStyle="#333"; ctx.lineWidth=1.4;
+  if (S.komaArt){
+    ctx.strokeStyle="#333"; ctx.lineWidth = kopfR*0.14; ctx.lineCap="round";
+    [-1,1].forEach(s=>{
+      ctx.beginPath();
+      ctx.moveTo(s*ax-ar*0.7, ay-ar*0.7); ctx.lineTo(s*ax+ar*0.7, ay+ar*0.7);
+      ctx.moveTo(s*ax-ar*0.7, ay+ar*0.7); ctx.lineTo(s*ax+ar*0.7, ay-ar*0.7);
+      ctx.stroke();
+    });
+  } else if (st==="neuro"){
+    ctx.strokeStyle="#333"; ctx.lineWidth=1.6;
+    [-1,1].forEach(s=>{
+      ctx.beginPath();
+      for (let a=0; a<3.2*Math.PI; a+=0.3){
+        const r = a*ar*0.11;
+        const px = s*ax + Math.cos(a + t*3.5)*r, py = ay + Math.sin(a + t*3.5)*r;
+        if (a===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+    });
+  } else if (blinzelt || st==="hoch"){
+    ctx.strokeStyle="#333"; ctx.lineWidth=2;
+    [-1,1].forEach(s=>{ ctx.beginPath(); ctx.arc(s*ax, ay, ar*0.9, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke(); });
+  } else {
+    [-1,1].forEach(s=>{
+      ctx.beginPath(); ctx.ellipse(s*ax, ay, ar, ar*1.06, 0, 0, 7); ctx.fill(); ctx.stroke();
+      let px = 0, py = 0;
+      if (st==="autonom"){ px = Math.sin(t*17)*ar*0.25; }
+      if (essend || trinkend){ py = -ar*0.2; }
+      ctx.fillStyle="#222";
+      ctx.beginPath(); ctx.arc(s*ax+px, ay+py, ar*0.45, 0, 7); ctx.fill();
+      ctx.fillStyle="#fff";
+    });
+  }
+
+  // Augenbrauen
+  ctx.strokeStyle="#4a3b2e"; ctx.lineWidth = kopfR*0.10; ctx.lineCap="round";
+  const brauen = { normal:0, hoch:0.10, durst:0.18, keto:0.30, tief:0.22, autonom:0.34, neuro:0.2 }[st] || 0;
+  if (!S.komaArt){
+    [-1,1].forEach(s=>{
+      ctx.beginPath();
+      ctx.moveTo(s*ax-ar*0.8, ay-ar*1.5 + s*brauen*ar*0.9);
+      ctx.lineTo(s*ax+ar*0.8, ay-ar*1.5 - s*brauen*ar*0.2);
+      ctx.stroke();
+    });
+  }
+
+  // Mund
+  ctx.strokeStyle="#5a2f28"; ctx.lineWidth = kopfR*0.11; ctx.lineCap="round";
+  const my = kopfR*0.45;
+  if (essend){
+    const oeff = (Math.sin(t*13)+1)/2 * kopfR*0.30 + kopfR*0.06;
+    ctx.fillStyle="#8a4a42";
+    ctx.beginPath(); ctx.ellipse(0, my, kopfR*0.28, oeff, 0, 0, 7); ctx.fill();
+  } else if (trinkend){
+    ctx.fillStyle="#8a4a42";
+    ctx.beginPath(); ctx.ellipse(0, my, kopfR*0.20, kopfR*0.24, 0, 0, 7); ctx.fill();
+  } else if (st==="keto"){
+    ctx.fillStyle="#8a4a42";
+    ctx.beginPath(); ctx.ellipse(0, my+kopfR*0.05, kopfR*0.34, kopfR*0.30, 0, 0, 7); ctx.fill();
+  } else if (sportend){
+    // keuchen
+    const oeff = kopfR*(0.13 + 0.10*(Math.sin(t*7)+1)/2);
+    ctx.fillStyle="#8a4a42";
+    ctx.beginPath(); ctx.ellipse(0, my, kopfR*0.26, oeff, 0, 0, 7); ctx.fill();
+    ctx.fillStyle="#c96a6a";
+    ctx.beginPath(); ctx.ellipse(kopfR*0.10, my+oeff*0.55, kopfR*0.13, kopfR*0.16, 0.3, 0, 7); ctx.fill();
+  } else if (st==="normal"){
+    ctx.beginPath(); ctx.arc(0, my-kopfR*0.14, kopfR*0.36, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke();
+  } else if (st==="hoch" || st==="durst"){
+    ctx.beginPath(); ctx.moveTo(-kopfR*0.28, my); ctx.lineTo(kopfR*0.28, my); ctx.stroke();
+    if (st==="durst"){   // Zunge raus
+      ctx.fillStyle="#c96a6a";
+      ctx.beginPath(); ctx.ellipse(0, my+kopfR*0.20, kopfR*0.14, kopfR*0.20, 0, 0, 7); ctx.fill();
+    }
+  } else {
+    ctx.beginPath(); ctx.arc(0, my+kopfR*0.22, kopfR*0.34, 1.15*Math.PI, 1.85*Math.PI); ctx.stroke();
+  }
+  ctx.restore();   // Kopf
+
+  // Erbrechen (deutlich, comichaft)
+  if (st==="keto" && !S.komaArt){
+    const puls = (Math.sin(t*4)+1)/2;
+    if (puls > 0.35){
+      const laenge = gr*(0.10 + puls*0.30);
+      ctx.fillStyle = "#7ea23a";
+      ctx.beginPath();
+      ctx.moveTo(-gr*0.05, kopfY+gr*0.09);
+      ctx.quadraticCurveTo(-gr*0.16, kopfY+gr*0.16, -gr*0.10-laenge*0.4, kopfY+gr*0.10+laenge);
+      ctx.quadraticCurveTo( gr*0.02, kopfY+gr*0.22, gr*0.05, kopfY+gr*0.09);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#5f8b28";
+      for (let i=0;i<3;i++){
+        const ph = (t*1.6+i*0.33)%1;
+        ctx.globalAlpha = 1-ph;
+        ctx.beginPath();
+        ctx.arc(-gr*0.12 - ph*gr*0.16, kopfY+gr*0.20+ph*gr*0.5, gr*0.035*(1-ph*0.4), 0, 7);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // Schweisstropfen
+  if (schwitzt && !S.komaArt){
+    ctx.fillStyle="#7ec8e3";
+    for (let i=0;i<3;i++){
+      const ph = (t*(sportend?2.2:1.3) + i*0.37)%1;
+      const sx = (i%2? 1 : -1)*(kopfR*1.15 + i*gr*0.02);
+      const sy = kopfY - kopfR*0.5 + ph*gr*0.42;
+      ctx.globalAlpha = 1-ph*0.85;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo(sx-gr*0.022, sy+gr*0.045, sx, sy+gr*0.075);
+      ctx.quadraticCurveTo(sx+gr*0.022, sy+gr*0.045, sx, sy);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();   // Figur
+
+  // Symbole neben dem Kopf (Gedanken), nie ueber dem Gesicht
+  const iconGr = Math.round(gr*0.19);
+  function symbol(zeichen, dx, dy, alpha){
+    ctx.save(); ctx.globalAlpha = alpha==null?1:alpha;
+    ctx.font = iconGr+"px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(zeichen, cx+dx, boden-gr*0.70+dy);
+    ctx.restore();
+  }
+  if (!S.komaArt){
+    if (st==="hoch"){ symbol("💤", gr*0.43, -gr*0.10 + Math.sin(t*2)*gr*0.02); }
+    if (st==="durst"){ symbol("💧", gr*0.43, -gr*0.10 + Math.sin(t*2.4)*gr*0.02); }
+    if (st==="tief" || st==="autonom"){ symbol("🍬", gr*0.43, -gr*0.10 + Math.sin(t*3)*gr*0.03); }
+    if (st==="neuro"){ symbol("❓", gr*0.43, -gr*0.12 + Math.sin(t*4)*gr*0.04); }
+    if (st==="keto"){ symbol("🤢", -gr*0.43, -gr*0.10); }
+  } else {
+    // Sternchen kreisen ueber dem Kopf
+    for (let i=0;i<3;i++){
+      const a = t*2.2 + i*2.09;
+      symbol("💫", Math.cos(a)*gr*0.22, -gr*0.14 + Math.sin(a)*gr*0.05, 0.9);
+    }
+  }
+
+  // Essen / Trinken: Symbol fliegt zum Mund
+  if ((essend || trinkend) && !S.komaArt){
+    const rest = clamp((S.effektBis - S.z.t)/EFFEKT_DAUER, 0, 1);
+    const flug = 1 - rest;
+    const px = cx + gr*0.44*(1-flug) + gr*0.20*flug;
+    const py = boden - gr*0.60 - gr*0.28*(1-flug);
+    ctx.save();
+    ctx.font = Math.round(gr*0.24)+"px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.globalAlpha = clamp(rest*1.4, 0, 1);
+    ctx.translate(px, py); ctx.rotate(Math.sin(t*6)*0.25);
+    ctx.fillText(S.effektIcon || (trinkend?"🥤":"🍽️"), 0, 0);
+    ctx.restore();
+    // Kruemel / Tropfen
+    ctx.fillStyle = trinkend ? "#8fb8d8" : "#c9a06a";
+    for (let i=0;i<3;i++){
+      const ph = (t*2.1 + i*0.33)%1;
+      ctx.globalAlpha = (1-ph)*rest;
+      ctx.beginPath();
+      ctx.arc(cx + (i-1)*gr*0.06, boden-gr*0.54+ph*gr*0.20, gr*0.018, 0, 7);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* =====================================================================
+   KOMA-FENSTER
+   ===================================================================== */
+function zeigeKomaModal(){
+  S.modalOffen = true;
+  const punkte = Math.round(S.punkte);
+  const neu = highscoreSetzen(punkte);
+  const info = S.komaArt === "hypo" ? {
+    titel:"😵 Unterzucker-Koma", farbe:"#b8433a",
+    text:"Unter 30 mg/dl bekommt das Gehirn nicht mehr genug Energie. Es kommt zu Bewusstlosigkeit, "+
+         "im schlimmsten Fall zu einem Krampfanfall.",
+    liste:["📞 Sofort den Notruf 112 wählen.",
+           "🛌 Die Person in die stabile Seitenlage bringen.",
+           "🚫 Nichts einflößen — Erstickungsgefahr!",
+           "💉 Wenn vorhanden: Glukagon-Spritze oder -Nasenspray durch geschulte Personen.",
+           "🏥 In der Klinik: Glukose direkt in die Vene."]
+  } : {
+    titel:"🥵 Hyperosmolares Koma", farbe:"#a06a00",
+    text:"Bei so extrem hohem Blutzucker verliert der Körper über die Nieren sehr viel Flüssigkeit, "+
+         "das Blut „dickt ein“. Starker Durst, Austrocknung und Bewusstseinstrübung sind die Folge.",
+    liste:["📞 Sofort den Notruf 112 wählen.",
+           "🏥 In der Klinik: langsame Rehydrierung über Infusionen.",
+           "💉 Insulin über die Vene, engmaschig kontrolliert.",
+           "⚠️ Zu schnelle Korrektur ist ebenfalls gefährlich — nur ärztlich!"]
+  };
+  el.modal.style.setProperty("--go", info.farbe);
+  el.modal.innerHTML =
+    "<h2>"+info.titel+"</h2>"+
+    "<p>"+info.text+"</p>"+
+    "<h3>Was in der Realität sofort passieren muss:</h3>"+
+    "<ul>"+info.liste.map(x=>"<li>"+x+"</li>").join("")+"</ul>"+
+    "<div class='modal-punkte'>⭐ "+punkte+" Punkte"+(neu?" — 🎉 neuer Bestwert!":" (Bestwert: "+highscore()+")")+"</div>"+
+    "<div class='aktionen'>"+
+      "<button class='prim' id='m-nochmal'>🔄 Neuer Versuch</button>"+
+      "<button id='m-auswertung'>📈 Tag ansehen</button>"+
+    "</div>";
+  el.modalHG.classList.add("an");
+  document.getElementById("m-nochmal").addEventListener("click", ()=>{ el.modalHG.classList.remove("an"); starteTag(); });
+  document.getElementById("m-auswertung").addEventListener("click", ()=>{ el.modalHG.classList.remove("an"); tagAuswerten(); });
+}
+
+/* =====================================================================
+   AUSWERTUNG
+   ===================================================================== */
+function tagAuswerten(){
+  S.laeuft = false;
+  const v = S.verlauf;
+  let imZiel=0, tol=0, ueber180=0, unter70=0, minG=Infinity, maxG=-Infinity;
+  for (let i=1;i<v.length;i++){
+    const dt = v[i].t - v[i-1].t, g = v[i].G;
+    if (g>=ZIEL_MIN && g<=ZIEL_MAX) imZiel += dt;
+    else if (g>ZIEL_MAX && g<=TOLERANZ_MAX) tol += dt;
+    if (g>180) ueber180 += dt;
+    if (g<70) unter70 += dt;
+    if (g<minG) minG=g; if (g>maxG) maxG=g;
+  }
+  const gesamt = v[v.length-1].t || 1;
+  const punkte = Math.round(S.punkte);
+  const neu = highscoreSetzen(punkte);
+
+  el.spiel.style.display = "none";
+  el.ende.style.display = "block";
+
+  const liste = S.ereignisse.map(e =>
+    "<div>"+(e.icon?e.icon+" ":"")+uhrzeit(TAG_START+e.t)+" — "+e.text+"</div>").join("")
+    || "<div>Keine besonderen Ereignisse.</div>";
+
+  const titel = S.komaArt
+    ? (S.komaArt==="hypo" ? "😵 Der Tag endete im Unterzucker-Koma" : "🥵 Der Tag endete im hyperosmolaren Koma")
+    : "🎉 Geschafft — der Schultag ist vorbei!";
+
+  el.ende.innerHTML =
+    "<div class='ende-wrap'>"+
+    "<h1>"+titel+"</h1>"+
+    (neu ? "<div class='neuer-hs'>🏆 Neuer Bestwert: "+punkte+" Punkte!</div>"
+         : "<div class='punktezeile'>⭐ "+punkte+" Punkte (Bestwert: "+highscore()+")</div>")+
+    "<div class='kennzahlen'>"+
+      kz("🎯 "+Math.round(imZiel/gesamt*100)+" %", "Zeit im Zielbereich (70–110)")+
+      kz("🙂 "+Math.round(tol/gesamt*100)+" %", "Zeit 110–140 mg/dl")+
+      kz("🚰 "+Math.round(ueber180/gesamt*100)+" %", "Zeit über 180 mg/dl")+
+      kz("😟 "+Math.round(unter70/gesamt*100)+" %", "Zeit unter 70 mg/dl")+
+      kz("🥶 "+Math.round(minG)+" mg/dl", "Tiefster Wert")+
+      kz("🥵 "+Math.round(maxG)+" mg/dl", "Höchster Wert")+
+    "</div>"+
+    "<h3>Wie der Tag lief</h3><div id='ereignisse'>"+liste+"</div>"+
+    "<h3>Tagesdiagramm</h3><div id='ende-chart-box'><canvas id='ende-chart'></canvas></div>"+
+    "<div class='aktionen'>"+
+      "<button id='e-sichern'>📷 Diagramm sichern</button>"+
+      "<button class='prim' id='e-nochmal'>🔄 Nochmal spielen</button>"+
+      "<button id='e-start'>Zur Startseite</button>"+
+    "</div></div>";
+
+  requestAnimationFrame(()=> zeichneEndDiagramm(document.getElementById("ende-chart")));
+  document.getElementById("e-sichern").addEventListener("click", ()=>{
+    const c = document.getElementById("ende-chart");
+    const url = c.toDataURL("image/png");
+    const f = window.open();
+    if (f) f.document.write('<title>Tagesdiagramm</title><body style="margin:0;background:#222;">'+
+      '<img src="'+url+'" style="max-width:100%;display:block;margin:auto;"></body>');
+  });
+  document.getElementById("e-nochmal").addEventListener("click", starteTag);
+  document.getElementById("e-start").addEventListener("click", zeigeStart);
+}
+function kz(wert, label){ return "<div class='kennzahl'><div class='wert'>"+wert+"</div><div class='lab'>"+label+"</div></div>"; }
+
+function zeichneEndDiagramm(canvas){
+  zeichneDiagramm(canvas, S.verlauf, S.achsenMax);
+}
+
+window.addEventListener("resize", ()=>{
+  if (el.spiel.style.display !== "none"){ canvasDPR(el.chart); canvasDPR(el.figur); zeichneAlles(); }
+});
+window.addEventListener("orientationchange", ()=>{
+  setTimeout(()=>{ if (el.spiel.style.display !== "none"){ canvasDPR(el.chart); canvasDPR(el.figur); zeichneAlles(); } }, 300);
+});
+
+/* =====================================================================
+   START
+   ===================================================================== */
+zeigeStart();
+testeKalibrierung();
+
+})();
+</script>
+</body>
+</html>
