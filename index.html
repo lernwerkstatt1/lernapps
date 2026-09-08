@@ -59,7 +59,9 @@
     <p id="status">Apps werden gesucht …</p>
     <ul id="app-list" hidden></ul>
 
-    <button id="reload" type="button" hidden>Liste neu laden</button>
+    <button id="reload" type="button" hidden>
+      Liste neu laden
+    </button>
 
     <noscript>
       <p class="error">
@@ -80,7 +82,7 @@
         `https://api.github.com/repos/${OWNER}/${REPOSITORY}` +
         `/git/trees/${encodeURIComponent(BRANCH)}?recursive=1`;
 
-      const CACHE_KEY = `${OWNER}/${REPOSITORY}:app-index`;
+      const CACHE_KEY = `${OWNER}/${REPOSITORY}:app-index-v2`;
       const CACHE_MAX_AGE = 10 * 60 * 1000;
 
       const statusElement = document.getElementById("status");
@@ -101,55 +103,138 @@
       }
 
       function findApps(tree) {
-        const appsByFolder = new Map();
+        const filesByFolder = new Map();
 
         for (const item of tree) {
           if (item.type !== "blob") continue;
 
           /*
-           * Es werden nur Apps erkannt, deren Startdatei direkt in einem
-           * Unterordner liegt:
+           * Gesucht werden HTML-Dateien direkt in einem Unterordner:
            *
-           * app-name/index.html
-           * app-name/index.htm
+           * Blutzuckerregulationssimulator/
+           *   blutzuckerregulationssimulator.html
+           *
+           * Bruchrechnen/
+           *   index.html
+           *
+           * Vokabeltrainer/
+           *   vokabeltrainer.htm
            */
-          const match = item.path.match(/^([^/]+)\/(index\.html?)$/i);
+          const match = item.path.match(
+            /^([^/]+)\/([^/]+\.html?)$/i
+          );
+
           if (!match) continue;
 
           const folder = match[1];
-          if (folder.startsWith(".") || folder.startsWith("_")) continue;
+          const fileName = match[2];
 
-          const existing = appsByFolder.get(folder);
-
-          /*
-           * Falls beide Varianten existieren, wird index.html bevorzugt.
-           */
-          if (!existing || item.path.toLowerCase().endsWith("index.html")) {
-            appsByFolder.set(folder, {
-              folder,
-              indexPath: item.path
-            });
+          // Versteckte/interne Ordner ignorieren
+          if (
+            folder.startsWith(".") ||
+            folder.startsWith("_")
+          ) {
+            continue;
           }
+
+          if (!filesByFolder.has(folder)) {
+            filesByFolder.set(folder, []);
+          }
+
+          filesByFolder.get(folder).push({
+            folder,
+            fileName,
+            indexPath: item.path
+          });
         }
 
-        return [...appsByFolder.values()].sort((a, b) =>
-          a.folder.localeCompare(b.folder, "de", { sensitivity: "base" })
+        const apps = [];
+
+        for (const [folder, files] of filesByFolder) {
+
+          /*
+           * Falls mehrere HTML-Dateien in einem Ordner liegen:
+           *
+           * 1. index.html bevorzugen
+           * 2. Datei mit gleichem Namen wie der Ordner bevorzugen
+           * 3. ansonsten erste HTML-Datei alphabetisch nehmen
+           */
+
+          let selectedFile = files.find(file =>
+            /^index\.html?$/i.test(file.fileName)
+          );
+
+          if (!selectedFile) {
+            const normalizedFolder =
+              folder.toLowerCase().replace(/[-_\s]/g, "");
+
+            selectedFile = files.find(file => {
+              const fileWithoutExtension =
+                file.fileName.replace(/\.html?$/i, "");
+
+              const normalizedFile =
+                fileWithoutExtension
+                  .toLowerCase()
+                  .replace(/[-_\s]/g, "");
+
+              return normalizedFile === normalizedFolder;
+            });
+          }
+
+          if (!selectedFile) {
+            selectedFile = [...files].sort((a, b) =>
+              a.fileName.localeCompare(
+                b.fileName,
+                "de",
+                { sensitivity: "base" }
+              )
+            )[0];
+          }
+
+          apps.push(selectedFile);
+        }
+
+        return apps.sort((a, b) =>
+          a.folder.localeCompare(
+            b.folder,
+            "de",
+            { sensitivity: "base" }
+          )
         );
       }
 
-      async function readPageTitle(indexPath, fallbackTitle) {
+      async function readPageTitle(
+        indexPath,
+        fallbackTitle
+      ) {
         try {
-          const response = await fetch(`./${encodePath(indexPath)}`, {
-            cache: "no-cache"
-          });
+          const response = await fetch(
+            `./${encodePath(indexPath)}`,
+            {
+              cache: "no-cache"
+            }
+          );
 
-          if (!response.ok) return fallbackTitle;
+          if (!response.ok) {
+            return fallbackTitle;
+          }
 
           const html = await response.text();
-          const documentCopy = new DOMParser().parseFromString(html, "text/html");
-          const title = documentCopy.querySelector("title")?.textContent?.trim();
+
+          const documentCopy =
+            new DOMParser().parseFromString(
+              html,
+              "text/html"
+            );
+
+          const title =
+            documentCopy
+              .querySelector("title")
+              ?.textContent
+              ?.trim();
 
           return title || fallbackTitle;
+
         } catch {
           return fallbackTitle;
         }
@@ -159,6 +244,7 @@
         return Promise.all(
           apps.map(async app => ({
             ...app,
+
             title: await readPageTitle(
               app.indexPath,
               readableName(app.folder)
@@ -167,16 +253,26 @@
         );
       }
 
-      function render(apps, sourceMessage = "") {
+      function render(
+        apps,
+        sourceMessage = ""
+      ) {
         listElement.replaceChildren();
 
         for (const app of apps) {
-          const listItem = document.createElement("li");
-          const link = document.createElement("a");
+          const listItem =
+            document.createElement("li");
 
-          link.href = `./${encodeURIComponent(app.folder)}/${app.indexPath
-            .split("/")
-            .pop()}`;
+          const link =
+            document.createElement("a");
+
+          /*
+           * Verwendet direkt den von GitHub
+           * gefundenen Dateipfad.
+           */
+          link.href =
+            `./${encodePath(app.indexPath)}`;
+
           link.textContent = app.title;
 
           listItem.appendChild(link);
@@ -188,21 +284,41 @@
 
         if (apps.length === 0) {
           statusElement.textContent =
-            "Es wurden keine Unterordner mit index.html oder index.htm gefunden.";
+            "Es wurden keine Unterordner mit HTML-Dateien gefunden.";
+
           return;
         }
 
         statusElement.textContent =
-          `${apps.length} ${apps.length === 1 ? "App" : "Apps"} gefunden` +
-          (sourceMessage ? ` (${sourceMessage})` : "") +
+          `${apps.length} ${
+            apps.length === 1
+              ? "App"
+              : "Apps"
+          } gefunden` +
+          (
+            sourceMessage
+              ? ` (${sourceMessage})`
+              : ""
+          ) +
           ".";
       }
 
       function readCache() {
         try {
-          const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-          if (!cached || !Array.isArray(cached.apps)) return null;
+          const cached =
+            JSON.parse(
+              localStorage.getItem(CACHE_KEY)
+            );
+
+          if (
+            !cached ||
+            !Array.isArray(cached.apps)
+          ) {
+            return null;
+          }
+
           return cached;
+
         } catch {
           return null;
         }
@@ -217,72 +333,122 @@
               apps
             })
           );
+
         } catch {
-          // Die Seite funktioniert auch ohne lokalen Speicher.
+          // Seite funktioniert auch ohne localStorage.
         }
       }
 
-      async function fetchApps({ ignoreCache = false } = {}) {
+      async function fetchApps({
+        ignoreCache = false
+      } = {}) {
+
         statusElement.classList.remove("error");
-        statusElement.textContent = "Apps werden gesucht …";
+        statusElement.textContent =
+          "Apps werden gesucht …";
+
         reloadButton.disabled = true;
 
         const cached = readCache();
-        const cacheIsCurrent =
-          cached && Date.now() - cached.savedAt < CACHE_MAX_AGE;
 
-        if (!ignoreCache && cacheIsCurrent) {
-          render(cached.apps, "zwischengespeichert");
+        const cacheIsCurrent =
+          cached &&
+          Date.now() - cached.savedAt <
+            CACHE_MAX_AGE;
+
+        if (
+          !ignoreCache &&
+          cacheIsCurrent
+        ) {
+          render(
+            cached.apps,
+            "zwischengespeichert"
+          );
+
           reloadButton.disabled = false;
           return;
         }
 
         try {
-          const response = await fetch(API_URL, {
-            headers: {
-              Accept: "application/vnd.github+json",
-              "X-GitHub-Api-Version": "2022-11-28"
-            },
-            cache: "no-cache"
-          });
+          const response = await fetch(
+            API_URL,
+            {
+              headers: {
+                Accept:
+                  "application/vnd.github+json",
+
+                "X-GitHub-Api-Version":
+                  "2022-11-28"
+              },
+
+              cache: "no-cache"
+            }
+          );
 
           if (!response.ok) {
-            throw new Error(`GitHub-API: HTTP ${response.status}`);
+            throw new Error(
+              `GitHub-API: HTTP ${response.status}`
+            );
           }
 
           const data = await response.json();
 
           if (!Array.isArray(data.tree)) {
-            throw new Error("Die GitHub-API lieferte keine Dateiliste.");
+            throw new Error(
+              "Die GitHub-API lieferte keine Dateiliste."
+            );
           }
 
-          const apps = await addTitles(findApps(data.tree));
+          const foundApps =
+            findApps(data.tree);
+
+          const apps =
+            await addTitles(foundApps);
+
           writeCache(apps);
           render(apps);
+
         } catch (error) {
+
           if (cached) {
-            render(cached.apps, "ältere gespeicherte Liste");
+            render(
+              cached.apps,
+              "ältere gespeicherte Liste"
+            );
+
             statusElement.textContent +=
               " Die aktuelle GitHub-Liste konnte gerade nicht geladen werden.";
+
           } else {
-            statusElement.classList.add("error");
+            statusElement.classList.add(
+              "error"
+            );
+
             statusElement.textContent =
               "Die App-Liste konnte nicht geladen werden. " +
               "Bitte die Seite später erneut öffnen.";
+
             reloadButton.hidden = false;
           }
 
           console.error(error);
+
         } finally {
           reloadButton.disabled = false;
         }
       }
 
-      reloadButton.addEventListener("click", () => {
-        fetchApps({ ignoreCache: true });
-      });
+      reloadButton.addEventListener(
+        "click",
+        () => {
+          fetchApps({
+            ignoreCache: true
+          });
+        }
+      );
 
       fetchApps();
+
     })();
   </script>
 </body>
