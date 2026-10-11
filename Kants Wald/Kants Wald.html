@@ -1,0 +1,351 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Kants Wald</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: Simulationsfläche groß links (zum Projizieren), schmale Spalte rechts mit Modus, Kant-Zitat, Beobachtungsfrage und Messwerten. */
+:root {
+  --sky: #e6eef0; --sky2: #d2e1e4; --ground: #7d6a4f; --soil: #5e4e39;
+  --bg: #f3f6f4; --panel: #ffffff; --fg: #1f2a24; --mute: #5d6b63; --line: #cfd9d3;
+  --moss: #3f7a4d; --leaf: #5c9a5f; --leaf2: #7fb377; --bark: #6b4f36; --dead: #a49d93;
+  --sun: #e8a93a; --accent: #2f5d3d; --warn: #a2482e; --fence: #8a6b47; --plot: #f1e6cf;
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --sky: #1c2a33; --sky2: #16222a; --ground: #4f4232; --soil: #3a3125;
+  --bg: #121815; --panel: #1a221e; --fg: #e3ebe5; --mute: #9aaba1; --line: #2e3a33;
+  --moss: #7cc08a; --leaf: #5e9e63; --leaf2: #7fb377; --bark: #8a6a4b; --dead: #6f6a63;
+  --sun: #f0bd5a; --accent: #8fd29d; --warn: #e2876a; --fence: #b08d63; --plot: #cbbd9f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --sky: #1c2a33; --sky2: #16222a; --ground: #4f4232; --soil: #3a3125;
+  --bg: #121815; --panel: #1a221e; --fg: #e3ebe5; --mute: #9aaba1; --line: #2e3a33;
+  --moss: #7cc08a; --leaf: #5e9e63; --leaf2: #7fb377; --bark: #8a6a4b; --dead: #6f6a63;
+  --sun: #f0bd5a; --accent: #8fd29d; --warn: #e2876a; --fence: #b08d63; --plot: #cbbd9f; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 18px 28px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; margin-bottom: 14px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 4vw, 44px); margin: 0; letter-spacing: -0.01em; color: var(--accent); }
+header p { margin: 0; color: var(--mute); }
+.modes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+button { font: inherit; cursor: pointer; border-radius: 999px; border: 1.5px solid var(--line); background: var(--panel); color: var(--fg); padding: 8px 16px; }
+button:hover { border-color: var(--moss); }
+button:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.mode[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 700; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.stage { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--sky); }
+canvas { display: block; width: 100%; height: auto; aspect-ratio: 1000 / 560; max-width: 100%; cursor: crosshair; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+.controls .primary { background: var(--moss); border-color: var(--moss); color: var(--bg); font-weight: 700; }
+.year { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--mute); }
+label.speed { display: flex; align-items: center; gap: 8px; color: var(--mute); }
+.side { display: grid; gap: 12px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); font-weight: 700; margin: 0 0 6px; }
+.card h2 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 0 0 6px; text-wrap: balance; }
+.card p { margin: 0; }
+blockquote { margin: 0; font-style: italic; border-left: 3px solid var(--sun); padding-left: 12px; }
+.src { font-size: 12px; color: var(--mute); margin-top: 6px; }
+.q { font-weight: 700; color: var(--accent); }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-variant-numeric: tabular-nums; }
+dt { color: var(--mute); }
+dd { margin: 0; font-weight: 700; text-align: right; }
+.dead { color: var(--warn); }
+.hint { font-size: 13px; color: var(--mute); margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Kants Wald</h1>
+    <p>Wachsen Bäume allein besser – oder im Wald? Ein Experiment zu Kants Bild von der „ungeselligen Geselligkeit“.</p>
+  </header>
+
+  <div class="modes" role="group" aria-label="Versuch wählen">
+    <button class="mode" id="m1" data-mode="0" aria-pressed="true">1 · Allein auf dem Feld</button>
+    <button class="mode" id="m2" data-mode="1" aria-pressed="false">2 · Wald mit Gehege (Regeln)</button>
+    <button class="mode" id="m3" data-mode="2" aria-pressed="false">3 · Wald ohne Gehege (keine Regeln)</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="stage"><canvas id="cv" width="1000" height="560" aria-label="Simulation wachsender Bäume"></canvas></div>
+      <div class="controls">
+        <button class="primary" id="play">▶ Wachsen lassen</button>
+        <button id="reset">↺ Neu pflanzen</button>
+        <label class="speed" for="speed">Tempo <input id="speed" type="range" min="1" max="6" value="3"></label>
+        <span class="year" id="year">Jahr 0</span>
+      </div>
+      <p class="hint">Klick auf den Boden: einen neuen Baum pflanzen. · Ein vereinfachtes Modell zu Kants Bild – kein Biologie-Beweis.</p>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <p class="eyebrow" id="mEyebrow">Versuch 1</p>
+        <h2 id="mTitle">Allein auf dem Feld</h2>
+        <p id="mText"></p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Kant sagt</p>
+        <blockquote id="mQuote"></blockquote>
+        <p class="src">Immanuel Kant, 1784</p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Was heißt hier „Gehege“?</p>
+        <p id="mRule"></p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Beobachtet</p>
+        <p class="q" id="mQ"></p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Messwerte</p>
+        <dl>
+          <dt>Bäume lebend</dt><dd id="sAlive">–</dd>
+          <dt>abgestorben</dt><dd id="sDead">–</dd>
+          <dt>höchster Baum</dt><dd id="sTall">–</dd>
+          <dt>Stämme</dt><dd id="sStraight">–</dd>
+        </dl>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+//SIM-START
+const W = 1000, H = 560, GROUND = 520, MAXT = 240;
+function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const BR_TILT = 0.35, COS_T = Math.cos(BR_TILT), SIN_T = Math.sin(BR_TILT);
+
+function makeTree(x, start, r) { return { x, start, alive: true, dark: 0, ang: 0, pts: [{ x, y: GROUND }], branches: [], r }; }
+
+function topOf(t) { return t.pts[t.pts.length - 1]; }
+
+// Wie viel Licht kommt bei (px,py) an? Jede höhere Baumkrone darüber wirft Schatten.
+function crown(o) { let r = 30; for (const b of o.branches) r = Math.max(r, b.len * COS_T); return r; }
+function light(world, px, py, self) {
+  let l = 1;
+  for (const o of world.trees) {
+    if (o === self || o.pts.length < 2) continue;
+    const tp = topOf(o);
+    if (tp.y >= py - 6) continue;
+    if (Math.abs(tp.x - px) < (o.cr ?? crown(o))) l *= o.alive ? 0.42 : 0.85;
+  }
+  return l;
+}
+
+// Wie viel Platz hat ein Baum auf einer Seite in Höhe py? (1 = frei, 0 = zu)
+function sideOpen(world, t, py, side) {
+  let best = 1;
+  for (const o of world.trees) {
+    if (o === t || !o.alive) continue;
+    const d = (o.x - t.x) * side;
+    if (d <= 0) continue;
+    if (topOf(o).y > py + 30) continue; // Nachbar viel kleiner: stört nicht
+    let reach = 0;
+    for (const b of o.branches) if (b.side === -side && o.pts[b.i].y <= py + 40) reach = Math.max(reach, b.len * COS_T);
+    best = Math.min(best, Math.max(0, (d - reach) / 220));
+  }
+  return Math.min(1, best);
+}
+
+function step(world) {
+  world.tick++;
+  for (const o of world.trees) o.cr = crown(o);
+  for (const t of world.trees) {
+    if (!t.alive || world.tick < t.start) continue;
+    const age = world.tick - t.start;
+    const top = topOf(t);
+    const L = light(world, top.x, top.y, t);
+    const oL = sideOpen(world, t, top.y, -1), oR = sideOpen(world, t, top.y, 1);
+    const closed = 1 - (oL + oR) / 2;
+    t.dark = L < 0.45 ? t.dark + 1 : Math.max(0, t.dark - 1);
+    if (t.dark > 30) { t.alive = false; continue; }
+    const grow = 2.0 * L * (0.5 + 0.75 * closed);
+    t.ang += (oR - oL) * 0.03 * (1 - closed) + (t.r() - 0.5) * 0.5 * (1 - 0.9 * closed);
+    t.ang *= 0.96 - 0.14 * closed;
+    t.ang = Math.max(-0.6, Math.min(0.6, t.ang));
+    if (top.y > 70 && grow > 0.05) t.pts.push({ x: top.x + Math.sin(t.ang) * grow, y: top.y - Math.cos(t.ang) * grow });
+    if (age % 12 === 6 && t.pts.length > 6) {
+      t.branches.push({ i: t.pts.length - 1, side: -1, len: 4, dead: 0 });
+      t.branches.push({ i: t.pts.length - 1, side: 1, len: 4, dead: 0 });
+    }
+    for (const b of t.branches) {
+      const bp = t.pts[b.i];
+      const bl = light(world, bp.x + b.side * b.len * 0.6, bp.y - 3, t);
+      const so = sideOpen(world, t, bp.y, b.side);
+      b.len = Math.min(170, b.len + 1.5 * so * bl);
+      const below = top.y < bp.y - 90 && so < 0.6;
+      if (bl < 0.5 || so < 0.25 || below) b.dead++; else b.dead = Math.max(0, b.dead - 1);
+    }
+    t.branches = t.branches.filter(b => b.dead < 14);
+  }
+}
+
+function crookedness(t) { // Summe der seitlichen Abweichung pro Höhe
+  if (t.pts.length < 10) return 0;
+  let s = 0; for (let i = 1; i < t.pts.length; i++) s += Math.abs(t.pts[i].x - t.pts[i - 1].x);
+  return s / (GROUND - topOf(t).y);
+}
+
+const SETUPS = [
+  { seed: 11, trees: [[500, 0]] },
+  { seed: 22, trees: [[140, 0], [260, 0], [380, 0], [500, 0], [620, 0], [740, 0], [860, 0]] },
+  { seed: 33, trees: [[110, 0], [170, 70], [230, 6], [400, 0], [450, 80], [490, 12], [660, 0], [705, 60], [880, 4]] },
+];
+function makeWorld(mode) {
+  const r = rng(SETUPS[mode].seed);
+  return { tick: 0, mode, r, trees: SETUPS[mode].trees.map(([x, s]) => makeTree(x, s, rng(Math.floor(r() * 1e9)))) };
+}
+//SIM-END
+
+const TEXT = [
+  { t: 'Allein auf dem Feld', p: 'Ein Baum, viel Platz, Licht von allen Seiten. Niemand nimmt ihm etwas weg – und niemand zwingt ihn zu etwas.',
+    rule: 'Hier gibt es kein Gehege und keine anderen Bäume. Der Baum kann wachsen, wie es ihm gefällt.',
+    q: '„… statt dass die, welche in Freiheit und voneinander abgesondert ihre Äste nach Wohlgefallen treiben, krüppelig, schief und krumm wachsen.“',
+    o: 'Vermutet zuerst: Wie wird dieser Baum aussehen? Dann wachsen lassen. Hatte Kant recht?' },
+  { t: 'Wald mit Gehege', p: 'Sieben Bäume kämpfen um Licht. Aber es gibt feste Regeln dafür, wer wo wachsen darf.',
+    rule: 'Der Zaun steht für Kants Gehege: Gesetze, die für alle gelten. Jeder Baum hat sein eigenes Beet (gleicher Abstand), und alle starten gleichzeitig. Gekämpft wird trotzdem – aber nur um Licht nach oben, nicht um den Platz des anderen.',
+    q: '„… so wie Bäume in einem Walde eben dadurch, dass ein jeder dem andern Luft und Sonne zu benehmen sucht, einander nötigen, beides über sich zu suchen, und dadurch einen schönen geraden Wuchs bekommen.“',
+    o: 'Vergleicht mit Versuch 1: Wie wachsen die Stämme? Was passiert mit den unteren Ästen?' },
+  { t: 'Wald ohne Gehege', p: 'Wieder ein Wald – aber ohne Regeln: Jeder Baum keimt, wo und wann er gerade kann. Manche stehen dicht nebeneinander, manche kommen später dazu.',
+    rule: 'Kein Zaun, keine Beete. Wer zuerst da ist und schneller wächst, nimmt den anderen das Licht weg. Kant sagt: Der Kampf ist nur dann gut, wenn er in einem Gehege stattfindet.',
+    q: '„Allein in einem solchen Gehege […] tun eben dieselben Neigungen hernach die beste Wirkung.“',
+    o: 'Was passiert mit den Kleinen und den Nachzüglern? Was würde ein Gehege für sie ändern?' },
+];
+
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+let world = makeWorld(0), playing = false, mode = 0;
+function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+function fit() {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(w * 0.56 * dpr);
+  draw();
+}
+
+function draw() {
+  const s = cv.width / W;
+  ctx.setTransform(s, 0, 0, s, 0, 0);
+  const g = ctx.createLinearGradient(0, 0, 0, GROUND);
+  g.addColorStop(0, css('--sky2')); g.addColorStop(1, css('--sky'));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // Sonne
+  ctx.fillStyle = css('--sun'); ctx.beginPath(); ctx.arc(900, 52, 26, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = css('--sun'); ctx.lineWidth = 3;
+  for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; ctx.beginPath(); ctx.moveTo(900 + Math.cos(a) * 34, 52 + Math.sin(a) * 34); ctx.lineTo(900 + Math.cos(a) * 46, 52 + Math.sin(a) * 46); ctx.stroke(); }
+  // Boden
+  ctx.fillStyle = css('--ground'); ctx.fillRect(0, GROUND, W, H - GROUND);
+  ctx.fillStyle = css('--soil'); ctx.fillRect(0, GROUND + 18, W, H - GROUND - 18);
+  const bark = css('--bark'), dead = css('--dead'), leaf = css('--leaf'), leaf2 = css('--leaf2');
+  ctx.font = '600 20px ' + css('--body');
+  if (world.mode === 1) {
+    // Gehege: Zaun um den Wald und Beet-Grenzen zwischen den Bäumen
+    const fx0 = 70, fx1 = 930, fy = GROUND;
+    ctx.strokeStyle = css('--fence'); ctx.lineWidth = 3;
+    for (const yy of [fy - 22, fy - 10]) { ctx.beginPath(); ctx.moveTo(fx0, yy); ctx.lineTo(fx1, yy); ctx.stroke(); }
+    ctx.lineWidth = 5;
+    for (let x = fx0; x <= fx1 + 1; x += 43) { ctx.beginPath(); ctx.moveTo(x, fy + 4); ctx.lineTo(x, fy - 30); ctx.stroke(); }
+    ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.strokeStyle = css('--plot');
+    for (let x = 200; x <= 800; x += 120) { ctx.beginPath(); ctx.moveTo(x, fy + 2); ctx.lineTo(x, fy + 30); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.fillStyle = css('--fg'); ctx.fillText('Gehege: gleiche Beete, gleicher Start', 24, 36);
+  } else if (world.mode === 2) {
+    ctx.fillStyle = css('--fg'); ctx.fillText('Kein Gehege: jeder keimt, wo und wann er kann', 24, 36);
+  } else {
+    ctx.fillStyle = css('--fg'); ctx.fillText('Allein auf dem Feld', 24, 36);
+  }
+  for (const t of world.trees) {
+    if (world.tick < t.start && t.pts.length < 2) { ctx.fillStyle = leaf; ctx.beginPath(); ctx.arc(t.x, GROUND - 3, 3, 0, Math.PI * 2); ctx.fill(); continue; }
+    const col = t.alive ? bark : dead, n = t.pts.length;
+    // Äste
+    for (const b of t.branches) {
+      const bp = t.pts[b.i], ex = bp.x + b.side * b.len * COS_T, ey = bp.y - b.len * SIN_T;
+      ctx.strokeStyle = col; ctx.lineWidth = 1.2 + b.len / 70; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(bp.x, bp.y); ctx.lineTo(ex, ey); ctx.stroke();
+    }
+    // Stamm
+    for (let i = 1; i < n; i++) {
+      ctx.strokeStyle = col; ctx.lineWidth = (t.alive ? 2 : 3) + (n - i) / 22; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(t.pts[i - 1].x, t.pts[i - 1].y); ctx.lineTo(t.pts[i].x, t.pts[i].y); ctx.stroke();
+    }
+    // Laub
+    if (t.alive) {
+      for (const b of t.branches) {
+        const bp = t.pts[b.i], ex = bp.x + b.side * b.len * COS_T, ey = bp.y - b.len * SIN_T;
+        const rr = 9 + b.len * 0.1;
+        ctx.fillStyle = b.dead > 6 ? leaf2 : leaf; ctx.globalAlpha = 0.9;
+        for (const f of [1, 0.66, 0.33]) {
+          if (b.len * f < 12 && f < 1) continue;
+          ctx.beginPath(); ctx.arc(bp.x + (ex - bp.x) * f, bp.y + (ey - bp.y) * f - 5, rr * (0.6 + 0.4 * f), 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      const tp = topOf(t); ctx.fillStyle = leaf; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.arc(tp.x, tp.y, 10 + Math.min(14, n / 14), 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+function stats() {
+  const planted = world.trees.filter(t => world.tick >= t.start || t.pts.length > 1);
+  const alive = planted.filter(t => t.alive), deadN = planted.length - alive.length;
+  document.getElementById('sAlive').textContent = alive.length;
+  const d = document.getElementById('sDead'); d.textContent = deadN; d.className = deadN ? 'dead' : '';
+  const tall = Math.max(0, ...alive.map(t => GROUND - topOf(t).y));
+  document.getElementById('sTall').textContent = (tall / 20).toFixed(1).replace('.', ',') + ' m';
+  const grown = alive.filter(t => t.pts.length > 30);
+  if (!grown.length) document.getElementById('sStraight').textContent = '–';
+  else {
+    const c = grown.reduce((a, t) => a + crookedness(t), 0) / grown.length;
+    document.getElementById('sStraight').textContent = c < 0.17 ? 'gerade' : c < 0.27 ? 'etwas schief' : 'krumm';
+  }
+  document.getElementById('year').textContent = 'Jahr ' + Math.round(world.tick / 3);
+}
+
+function setMode(m) {
+  mode = m; world = makeWorld(m); playing = false; updPlay();
+  document.querySelectorAll('.mode').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.mode === m)));
+  const T = TEXT[m];
+  document.getElementById('mEyebrow').textContent = 'Versuch ' + (m + 1);
+  document.getElementById('mTitle').textContent = T.t;
+  document.getElementById('mText').textContent = T.p;
+  document.getElementById('mQuote').textContent = T.q;
+  document.getElementById('mQ').textContent = T.o;
+  document.getElementById('mRule').textContent = T.rule;
+  draw(); stats();
+}
+function updPlay() { document.getElementById('play').textContent = playing ? '❚❚ Pause' : (world.tick >= MAXT ? '✓ Ausgewachsen' : '▶ Wachsen lassen'); }
+
+function loop() {
+  if (playing) {
+    const k = +document.getElementById('speed').value;
+    for (let i = 0; i < k && world.tick < MAXT; i++) step(world);
+    if (world.tick >= MAXT) playing = false, updPlay();
+    draw(); stats();
+  }
+  requestAnimationFrame(loop);
+}
+
+document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => setMode(+b.dataset.mode)));
+document.getElementById('play').addEventListener('click', () => { if (world.tick >= MAXT) return; playing = !playing; updPlay(); });
+document.getElementById('reset').addEventListener('click', () => setMode(mode));
+cv.addEventListener('click', e => {
+  const rect = cv.getBoundingClientRect(), x = (e.clientX - rect.left) / rect.width * W;
+  if (x < 20 || x > W - 20) return;
+  world.trees.push(makeTree(x, world.tick, rng(Math.floor(Math.random() * 1e9))));
+  draw(); stats();
+});
+window.addEventListener('resize', fit);
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+setMode(0);
+// Startbild: der allein stehende Baum ist schon ein Stück gewachsen, damit man sieht, was passiert.
+for (let i = 0; i < 90; i++) step(world);
+fit(); stats(); updPlay();
+requestAnimationFrame(loop);
+</script>
+
+</body></html>
