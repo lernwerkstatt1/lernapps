@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#1B3B1F">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Zellbiologie">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="bilder/symbol-180.png">
+<link rel="icon" type="image/png" href="bilder/symbol-180.png">
+<title>Zellbiologie EF – Übungen</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="kopf" id="kopf">
+  <div class="kopf-balken">
+    <div class="kopf-innen">
+      <a class="marke" href="#start">Zellbiologie EF</a>
+      <button type="button" class="knopf-leise" id="zur-startseite" hidden>Startseite</button>
+    </div>
+  </div>
+  <div class="stand">
+    <div class="stand-innen">
+      <div class="stand-text">
+        <span id="stand-punkte"></span>
+        <span id="stand-fortschritt"></span>
+      </div>
+      <div class="stand-leiste" id="stand-leiste" role="img" aria-label="Fortschritt"></div>
+    </div>
+  </div>
+</header>
+<main id="inhalt" tabindex="-1">
+  <noscript>
+    <p>Diese Übungen brauchen JavaScript. Schalte JavaScript im Browser ein und lade die Seite neu.</p>
+  </noscript>
+</main>
+<div id="ansage" class="nur-sr" aria-live="polite"></div>
+<script src="bilder/schemata.js"></script>
+<script src="fragen.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

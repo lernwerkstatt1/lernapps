@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<title>Ergebniscode prüfen</title>
+<style>
+  :root {
+    --dark: #1B3B1F; --green: #2E7D32; --lime: #D3E9A6; --limebg: #F1F7E6;
+    --yell: #F7EBB5; --gold: #8A6D1A; --edge: #C9DDAC; --grey: #6B6B6B; --ink: #1A1A1A;
+    --bg: var(--limebg); --flaeche: #FFFFFF; --text: var(--ink); --leise: var(--grey); --rand: var(--edge);
+    --akzent: var(--green); --fehler-bg: var(--yell); --fehler-rand: var(--gold); --spur: #E3EBD8;
+    --stufe-1: #C62828; --stufe-2: #D35400; --stufe-3: #B88A00; --stufe-4: #689F38; --stufe-5: #2E7D32;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F1610; --flaeche: #172118; --text: #E8F0E1; --leise: #B4C2AA; --rand: #34452F;
+      --akzent: var(--lime); --fehler-bg: #3A3118; --fehler-rand: #E0BE5C; --spur: #2A3828;
+      --stufe-1: #EF6B6B; --stufe-2: #F08A3C; --stufe-3: #E0B33A; --stufe-4: #9CCC65; --stufe-5: #66BB6A;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, Arial, sans-serif; font-size: 1.0625rem; line-height: 1.6; background: var(--bg); color: var(--text); }
+  header { background: var(--dark); color: #fff; padding: calc(.7rem + env(safe-area-inset-top)) 1rem .7rem; font-weight: 700; }
+  main { max-width: 62rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+  h1 { font-size: 1.5rem; margin: .3rem 0 .6rem; color: var(--akzent); }
+  h2 { font-size: 1.15rem; margin: 1.5rem 0 .5rem; color: var(--akzent); }
+  .karte { background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+  label { font-weight: 600; display: block; margin-bottom: .3rem; }
+  textarea { width: 100%; min-height: 6rem; font: inherit; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.05rem;
+    padding: .6rem .7rem; border: 2px solid #6E9150; border-radius: 10px; background: var(--flaeche); color: var(--text); }
+  button { font: inherit; font-weight: 600; min-height: 48px; padding: .5rem 1.2rem; border-radius: 10px; border: 2px solid var(--akzent);
+    background: var(--akzent); color: var(--flaeche); cursor: pointer; margin-top: .6rem; touch-action: manipulation; }
+  :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  @media (prefers-color-scheme: dark) { :focus-visible { outline-color: #F2D27A; } button { color: var(--dark); } }
+  .leise { color: var(--leise); font-size: .93rem; }
+  .huelle { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(--rand); vertical-align: middle; }
+  th { color: var(--leise); font-weight: 600; font-size: .88rem; }
+  td.zahl, th.zahl { white-space: nowrap; }
+  .klein { font-size: .82rem; color: var(--leise); display: block; }
+  .fehler { background: var(--fehler-bg); border: 2px dashed var(--fehler-rand); border-radius: 10px; padding: .6rem .8rem; margin: .5rem 0; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+  dl { margin: 0; }
+  dt { font-weight: 600; margin-top: .6rem; }
+  dd { margin: 0 0 0 1rem; }
+  .stufe-1 { --stufe: var(--stufe-1); } .stufe-2 { --stufe: var(--stufe-2); } .stufe-3 { --stufe: var(--stufe-3); }
+  .stufe-4 { --stufe: var(--stufe-4); } .stufe-5 { --stufe: var(--stufe-5); }
+  .balken { height: 12px; border-radius: 6px; background: var(--spur); overflow: hidden; min-width: 6rem; }
+  .balken > div { height: 100%; border-radius: inherit; background: var(--stufe, var(--rand)); }
+  .note { display: inline-block; font-weight: 700; padding: 0 .5rem; border-radius: 999px; border: 2px solid var(--stufe, var(--rand)); white-space: nowrap; }
+  .gesamt { border: 2px solid var(--stufe, var(--rand)); border-radius: 12px; padding: .8rem 1rem; margin: 0 0 1rem; }
+  .gesamt .balken { height: 18px; margin: .4rem 0; }
+  td.zelle { min-width: 4.2rem; padding-left: .35rem; padding-right: .35rem; }
+  td.zelle .balken { height: 8px; min-width: 3rem; margin: .2rem 0; }
+  td.code { white-space: nowrap; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85rem; }
+  td.kapitelfarbe { border-left: 5px solid var(--stufe, var(--rand)); }
+</style>
+</head>
+<body>
+<header>Zellbiologie EF – Ergebniscode prüfen</header>
+<main>
+  <h1>Ergebniscode prüfen</h1>
+  <p>Diese Seite ist für die Lehrkraft gedacht und von der Übungs-App aus nicht verlinkt. Sie arbeitet vollständig im Browser; es wird nichts gespeichert oder versendet.</p>
+
+  <div class="karte">
+    <label for="codes">Ergebniscode oder mehrere Codes, je einer pro Zeile</label>
+    <textarea id="codes" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="EF1-xxxxxxxx-XX"></textarea>
+    <button type="button" id="auswerten">Auswerten</button>
+    <p class="leise">Groß- und Kleinschreibung sowie Leerzeichen spielen keine Rolle.</p>
+  </div>
+
+  <div id="ergebnis" aria-live="polite"></div>
+
+  <h2>So ist der Code aufgebaut</h2>
+  <div class="karte">
+    <dl>
+      <dt>Aufbau</dt>
+      <dd><code>EF1-</code>, dann ein Zeichen je Kapitel, dann <code>-</code> und zwei Prüfzeichen.</dd>
+      <dt>Kapitelzeichen</dt>
+      <dd>Wert v (Basis 36, <code>0</code> bis <code>z</code>) = 3 · q + o. q ist der Anteil der beim ersten Versuch richtig gelösten
+        geschlossenen Aufgaben in Zehnteln (0 bis 10, gerundet); q = 11 heißt „keine geschlossene Aufgabe bearbeitet“.
+        o beschreibt die offenen Aufgaben: 0 keine, 1 teilweise, 2 alle bearbeitet. Übersprungene Aufgaben zählen als nicht richtig.</dd>
+      <dt>Prüfzeichen</dt>
+      <dd>Summe aus Position · Wert über alle Kapitelzeichen (Position ab 1), modulo 1296, als zwei Zeichen zur Basis 36.
+        Sie fangen Tippfehler ab und verhindern keinen Betrug. Die App ist eine Übung.</dd>
+      <dt>Farben und Noten</dt>
+      <dd>Rot unter 45 %, Orange ab 45 %, Gelb ab 55 %, Gelbgrün ab 70 %, Grün ab 85 %. Die Noten folgen dem in der
+        Oberstufe üblichen Schlüssel (ab 95 % 1+, ab 45 % 4, unter 20 % 6). Da der Code die Anteile auf Zehntel rundet,
+        ist die Note hier nur eine Orientierung; die Gesamtnote ist der Mittelwert der bearbeiteten Kapitel.</dd>
+      <dt>Grundlage</dt>
+      <dd>Der Code fasst das jeweils letzte Ergebnis jeder Aufgabe zusammen, die auf dem Gerät bearbeitet wurde. Offene Aufgaben gelten als bearbeitet, wenn mindestens 20 Zeichen geschrieben wurden; sie werden nie als richtig oder falsch gewertet.</dd>
+    </dl>
+  </div>
+</main>
+
+<script src="fragen.js"></script>
+<script>
+(function () {
+  'use strict';
+  var KAP = (typeof KAPITEL !== 'undefined' && Array.isArray(KAPITEL)) ? KAPITEL : [];
+  var titel = KAP.map(function (k) { return k.nr + ' ' + k.titel; });
+  var seiten = KAP.map(function (k) { return k.seiten ? 'Natura ' + k.seiten : ''; });
+  var hatOffene = KAP.map(function (k) { return (k.aufgaben || []).some(function (a) { return a.typ === 'offen'; }); });
+  var OFFEN = ['keine bearbeitet', 'teilweise bearbeitet', 'alle bearbeitet'];
+  var OFFEN_KURZ = ['keine', 'teilweise', 'alle'];
+  var SCHWELLEN = [20, 27, 33, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95];
+  var NOTEN = ['6', '5−', '5', '5+', '4−', '4', '4+', '3−', '3', '3+', '2−', '2', '2+', '1−', '1', '1+'];
+
+  function note(p) { var n = 0; SCHWELLEN.forEach(function (s) { if (p >= s) n++; }); return NOTEN[n]; }
+  function stufe(p) { return p >= 85 ? 5 : p >= 70 ? 4 : p >= 55 ? 3 : p >= 45 ? 2 : 1; }
+
+  function el(tag, klasse, text) {
+    var e = document.createElement(tag);
+    if (klasse) e.className = klasse;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+  function balken(p) {
+    var b = el('div', 'balken stufe-' + stufe(p));
+    b.setAttribute('role', 'img');
+    b.setAttribute('aria-label', p + ' Prozent');
+    var f = el('div'); f.style.width = Math.max(p, 2) + '%';
+    b.appendChild(f);
+    return b;
+  }
+  function notenKnoten(p) { return el('span', 'note stufe-' + stufe(p), 'Note ' + note(p)); }
+  function name(i) { return titel[i] || 'Kapitel ' + (i + 1); }
+  function offenText(k, i, kurz) {
+    if (KAP.length && !hatOffene[i]) return kurz ? '–' : 'keine offenen Aufgaben im Kapitel';
+    return kurz ? OFFEN_KURZ[k.o] : OFFEN[k.o];
+  }
+
+  function entschluessle(roh) {
+    var code = String(roh).replace(/\s+/g, '').toUpperCase();
+    var m = /^EF1-([0-9A-Z]+)-([0-9A-Z]{2})$/.exec(code);
+    if (!m) return { code: code, fehler: 'Das Format stimmt nicht. Erwartet wird EF1-, Kapitelzeichen, Bindestrich und zwei Prüfzeichen.' };
+    var werte = m[1].toLowerCase().split('').map(function (c) { return parseInt(c, 36); });
+    if (titel.length && werte.length !== titel.length) {
+      return { code: code, fehler: 'Der Code enthält ' + werte.length + ' Kapitelzeichen, die App hat aber ' + titel.length + ' Kapitel.' };
+    }
+    var summe = 0, kapitel = [];
+    for (var i = 0; i < werte.length; i++) {
+      var v = werte[i], q = Math.floor(v / 3), o = v % 3;
+      if (q > 11) return { code: code, fehler: 'Das Zeichen an Position ' + (i + 1) + ' ist kein gültiger Wert.' };
+      summe += (i + 1) * v;
+      kapitel.push({ q: q, o: o });
+    }
+    if (summe % 1296 !== parseInt(m[2], 36)) {
+      return { code: code, fehler: 'Die Prüfzeichen passen nicht zu den Kapitelzeichen. Vermutlich wurde der Code falsch abgeschrieben.' };
+    }
+    var bearbeitet = kapitel.filter(function (k) { return k.q !== 11; });
+    var mittel = bearbeitet.length ? Math.round(bearbeitet.reduce(function (s, k) { return s + k.q * 10; }, 0) / bearbeitet.length) : null;
+    return { code: code, kapitel: kapitel, mittel: mittel, anzahl: bearbeitet.length };
+  }
+
+  function kopfzeile(namen) {
+    var thead = el('thead'), tr = el('tr');
+    namen.forEach(function (n) { var th = el('th', n[1] || '', n[0]); th.scope = 'col'; if (n[2]) th.title = n[2]; tr.appendChild(th); });
+    thead.appendChild(tr);
+    return thead;
+  }
+
+  function gesamtKasten(erg) {
+    var g = el('div', 'gesamt' + (erg.mittel !== null ? ' stufe-' + stufe(erg.mittel) : ''));
+    if (erg.mittel === null) { g.appendChild(el('p', null, 'Keine geschlossene Aufgabe bearbeitet.')); return g; }
+    var z = el('div');
+    z.appendChild(el('strong', null, 'Mittelwert der ' + erg.anzahl + ' bearbeiteten Kapitel: etwa ' + erg.mittel + ' % '));
+    z.appendChild(notenKnoten(erg.mittel));
+    g.appendChild(z);
+    g.appendChild(balken(erg.mittel));
+    return g;
+  }
+
+  function einzeln(erg) {
+    var t = el('table');
+    t.appendChild(kopfzeile([['Kapitel'], ['Richtig beim ersten Versuch'], [''], ['Note'], ['Offene Aufgaben']]));
+    var tbody = el('tbody');
+    erg.kapitel.forEach(function (k, i) {
+      var tr = el('tr'), p = k.q * 10, bearbeitet = k.q !== 11;
+      var td0 = el('td', 'kapitelfarbe' + (bearbeitet ? ' stufe-' + stufe(p) : ''));
+      td0.appendChild(el('span', null, name(i)));
+      if (seiten[i]) td0.appendChild(el('span', 'klein', seiten[i]));
+      tr.appendChild(td0);
+      tr.appendChild(el('td', 'zahl', bearbeitet ? 'etwa ' + p + ' %' : 'nicht bearbeitet'));
+      var tdb = el('td'); if (bearbeitet) tdb.appendChild(balken(p)); tr.appendChild(tdb);
+      var tdn = el('td', 'zahl'); if (bearbeitet) tdn.appendChild(notenKnoten(p)); else tdn.textContent = '–'; tr.appendChild(tdn);
+      tr.appendChild(el('td', null, offenText(k, i, false)));
+      tbody.appendChild(tr);
+    });
+    t.appendChild(tbody);
+    return t;
+  }
+
+  function mehrere(liste) {
+    var t = el('table');
+    var spalten = [['Code'], ['Gesamt', 'zahl']];
+    liste[0].kapitel.forEach(function (k, i) { spalten.push(['K' + (i + 1), 'zahl', name(i)]); });
+    t.appendChild(kopfzeile(spalten));
+    var tbody = el('tbody');
+    var summen = liste[0].kapitel.map(function () { return { s: 0, n: 0 }; });
+    liste.forEach(function (erg) {
+      var tr = el('tr');
+      tr.appendChild(el('td', 'code', erg.code));
+      var tdg = el('td', 'zelle');
+      if (erg.mittel !== null) { tdg.appendChild(el('span', null, erg.mittel + ' % ')); tdg.appendChild(notenKnoten(erg.mittel)); }
+      else tdg.textContent = '–';
+      tr.appendChild(tdg);
+      erg.kapitel.forEach(function (k, i) {
+        var td = el('td', 'zelle');
+        if (k.q === 11) td.textContent = '–';
+        else {
+          td.appendChild(el('span', null, (k.q * 10) + ' %'));
+          td.appendChild(balken(k.q * 10));
+          summen[i].s += k.q * 10; summen[i].n++;
+        }
+        td.appendChild(el('span', 'klein', 'offen: ' + offenText(k, i, true)));
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    var tr = el('tr');
+    tr.appendChild(el('td', null, 'Mittelwert'));
+    tr.appendChild(el('td'));
+    summen.forEach(function (s) {
+      var td = el('td', 'zelle');
+      if (s.n) { var m = Math.round(s.s / s.n); td.appendChild(el('span', null, m + ' %')); td.appendChild(balken(m)); }
+      else td.textContent = '–';
+      td.appendChild(el('span', 'klein', s.n + ' Codes'));
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+    t.appendChild(tbody);
+    return t;
+  }
+
+  function auswerten() {
+    var ziel = document.getElementById('ergebnis');
+    ziel.textContent = '';
+    var zeilen = document.getElementById('codes').value.split(/\n+/).map(function (z) { return z.trim(); }).filter(Boolean);
+    if (!zeilen.length) return;
+    var gut = [], karte = el('div', 'karte');
+    zeilen.forEach(function (z) {
+      var erg = entschluessle(z);
+      if (erg.fehler) karte.appendChild(el('div', 'fehler', erg.code + ': ' + erg.fehler));
+      else gut.push(erg);
+    });
+    var w = el('div', 'huelle');
+    if (gut.length === 1) {
+      var h = el('h2', null, 'Code ' + gut[0].code); h.style.marginTop = '0';
+      karte.appendChild(h);
+      karte.appendChild(gesamtKasten(gut[0]));
+      w.appendChild(einzeln(gut[0]));
+      karte.appendChild(w);
+    } else if (gut.length > 1) {
+      var h2 = el('h2', null, gut.length + ' gültige Codes'); h2.style.marginTop = '0';
+      karte.appendChild(h2);
+      w.appendChild(mehrere(gut));
+      karte.appendChild(w);
+      karte.appendChild(el('p', 'leise', titel.map(function (t, i) { return 'K' + (i + 1) + ' = ' + t.replace(/^\d+\s/, '') + (seiten[i] ? ' (' + seiten[i] + ')' : ''); }).join(' · ')));
+    }
+    karte.appendChild(el('p', 'leise', 'Die Noten dienen nur zur Orientierung.'));
+    ziel.appendChild(karte);
+  }
+
+  document.getElementById('auswerten').addEventListener('click', auswerten);
+  window.__entschluessle = entschluessle;
+}());
+</script>
+</body>
+</html>
