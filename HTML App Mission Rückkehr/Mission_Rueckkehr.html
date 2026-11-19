@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Mission Rückkehr</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Chakra+Petch:wght@500;600;700&display=swap">
+<style>
+/* Layout: Zeitmaschinen-Konsole (dunkel): oben Anzeige mit Treibstoff, darunter die geologische Zeitskala,
+   darunter Szene des Zeitalters und eine helle Arbeitsplatte für die Aufgaben. Overlays für Film, Game over und Sprung. */
+:root {
+  color-scheme: dark;
+  --night: #0D181B;
+  --console: #15262A;
+  --line: #2C444A;
+  --glow: #5CE1CB;
+  --amber: #F4B03E;
+  --paper: #EEF1EC;
+  --muted-d: #93AEB0;
+  --stone: #E5E7DF;
+  --stone-2: #D4D8CD;
+  --stone-3: #BFC5B8;
+  --ink: #1B2426;
+  --ink-2: #4E5D5F;
+  --sel: #0E7F70;
+  --ok: #24864F; --ok-bg: #DDEFE3;
+  --bad: #B6412A; --bad-bg: #F5DDD5;
+  --info-bg: #F1E8CF;
+  --blood: #7A1E14;
+  --white: #FFFFFF;
+  --f-display: "Chakra Petch", "Avenir Next Condensed", "DIN Alternate", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --scene-h: clamp(76px, 19vh, 200px);
+  --hero-h: clamp(120px, min(38vh, 30vw), 380px);
+}
+html { height: 100%; }
+body {
+  margin: 0; height: 100%; height: 100dvh; overflow: hidden;
+  background: var(--night); color: var(--paper);
+  font-family: var(--f-body); font-size: 18px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+  -webkit-text-size-adjust: 100%; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+#app { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr); max-width: 1180px; margin: 0 auto; }
+button, input { font: inherit; }
+button { -webkit-appearance: none; appearance: none; }
+:focus-visible { outline: 3px solid var(--glow); outline-offset: 2px; }
+svg { overflow: hidden; }
+
+/* ---------- Konsole ---------- */
+.hud { display: flex; align-items: center; gap: 8px 18px; padding-block: 8px 4px; flex-wrap: wrap; }
+.brand { font-family: var(--f-display); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 14px; color: var(--glow); user-select: none; -webkit-user-select: none; line-height: 1.15; cursor: default; }
+.brand small { display: block; color: var(--muted-d); letter-spacing: .08em; font-weight: 500; font-size: 11.5px; text-transform: none; max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.readout { font-family: var(--f-display); font-size: 19px; font-weight: 600; letter-spacing: .04em; line-height: 1.12; min-width: 0; }
+.readout span { display: block; font-size: 12.5px; font-weight: 500; color: var(--muted-d); letter-spacing: .05em; }
+.fuel { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.fuel .fl { font-family: var(--f-display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-d); text-align: right; line-height: 1.2; }
+.fuel .fl b { display: block; color: var(--paper); font-size: 15px; letter-spacing: .04em; }
+.cells { display: flex; gap: 3px; position: relative; padding: 4px; border: 1.5px solid var(--line); border-radius: 9px; background: var(--console); }
+.cells i { width: 13px; height: 26px; border-radius: 3px; background: #22383D; transition: background .3s; }
+.cells i.on { background: var(--glow); box-shadow: 0 0 8px rgba(92,225,203,.6); }
+.cells i.red { background: var(--bad); }
+.cells i.pop { animation: pop .45s ease; }
+.cells i.mark { margin-left: 6px; }
+.cells i.mark::before { content: ""; position: absolute; }
+.cells .th { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--amber); border-radius: 1px; }
+.cells.ready { border-color: var(--glow); }
+.lives { display: flex; align-items: center; gap: 6px; font-family: var(--f-display); font-size: 15px; color: var(--muted-d); }
+.lives svg { width: 22px; height: 22px; color: var(--muted-d); }
+@keyframes pop { 0% { transform: scale(.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+.timeline { position: relative; padding-block: 16px 2px; }
+.tl-bar { display: flex; height: 9px; border-radius: 5px; overflow: hidden; }
+.tl-bar i { display: block; height: 100%; }
+.tl-bar i.pre { background: repeating-linear-gradient(135deg, #3B4447 0 4px, #2A3235 4px 8px); }
+.tl-groups { position: relative; height: 15px; font-family: var(--f-display); font-size: 10.5px; letter-spacing: .06em; color: var(--muted-d); }
+.tl-groups span { position: absolute; top: 2px; white-space: nowrap; transform: translateX(-50%); }
+.tl-groups span::before { content: ""; position: absolute; left: 50%; top: -4px; height: 3px; width: 1px; background: var(--muted-d); }
+.tl-mark { position: absolute; top: 0; transform: translateX(-50%); transition: left 1.2s cubic-bezier(.6,0,.3,1); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.tl-mark b { font-family: var(--f-display); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--amber); white-space: nowrap; }
+.tl-mark i { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 7px solid var(--amber); }
+
+main { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; min-height: 0; padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
+.stage { margin-top: 6px; }
+.scene { position: relative; height: var(--scene-h); border-radius: 16px 16px 0 0; overflow: hidden; background: var(--console); }
+.scene.hero { height: var(--hero-h); }
+.scene > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.scene .tag { position: absolute; left: 12px; top: 10px; display: flex; align-items: center; gap: 8px; background: rgba(9,17,19,.78); border-radius: 9px; padding: 5px 10px 5px 6px; }
+.tag .era { font-family: var(--f-display); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: 13.5px; padding: 2px 8px; border-radius: 5px; }
+.tag .ago { font-family: var(--f-display); font-size: 13px; color: var(--paper); letter-spacing: .03em; }
+.panel { background: var(--stone); color: var(--ink); border-radius: 0 0 16px 16px; padding: 18px clamp(14px, 3vw, 28px) 22px; }
+
+/* Bordcomputer Z-8 */
+.z8 { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: start; margin-bottom: 14px; }
+.z8-ava { width: 64px; height: 54px; background: var(--night); border-radius: 12px; display: grid; place-items: center; }
+.z8-ava svg { width: 56px; height: 46px; }
+.z8-msg { background: var(--night); color: var(--paper); border-radius: 4px 14px 14px 14px; padding: 10px 14px; min-height: 44px; }
+.z8-msg b { font-family: var(--f-display); letter-spacing: .12em; color: var(--glow); font-size: 12.5px; display: block; }
+.z8-msg p { margin: 2px 0 0; font-size: 17.5px; line-height: 1.4; }
+.z8-msg p + p { margin-top: 6px; }
+.tk-how { font-size: 15px; color: var(--ink-2); margin: -4px 0 12px; }
+.tk-n { font-family: var(--f-display); font-weight: 700; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--sel); margin-bottom: 6px; }
+
+/* Knöpfe und Rückmeldungen */
+.btn { font-family: var(--f-display); font-weight: 700; font-size: 18px; letter-spacing: .05em; border-radius: 12px; padding: 12px 22px; min-height: 52px; border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; color: #1D1505; background: var(--amber); }
+.btn:active { transform: translateY(1px); }
+.btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--stone-3); }
+.btn.ghost.dark { color: var(--paper); border-color: var(--line); }
+.btn.teal { background: var(--glow); }
+.btn.red { background: #E2563C; color: #FFFFFF; }
+.btn[disabled] { opacity: .4; cursor: default; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+.actions .grow { flex: 1; }
+.fb { margin-top: 12px; padding: 11px 15px; border-radius: 12px; font-size: 16.5px; max-width: 80ch; }
+.fb:empty { display: none; }
+.fb.info { background: var(--info-bg); }
+.fb.ok { background: var(--ok-bg); border-left: 5px solid var(--ok); }
+.fb.bad { background: var(--bad-bg); border-left: 5px solid var(--bad); }
+
+/* Kärtchen und Ziele */
+.pool { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background: var(--stone-2); border-radius: 12px; min-height: 64px; align-content: flex-start; }
+.pool:empty::before { content: "Alle Kärtchen sind verteilt."; color: var(--ink-2); font-size: 15px; align-self: center; padding-left: 4px; }
+.pool-l { font-family: var(--f-display); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 6px; }
+.tray { position: sticky; bottom: 0; z-index: 4; background: var(--stone); padding: 10px 0 6px; margin-top: 12px; border-top: 1px solid var(--stone-3); }
+.chip { max-width: 100%; background: var(--white); color: var(--ink); border: 2px solid var(--stone-3); border-radius: 10px; padding: 8px 13px; min-height: 48px; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; font-size: 16.5px; line-height: 1.25; }
+.chip .ci { display: inline-grid; place-items: center; flex: none; }
+.chip small { display: block; color: var(--ink-2); font-size: 13.5px; line-height: 1.25; margin-top: 2px; }
+.chip.sel { border-color: var(--sel); box-shadow: 0 0 0 3px rgba(14,127,112,.35); }
+.chip.ok { border-color: var(--ok); background: #EDF7F0; cursor: default; }
+.chip.bad { border-color: var(--bad); background: var(--bad-bg); cursor: default; }
+.chip .fix { display: block; font-size: 13.5px; font-weight: 700; color: var(--bad); margin-top: 3px; }
+.chip.shake { animation: shake .45s; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.tile { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 9px; }
+.tile svg { width: 32px; height: 32px; display: block; }
+.zone { border: 2px dashed #98A196; border-radius: 12px; background: rgba(255,255,255,.55); min-height: 56px; padding: 7px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; cursor: pointer; min-width: 0; }
+.zone.armed { border-color: var(--sel); border-style: solid; background: rgba(14,127,112,.08); }
+.locked .zone { cursor: default; }
+.num { width: 36px; height: 36px; border-radius: 50%; background: var(--sel); color: var(--white); display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; font-size: 18px; flex: none; }
+
+.lab { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.lab figure { margin: 0; background: var(--white); border-radius: 14px; padding: 6px; }
+.lab figure svg { width: 100%; height: auto; max-height: 38vh; display: block; }
+.lab .rows { display: grid; gap: 10px; }
+.lrow { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 10px; align-items: center; }
+.bins { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.bin { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.bin-h { font-family: var(--f-display); font-weight: 700; letter-spacing: .05em; font-size: 17px; padding: 7px 12px; border-radius: 10px; background: var(--ink); color: var(--paper); }
+.bin-h small { display: block; font-family: var(--f-body); font-weight: 400; font-size: 13.5px; letter-spacing: 0; opacity: .8; }
+.bin .zone { min-height: 130px; align-content: flex-start; }
+.order { display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); gap: 10px; }
+.oslot { display: flex; flex-direction: column; gap: 6px; min-width: 0; align-items: stretch; }
+.oslot .num { margin: 0 auto; }
+.oslot .zone { min-height: 128px; padding: 5px; align-items: stretch; justify-content: center; }
+.order-hint { display: flex; justify-content: space-between; font-family: var(--f-display); font-size: 12.5px; letter-spacing: .06em; color: var(--ink-2); margin-top: 6px; }
+.chip.card { flex-direction: column; align-items: stretch; gap: 5px; padding: 6px 8px 8px; font-size: 15px; width: 100%; }
+.pool .chip.card { width: calc(25% - 8px); min-width: 150px; }
+.chip.card .ci svg { width: 100%; height: 64px; display: block; }
+.wt { background: #F0EDE4; border-radius: 7px; padding: 4px; color: #3E3328; }
+.match { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: 10px 18px; }
+.mrow { display: grid; grid-template-columns: 150px minmax(0,1fr); gap: 10px; align-items: center; }
+.mrow .cat { font-weight: 700; font-size: 17px; line-height: 1.2; }
+.cloze { font-size: 18.5px; line-height: 2.3; max-width: 80ch; background: var(--white); border-radius: 14px; padding: 12px 16px; }
+.zone.gap { display: inline-flex; min-height: 44px; min-width: 140px; padding: 3px 6px; vertical-align: middle; margin: 2px; line-height: 1.2; }
+.zone.gap .chip { min-height: 36px; padding: 4px 10px; }
+.zone .fixw { font-size: 14px; font-weight: 700; color: var(--bad); padding: 0 4px; }
+
+/* Ja-nein-Karten */
+.yn { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; align-items: center; background: var(--white); border-radius: 14px; padding: 14px 16px; }
+.yn .tile { width: 112px; height: 112px; border-radius: 14px; }
+.yn .tile svg { width: 80px; height: 80px; }
+.yn q { display: block; font-size: 20px; font-weight: 700; line-height: 1.35; quotes: none; }
+.yn .cnt { font-family: var(--f-display); font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+.two { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.opt { flex: 1 1 200px; background: var(--white); border: 2px solid var(--stone-3); border-radius: 12px; padding: 12px 16px; min-height: 56px; cursor: pointer; color: var(--ink); font-family: var(--f-display); font-weight: 700; font-size: 19px; }
+.opt.ok { border-color: var(--ok); background: var(--ok-bg); }
+.opt.bad { border-color: var(--bad); background: var(--bad-bg); }
+.opt[disabled] { cursor: default; }
+.prog { display: flex; gap: 6px; margin: 0 0 10px; }
+.prog i { width: 26px; height: 6px; border-radius: 3px; background: var(--stone-3); }
+.prog i.ok { background: var(--ok); } .prog i.bad { background: var(--bad); } .prog i.cur { background: var(--sel); }
+
+/* Portale */
+.portals { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+.portal { background: var(--night); color: var(--paper); border: 0; border-radius: 16px; padding: 16px 14px 18px; cursor: pointer; display: grid; justify-items: center; gap: 12px; text-align: center; font-size: 17px; line-height: 1.3; }
+.portal .ring { width: 116px; height: 116px; border-radius: 50%; display: grid; place-items: center; position: relative; }
+.portal .ring::before, .portal .ring::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 3px solid var(--glow); border-color: var(--glow) transparent var(--glow) transparent; animation: spin 2.4s linear infinite; }
+.portal .ring::after { inset: -14px; border-color: transparent var(--amber) transparent var(--amber); border-width: 2px; animation-duration: 3.6s; animation-direction: reverse; }
+.portal .ring span { display: flex; gap: 2px; }
+.portal .ring svg { width: 48px; height: 48px; }
+.portal:active { transform: scale(.98); }
+
+/* Zeitsturm */
+.track { position: relative; height: 54px; background: var(--night); border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+.track .rail { position: absolute; left: 50px; right: 70px; top: 26px; height: 3px; background: repeating-linear-gradient(90deg, #3E5A60 0 10px, transparent 10px 18px); }
+.track .home { position: absolute; right: 12px; top: 8px; font-family: var(--f-display); font-size: 12px; color: var(--glow); letter-spacing: .1em; text-align: center; line-height: 1.1; }
+.track .home svg { width: 22px; height: 22px; display: block; margin: 0 auto; color: var(--glow); }
+.track .ship { position: absolute; top: 4px; width: 62px; height: 46px; transition: left .8s cubic-bezier(.5,0,.3,1); }
+.track .ship svg { width: 100%; height: 100%; }
+.timer { height: 8px; border-radius: 4px; background: var(--stone-2); overflow: hidden; margin: 10px 0 0; }
+.timer i { display: block; height: 100%; background: var(--sel); width: 100%; }
+.timer.low i { background: var(--bad); }
+.st-card { background: var(--white); border-radius: 14px; padding: 16px 18px; }
+.st-card q { display: block; font-size: 21px; font-weight: 700; line-height: 1.35; quotes: "„" "“"; }
+.st-card .cnt { font-family: var(--f-display); font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+
+/* Start und Diplom */
+.hero-sub { font-family: var(--f-display); font-size: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--sel); margin: 0 0 4px; }
+.hero-h { font-family: var(--f-display); font-weight: 700; font-size: clamp(34px, 6vw, 58px); line-height: 1; letter-spacing: .02em; margin: 0 0 10px; text-transform: uppercase; color: var(--ink); }
+.crew { display: grid; gap: 6px; max-width: 420px; margin: 12px 0 2px; }
+.crew label { font-family: var(--f-display); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.crew input { font-size: 18px; padding: 11px 14px; border-radius: 10px; border: 2px solid var(--stone-3); background: var(--white); color: var(--ink); min-height: 50px; }
+.crew input:focus { outline: 3px solid var(--sel); border-color: var(--sel); }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 16px 0 4px; padding: 0; list-style: none; }
+.rules li { background: var(--white); border-radius: 12px; padding: 11px 13px; font-size: 15.5px; }
+.rules li b { display: block; font-family: var(--f-display); letter-spacing: .06em; color: var(--sel); font-size: 13.5px; text-transform: uppercase; }
+.credits { margin-top: 16px; font-size: 13px; color: var(--ink-2); }
+.diploma { position: relative; background: #FBF7EC; border: 2px solid #D9CBA4; border-radius: 18px; padding: 22px clamp(16px, 4vw, 40px); text-align: center; box-shadow: inset 0 0 0 6px #FBF7EC, inset 0 0 0 8px #E5D8B5; }
+.diploma .trophy { width: 84px; height: 84px; color: #C08A1E; margin: 0 auto 4px; display: block; }
+.diploma .dk { font-family: var(--f-display); letter-spacing: .3em; text-transform: uppercase; color: #8A7552; font-size: 14px; }
+.diploma h1 { font-family: var(--f-display); font-size: clamp(28px, 5vw, 44px); margin: 4px 0 6px; color: var(--ink); line-height: 1.05; }
+.diploma p { margin: 0 auto; max-width: 52ch; color: var(--ink-2); font-size: 17px; }
+.stats { display: flex; justify-content: center; gap: 10px 26px; flex-wrap: wrap; margin: 16px 0 6px; }
+.stats div { font-family: var(--f-display); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: #8A7552; }
+.stats b { display: block; font-size: 28px; color: var(--ink); letter-spacing: .02em; }
+.rank { display: inline-block; margin-top: 10px; font-family: var(--f-display); font-weight: 700; letter-spacing: .08em; background: var(--ink); color: var(--amber); padding: 6px 14px; border-radius: 8px; }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 40; overflow: hidden; }
+.confetti i { position: absolute; top: -20px; width: 9px; height: 14px; border-radius: 2px; animation: fall 3.2s linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+
+/* ---------- Overlays ---------- */
+.ov { position: fixed; inset: 0; z-index: 50; background: var(--night); color: var(--paper); display: grid; grid-template-rows: minmax(0, 1fr) auto; padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) max(14px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); animation: fadein .3s ease; }
+.ov.out { animation: fadeout .35s ease forwards; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeout { to { opacity: 0; } }
+.ov-stage { position: relative; min-height: 0; overflow: hidden; border-radius: 0 0 18px 18px; }
+.ov-stage > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ov-bottom { width: 100%; max-width: 980px; margin: 0 auto; padding-top: 14px; }
+.cap { font-size: clamp(19px, 2.6vw, 25px); line-height: 1.4; min-height: 3.2em; }
+.cap p { margin: 0 0 6px; }
+.cap .who { font-family: var(--f-display); color: var(--glow); letter-spacing: .12em; font-size: .7em; display: block; }
+.ov .actions { justify-content: space-between; }
+.skip { background: transparent; border: 0; color: var(--muted-d); font-family: var(--f-display); letter-spacing: .08em; font-size: 15px; cursor: pointer; padding: 10px 6px; min-height: 44px; }
+.count { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.count b { font-family: var(--f-display); font-size: clamp(80px, 22vh, 200px); color: var(--amber); text-shadow: 0 0 30px rgba(244,176,62,.7); opacity: 0; animation: cnt 1s ease forwards; }
+@keyframes cnt { 0% { opacity: 0; transform: scale(1.6); } 30% { opacity: 1; transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: scale(.8); } }
+.alarm { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; }
+.alarm b { font-family: var(--f-display); font-size: clamp(34px, 8vw, 80px); letter-spacing: .1em; color: #FF5A3C; text-shadow: 0 0 24px rgba(255,70,40,.8); animation: blinkA .5s steps(2) infinite; display: block; }
+.alarm span { display: block; font-family: var(--f-display); font-size: clamp(20px, 3.4vw, 32px); color: var(--amber); margin-top: 8px; font-variant-numeric: tabular-nums; }
+.redwash { position: absolute; inset: 0; background: rgba(255,40,20,.18); animation: blinkA .5s steps(2) infinite; pointer-events: none; }
+@keyframes blinkA { 50% { opacity: .25; } }
+
+/* Game over */
+.death { background: #140707; grid-template-rows: auto minmax(0, 1fr); }
+.death .ov-stage { height: clamp(90px, 26vh, 260px); filter: grayscale(.75) brightness(.6); border-radius: 0 0 18px 18px; }
+.death .ov-stage::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(120,10,0,.55) 100%); }
+.death .scroll { overflow-y: auto; min-height: 0; }
+.death .ov-bottom { padding-bottom: 8px; }
+.go { font-family: var(--f-display); font-weight: 700; font-size: clamp(38px, 8vw, 72px); letter-spacing: .1em; color: #FF5A3C; text-shadow: 0 0 22px rgba(255,70,40,.6); line-height: 1; margin-top: 8px; animation: goIn .8s ease; }
+@keyframes goIn { from { letter-spacing: .6em; opacity: 0; } to { letter-spacing: .1em; opacity: 1; } }
+.death h2 { margin: 6px 0 10px; font-size: 22px; color: #F5D6CF; }
+.dlines { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.dlines li { font-size: 17.5px; line-height: 1.4; color: #EEDCD8; opacity: 0; transform: translateY(6px); transition: opacity .4s, transform .4s; }
+.dlines li.in { opacity: 1; transform: none; }
+.find { margin-top: 14px; background: #F3EBDA; color: #2A2018; border-radius: 12px; padding: 12px 16px; opacity: 0; transition: opacity .5s; border-left: 6px solid #8A7552; }
+.find.in { opacity: 1; }
+.find .fk { font-family: var(--f-display); font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: #8A7552; }
+.find .ff { font-family: var(--f-display); font-weight: 700; font-size: 20px; }
+.find p { margin: 4px 0 0; font-size: 16px; }
+
+/* Zeitsprung */
+.jump { place-items: center; grid-template-rows: auto; text-align: center; background: radial-gradient(circle at 50% 50%, #12343A 0%, var(--night) 62%); }
+.rings { position: relative; width: 210px; height: 210px; margin: 0 auto 16px; }
+.rings i { position: absolute; inset: 0; border-radius: 50%; border: 3px solid var(--glow); border-color: var(--glow) transparent var(--glow) transparent; animation: spin 1.1s linear infinite; }
+.rings i:nth-child(2) { inset: 26px; border-color: transparent var(--amber) transparent var(--amber); animation-duration: .8s; animation-direction: reverse; }
+.rings i:nth-child(3) { inset: 54px; border-color: var(--glow) transparent transparent transparent; animation-duration: .55s; }
+.rings b { position: absolute; inset: 82px; border-radius: 50%; background: radial-gradient(circle, #FFFFFF 0%, var(--glow) 45%, transparent 72%); animation: pulse .7s ease-in-out infinite alternate; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { from { transform: scale(.7); opacity: .7; } to { transform: scale(1.15); opacity: 1; } }
+.jump h2 { font-family: var(--f-display); font-size: 15px; letter-spacing: .3em; text-transform: uppercase; color: var(--glow); margin: 0 0 6px; }
+.jump .to { font-family: var(--f-display); font-weight: 700; font-size: clamp(30px, 6vw, 48px); letter-spacing: .06em; text-transform: uppercase; }
+.jump .cnt { font-family: var(--f-display); font-size: 22px; color: var(--amber); margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+/* Lehrkraft */
+.teach { position: fixed; inset: 0; z-index: 70; background: rgba(5,10,12,.88); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
+.teach .box { background: var(--stone); color: var(--ink); border-radius: 16px; padding: 20px; max-width: 600px; width: 100%; }
+.teach .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 10px 0; }
+.teach label { display: flex; gap: 10px; align-items: center; font-size: 17px; padding: 6px 0; }
+.teach input[type=checkbox] { width: 24px; height: 24px; }
+
+/* SVG-Animationen in den Szenen */
+.spin { transform-box: fill-box; transform-origin: center; animation: spin 3s linear infinite; }
+.spin.rev { animation-direction: reverse; animation-duration: 4.5s; }
+.blink { animation: blinkA 1s steps(2) infinite; }
+.rise { animation: rise 2.6s ease-in infinite; transform-box: fill-box; }
+.rise.d1 { animation-delay: .6s; } .rise.d2 { animation-delay: 1.2s; } .rise.d3 { animation-delay: 1.8s; }
+@keyframes rise { 0% { transform: translateY(8px); opacity: 0; } 30% { opacity: .8; } 100% { transform: translateY(-26px); opacity: 0; } }
+.bob { animation: bob 3.4s ease-in-out infinite alternate; transform-box: fill-box; }
+.bob.d2 { animation-delay: 1.2s; }
+@keyframes bob { to { transform: translateY(8px); } }
+.fall { animation: snow 5s linear infinite; transform-box: fill-box; }
+.fall.d1 { animation-delay: -1.2s; } .fall.d2 { animation-delay: -2.5s; } .fall.d3 { animation-delay: -3.7s; }
+@keyframes snow { from { transform: translateY(-20px); } to { transform: translateY(40px); } }
+.flash { animation: flash 2.2s steps(1) infinite; }
+.flash.d1 { animation-delay: .5s; } .flash.d2 { animation-delay: 1.1s; } .flash.d3 { animation-delay: 1.6s; }
+@keyframes flash { 0%, 100% { opacity: 0; } 8%, 14% { opacity: 1; } 10% { opacity: .2; } }
+.flashc { animation: flashc 1.2s ease-out forwards; }
+@keyframes flashc { 0% { opacity: 1; } 100% { opacity: 0; } }
+.shake { animation: shakeS .35s linear infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes shakeS { 0%,100% { transform: translate(0,0) rotate(0); } 25% { transform: translate(-3px,1px) rotate(-2deg); } 75% { transform: translate(3px,-1px) rotate(2deg); } }
+
+@media (hover: hover) {
+  .btn:hover { filter: brightness(1.05); }
+  .portal:hover { box-shadow: 0 0 0 3px var(--glow); }
+  .chip:not(.ok):not(.bad):hover { border-color: var(--sel); }
+}
+@media (max-width: 760px) {
+  body { font-size: 17px; }
+  .lab { grid-template-columns: minmax(0, 1fr); }
+  .order { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pool .chip.card { width: calc(50% - 5px); min-width: 0; }
+  .match { grid-template-columns: minmax(0, 1fr); }
+  .mrow { grid-template-columns: 112px minmax(0,1fr); }
+  .tray { position: static; }
+  .fuel .fl { display: none; }
+  .cells i { width: 10px; height: 22px; }
+  .yn { grid-template-columns: 72px minmax(0,1fr); }
+  .yn .tile { width: 72px; height: 72px; } .yn .tile svg { width: 52px; height: 52px; }
+  .z8 { grid-template-columns: 48px minmax(0, 1fr); }
+  .z8-ava { width: 48px; height: 42px; } .z8-ava svg { width: 42px; height: 34px; }
+}
+@media (max-height: 640px) {
+  :root { --scene-h: clamp(64px, 15vh, 120px); --hero-h: clamp(100px, 30vh, 220px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+.cells em.sep { width: 2px; align-self: stretch; background: var(--amber); border-radius: 1px; margin: -3px 2px; }
+.count b { grid-area: 1 / 1; }
+@media (max-width: 560px) { .tl-groups { display: none; } .timeline { padding-bottom: 6px; } }
+/* Kartenablage: eine Zeile zum Wischen, damit die Ziele sichtbar bleiben */
+.tray .pool { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; align-items: stretch; }
+.tray .chip { flex: 0 0 auto; max-width: 300px; scroll-snap-align: start; }
+.tray .chip.card { width: 176px; min-width: 0; }
+.tray .pool::-webkit-scrollbar { height: 8px; }
+.tray .pool::-webkit-scrollbar-thumb { background: var(--stone-3); border-radius: 4px; }
+@media (max-width: 760px) {
+  .tray .pool { flex-wrap: wrap; overflow-x: visible; }
+  .tray .chip { flex: 0 1 auto; max-width: 100%; }
+  .tray .chip.card { width: calc(50% - 5px); }
+}
+@media (max-width: 760px) { .swipe { display: none; } }
+/* Filmsequenz: Bild mittig, nicht bildschirmhoch */
+.ov.cine { grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr); }
+.ov.cine > .ov-stage { grid-row: 2; height: max(150px, min(56vh, 36vw)); width: 100%; max-width: 1180px; margin: 0 auto; border-radius: 18px; }
+.ov.cine > .ov-bottom { grid-row: 3; }
+
+</style>
+
+<div id="app">
+  <header class="hud" id="hud"></header>
+  <div class="timeline" id="tl"></div>
+  <main id="main"></main>
+</div>
+
+<script>
+const ICON = {"GiTrilobite":"<path d=\"M159.9 19.55c-20.7.2-41.7 7.8-60.4 20.8-53.2 37-89.8 119.45-56.7 216.85 14 41.3 17.2 76.3 12.5 102.9-4.6 26.5-16.6 44.3-33.4 53.5l9 16.4c22.5-12.3 37.5-36 42.8-66.7 5.4-30.7 1.6-68.6-13.2-112.1-30.7-90.4 3.9-163.55 49.7-195.45 22.9-16 48.2-21.4 69.9-14.6 8.8 2.7 17.2 7.5 24.9 14.6 6.8-1.9 13.9-3.4 21-4.5-11.5-14-25.3-23.3-40.4-28-9.2-2.48-17.2-3.7-25.7-3.7zm166.5 3.8c-14.9 4.6-28.5 13.7-40 27.4 7.3 1 14.5 2.4 21.6 4.2 7.4-6.7 15.5-11.2 24-13.8 21.7-6.8 46.9-1.4 69.8 14.6 45.8 31.9 80.5 105.05 49.7 195.45-14.7 43.5-18.6 81.4-13.2 112.1 5.4 30.7 20.4 54.4 42.8 66.7l9-16.4c-16.7-9.2-28.8-27-33.4-53.5-4.6-26.6-1.5-61.6 12.5-102.9 33.1-97.4-3.5-179.75-56.7-216.85-18.7-13-39.7-20.6-60.3-20.8-8.9.1-18.5 1.48-25.8 3.8zM258 67.45c-45.6 0-86 15.3-115.4 46.25-18.4 19.4-32.6 45.3-40.6 78.1 25.2-18.3 62.6-29.2 87.9-33.8 3-.4 4.9-.3 7.4 1.1 40.3 20.3 84.2 21.5 121.7 0 2.4-1.8 3.6-1.6 6.4-1.1 35.8 5 64.1 15.1 88.5 33.4-8.1-32.6-22.2-58.3-40.6-77.7C344 82.75 303.5 67.45 258 67.45zM190.9 177c-28.4 7.6-94.13 24.2-95.2 57h-.2c-.5 6-.8 12.2-.9 18.6 27.9-23.9 64.7-34.3 97.2-40.1-.5 6.3-.9 12.7-1.3 19.2-30.8 6.8-92.77 17.3-94.6 56.1v.2c.7 7 1.5 13.8 2.6 20.6 22.9-21.8 63.8-35.3 90.8-40.6-.2 6.4 0 13.3 0 19.1-26.5 8.6-82.9 20.6-84.9 50.7 2 7.8 4.3 15.6 6.8 23 18.7-20.2 55.9-32.8 79.3-37.7.4 6.4.8 12.7 1.3 18.9-24.7 5.7-66.7 19.4-71.6 41.5 4.2 9.5 8.9 18.5 13.9 26.9 15.2-17.6 42-26.7 61.5-31.3.8 6.4 1.8 12.5 2.8 18.7-15.1 5.1-50.3 13.9-52.3 30.7 6.9 9.3 14.4 17.8 22.2 25.3 9.9-10.1 26-15.7 37.8-18.5 1.6 6.3 3.3 12.3 5.2 18-10.8 3.9-21.6 5.4-28.7 12.5 22.7 17.1 48.3 26.6 75.4 26.6 26.6 0 51.8-9.1 74.3-25.8-7.6-7.1-20-10.8-28.7-13.1 1.8-5.7 3.6-11.7 5.2-18 12.9 3.3 30.8 10.5 37.8 19.3 8.8-8.2 17-17.7 24.6-28.2-8.6-18.2-37.1-25.7-54.4-29.5 1-6 2-12.1 2.8-18.6 23.7 5.2 49 13 63 30.7 4.7-8.1 9.1-16.7 13.1-25.7-6.4-24.2-52.2-37.4-72.2-41.7.5-6.2.9-12.4 1.3-18.8 27.5 5.7 63.2 18.2 79.9 37.7 2.5-7.2 4.7-14.6 6.6-22.2-13.7-27.7-60.3-45.9-85.3-51.2 0-6.8.3-13 0-19.2 34.5 11.7 70 18.2 91.2 42.4 1.2-7.4 2.1-14.9 2.8-22.5-7.3-35.6-67.6-51.1-95.2-56.4-.4-6.5-.8-13-1.3-19.2 34.9 7 72.7 16.8 97.8 40.2-.1-8-.5-15.8-1.2-23.3-13.5-33.4-66.2-46.7-95-52.2-44.8 21.5-92.3 22.1-134.2-.1zm114 37c.5 6.7 1 13.6 1.4 20.6-31.3 12.6-68.2 13-97.3.6.4-6.8.8-13.5 1.4-20.2 28.4 13.4 68.6 14.8 94.5-1zm2.5 55.7c0 7.4-.1 15.3-.2 21.8-31.6 13.2-69.7 13.5-99.1.6-.1-7.9-.2-13.9-.2-21.2 30.3 15.1 72.2 16.8 99.5-1.2zm-1.6 55.3c-.5 7.6-1 15.1-1.7 22.3-30 11.6-65 11.9-92.9.6-.7-7-1.2-14.3-1.7-21.7 28.2 14.2 71 15.9 96.3-1.2zm-5.7 56.1c-1.1 7.6-2.3 14.8-3.6 21.8-26.1 7.7-53.6 7.9-77.9.3-1.2-6.8-2.4-13.9-3.5-21.4 26.7 10.5 60.4 11.6 85-.7zM225 432.6c19.5 8.1 46.4 9.7 64.9.1-2.2 8.2-4.5 15.7-6.9 22.5-17.3 3.7-35.1 3.9-51.2-.2-2.4-6.7-4.6-14.2-6.8-22.4z\"></path>","GiFern":"<path d=\"M127.3 21.33c-8.7 3.74-15.7 8.57-21.9 14.01 2.5 4.7 5.1 9.41 7.7 14.15 7-9.07 12.3-19.08 14.2-28.16zM48.18 35.86c-5.47.1-11.12.85-17.01 2.59 10 10.35 26.54 17.43 42.18 19.64-2.11-6.66-4.07-13.27-5.87-19.82-6.24-1.52-12.63-2.5-19.3-2.41zm37.84 1.07C108.6 116.3 155.9 207.1 214 288.5c62.5 87.4 137.5 164 205.5 205.5h72c-164.8-99-318-289.6-405.48-457.07zm65.58.6c-13.3 5.97-23.5 14.12-32.2 23.3 3.4 5.95 6.8 11.92 10.3 17.9 10.7-12.79 19.2-27.8 21.9-41.2zm36.6 10.95c-22.2 10.69-37.1 26.96-49.9 44.61 4.1 6.72 8.2 13.41 12.5 20.21 17.8-18 33.2-43.11 37.4-64.82zM47.86 68.68c-7.31 0-14.87.83-22.77 2.76C39.3 83.57 63.75 91.51 85.6 92.93c-2.62-6.81-5.09-13.58-7.42-20.31-9.76-2.33-19.78-3.97-30.32-3.94zm174.64 9.48c-27.8 10.8-45.5 30.34-61.8 50.54 3.5 5.4 7.1 10.8 10.7 16.2 22.4-15.8 44.3-42.9 51.1-66.74zm28.1 25.94c-31.5 13.4-50.6 35-67.8 57.6 4.3 6.2 8.7 12.4 13.1 18.5 25.3-18.7 49-49.8 54.7-76.1zm-188.95 1.7c-13.6.1-27.46 2.2-41.65 7.7 20.75 13 53.96 18.8 81 16.3-3.28-7.3-6.4-14.5-9.38-21.7-9-1.3-18.07-2.2-27.25-2.3zm217.95 33.5c-32.7 13.9-52 36.7-69.7 60.2 4.3 5.8 8.7 11.6 13.1 17.3 26.1-18.4 50.7-50.5 56.6-77.5zm-185.3 3.3c-21.73.1-43.47 2.5-64.55 14.4 23.57 10.2 59.64 10.3 85.15 2.3-2.7-5.5-5.4-11.1-8-16.6-2.7-.1-5.5-.1-8.25-.1zm219.1 23.7c-35.5 15.8-57.7 40.9-77.3 67.3 6 7.7 12.2 15.4 18.5 23 27.7-23.8 52.5-59.6 58.8-90.3zm-194.5 16.2c-26.84-.1-54.08 2.3-82.42 17.9 26.28 12.8 69.92 12.3 101.12 1.6-3.7-6.5-7.2-12.9-10.7-19.4-2.7-.1-5.3-.1-8-.1zm236.3 17.3c-39.6 17.7-62.6 46.7-84 76.5 5.8 6.7 11.6 13.4 17.5 20 30.7-23.4 59.6-63 66.5-96.5zm-220.3 19.4c-26.8 0-54.11 2.3-82.43 17.9 27.65 13.4 74.43 12.3 105.73-.1-3.6-5.8-7.1-11.7-10.6-17.6-4.2-.1-8.4-.2-12.7-.2zm261.6 8.4c-43.5 19.8-68.7 52.4-92.2 85.9 6.7 7.1 13.4 14.2 20.2 21.2 33.4-26.1 64.5-69.9 72-107.1zm45.2 27.5c-49.1 23.2-75.2 59.8-100.4 96.5 6.7 6.6 13.5 13.2 20.3 19.6 37.7-27.1 73.5-76 80.1-116.1zm-270.9 1.8c-36.9 1.5-74.06 4.6-110.83 28.2 34.33 13.8 88.63 9.8 125.63-5.8-5-7.4-10-14.9-14.8-22.4zM486.3 280c-51 26.5-77.5 68.7-103.4 110.6 7.4 6.6 14.9 13.1 22.5 19.4 38.1-30.4 74.2-85 80.9-130zm-283.6 23.5c-40.4 3.3-81.2 6.4-120.44 34.1 37.84 13.2 98.04 4.6 133.74-15.9-4.5-6-8.9-12.1-13.3-18.2zM494 342.6c-32.9 25.6-48.1 51.6-68.4 83.8 8.8 6.9 17.6 13.6 26.5 20 17.5-14.4 28.2-33.1 41.9-53.3zm-257.2 5.7c-42.1 9.6-84.4 19.9-121 54.6 41.5 7.9 101.6-8.3 138.2-33.7-5.8-6.8-11.6-13.8-17.2-20.9zm35.5 41.9c-41.7 14.1-83.6 29.4-118.8 69.8 42.1 4.8 101.9-18.4 138-49.1-6.5-6.7-12.9-13.7-19.2-20.7zm45.4 46.9c-43.1 10.9-86.1 23.1-123.5 56.9h70.6c28.5-7.5 56.2-20 76.9-35-8-7-16-14.3-24-21.9zm46.4 40.4c-15.6 4.9-31.3 10-46.6 16.5h68.8c-7.4-5.2-14.8-10.7-22.2-16.5z\"></path>","GiDinosaurBones":"<path d=\"M236.375 34.5l-18.53 2.406 5.06 39.407c-9.114 1.973-18.22 4.657-27.28 8.062l-9.5-40.156-18.188 4.31 10.25 43.345c-8.443 4.105-16.825 8.87-25.093 14.344l-17.28-42.876-17.314 6.968 19.03 47.22c-5.018 4.003-9.758 8.155-14.25 12.468L89.47 89.625l-14.345 12 35.22 42.063c-4.675 5.425-9.01 11.022-12.97 16.78L53.47 133.5l-9.782 15.938 43.874 26.906c-3.705 6.694-6.962 13.558-9.812 20.53l-47.53-12.81-4.845 18.06L71.5 214.532c-3.59 11.932-6.03 24.1-7.344 36.345l-39.656-2.25-1.03 18.688 39.56 2.218c-.18 11.804.654 23.588 2.47 35.19L31.375 311l3.375 18.375 34.47-6.344c2.885 11.524 6.74 22.782 11.56 33.595l-26.31 11.97 7.75 17 27-12.283c5.96 10.538 12.905 20.534 20.78 29.813l-20.53 16.813 11.843 14.468 21.5-17.625c8.905 8.594 18.724 16.354 29.406 23.126L141.53 456l15.564 10.344 11.437-17.22c11.12 5.558 23.014 10.1 35.626 13.47l3.563-17.72c-10.315-2.77-20.055-6.39-29.19-10.812l7.47-11.25-15.563-10.343-8.28 12.467c-9.12-5.807-17.506-12.456-25.157-19.78l13.906-11.407-11.844-14.438-14.843 12.157c-6.764-8.09-12.778-16.756-18-25.908l22.5-10.25-7.75-17-23.19 10.563c-4.193-9.428-7.62-19.208-10.218-29.22l32.313-5.967-3.375-18.375-32.72 6.03c-1.586-10.158-2.347-20.456-2.25-30.78l40.032 2.25 1.063-18.657-39.97-2.25c.73-6.54 1.805-13.07 3.25-19.53 4.226.572 9.16 1.176 15.064 1.843 14.326 1.616 32.835 3.446 51.155 5.186 29.98 2.848 49.638 4.533 59.375 5.375l-33.063 72.345-5.78 12.656 1.343.064L234.563 365l9.406-16.156-29.94-17.375 51.782 2.092.75-18.687-49.343-2 33.593-13.22-6.844-17.405-35.407 13.938L234 240.53l5.5-12.06-13.22-1.126s-35.88-3.062-72.405-6.53c-18.263-1.736-36.696-3.565-50.813-5.158-4.618-.52-8.52-1.014-12.03-1.47 9.83-29.017 27.474-56.23 53.812-78.5l20.937 52 17.345-7-22.875-56.75c.296-.202.578-.42.875-.624 7.11-4.84 14.278-9.096 21.47-12.812l18.874 79.906 18.186-4.28-19.72-83.5c8.432-3.326 16.87-5.95 25.314-7.876l11.78 91.75 18.532-2.375-11.875-92.53c8.964-1.012 17.896-1.247 26.75-.814l3 96.19 18.688-.595-.344-11.25 34.22 39.28-37.28 17.064 7.78 17 32.313-14.782-15.688 32.343 16.813 8.19L353.344 226l2.72-5.563-4.064-4.656-41.375-47.468 50.53-47.843c23.78 15.006 45.428 35.18 63.533 59.343-23.814 6.14-44.022 24.153-50.688 53.718l47 103.064 16.875-2.406-26.938-68.625 17.407-6.844 28.562 72.75 34.813-5-8.408-138.626c-11.76-6.55-24.637-9.992-37.312-10.375-4.585-6.65-9.41-13.05-14.47-19.19l18.564-18.686-13.25-13.156-17.72 17.812c-5.074-5.355-10.35-10.44-15.78-15.28l18.125-27.314-15.595-10.312-17 25.656c-6.047-4.625-12.28-8.927-18.656-12.906l10.56-31.844-17.75-5.875-9.374 28.28c-7.146-3.664-14.46-6.923-21.906-9.75l3.156-33.686-18.625-1.75-2.75 29.5c-8.182-2.25-16.497-3.956-24.905-5.126l-.938-30.188L269 44.22l.875 27.936c-1.664-.064-3.33-.105-5-.125-1.19-.013-2.37-.007-3.563 0-6.633.05-13.29.455-19.968 1.22l-4.97-38.75zm52.844 58.22c7.597 1.222 15.11 2.952 22.53 5.155l-4.438 47.406.407.032-16.376 15.5-2.125-68.093zm40.717 11.56c4.807 1.977 9.565 4.156 14.25 6.532l-16.312 15.438 2.063-21.97zM441.5 195.5c.786-.023 1.572.006 2.375.063 12.852.9 22.34 11.843 21.438 24.687-.902 12.84-11.836 22.34-24.688 21.438-12.852-.902-22.34-11.848-21.438-24.688.845-12.037 10.52-21.152 22.313-21.5zM328.25 439.563c-5.288 1.61-10.488 3.022-15.625 4.28l4 18.282c5.63-1.356 11.322-2.9 17.094-4.656l-5.47-17.908zm-33.906 8.093c-7.15 1.227-14.145 2.1-20.97 2.656l.376 18.532c8.005-.56 16.202-1.516 24.563-2.938l-3.97-18.25zM226 448.75l-3.594 17.78c10.464 1.76 21.356 2.75 32.656 2.876l-.375-18.344c-9.96-.06-19.515-.87-28.687-2.312z\"></path>","GiMammoth":"<path d=\"M337.2 56.85c2.6 4.01 5 10.08 9.6 14.39-6 14.4-22.9 25.94-42.7 25.66l16.1 15.6 25.9-14.9 20.3 17 19.4-9.5 19.6 7.5L419.6 98c-20.7-7-20.6-23.84-28.8-36.5-1.6-2.43-5.2-3.51-9.8-3.59-7.6-.14-18 2.48-26.1 6.27-7-2.17-10.1-5.32-17.7-7.33zM299.8 112c-23.3 14.8-47.7 29.3-74 28.8-16.4-7.3-39.8-12.2-66.8-15.9 3.5 5.1 4.6 10.5 4.4 16.2-1.3.1-2.6.1-3.9.2-11.5-3.3-27-4.9-50.4-2.9 6.3 1.9 11.8 4 15.4 6.8-34.78 6.1-72.74 15-87.27 47.8-4.11 9.3-6.83 18.8-8.6 28.4l-9.09 25.7 6.61-4.5c-.98 16.6 0 33.6.86 50.6l-6.43 35 7.44-11.9c.24 8.8.23 17.6-.33 26.3l21.74-56.2 11.13 71.5c1.66 11.9-3.98 22.2-7.88 33.2l7.69-.6-.1 10.5-10.02 30.7 9.86-4.7-.12 22.6c18.75 13.3 39.44 10.7 61.01.7l7.3-100.7c4.9-10.8 11.1-21.3 16.5-30.4 5.8-10 10.6-19.8 11.4-25.1l17.8 2.8c-3.4 13.9-9.6 24.8-16.1 35.5 23.5-1.2 44.8-5.7 64.1-13.9-.8-6.9-3.2-15.1-3.6-21l18-1.2c1.1 6.7 3.1 18.5 4.5 26 2.7 15.2 6.3 35.1 9.9 54.8 6.6 36.7 12.8 70.2 13.7 75.1 21 8.4 45.2 6.2 60.1 1.9l-2.9-55.5 7.2 3.6-7.9-15.9-.2-3.6 8.1 6-9.8-38.6-.2-3.9 9 2.2-10.7-35.7-1.1-20.5c12.9-4.1 25.1-8.3 37-12.8-2.3-2.5-4.6-5.1-6.8-7.9-9.3-11.3-14.4-26.5-12.3-40.6 1.1-7.1 4.1-15.4 11.5-18.5 9.1-3.8 24.1-7.4 30.4 1.7 22.6 31.9 40.5 45.2 51.4 47.8 5.5 1.3 9.3.6 13.3-1.7 14.3-10.4 14.5-15.1 14-32.2-7.2-18.7-12.9-37.7-18.6-56.7l14.3 2.9c-7.5-9-16.3-14.5-22-27.9-2.5-7.8-5.1-15.6-7.9-23.4l-6 12.5-27.8-10.7-22.8 11.3-19.7-16.5-31.5 18.2zm82.5 58.8l26.8 15.4c-3.4 3.8-6.6 7.9-15.3 6-9.3-2.1-12-13-11.5-21.4zm107.1 16c-3.4 24-9.8 51-21.7 70.3-4.8 7.8-10.6 14.4-18.2 18.7-7.5 4.4-16.9 5.9-26.3 3.6-18.4-4.3-37.1-20.6-59.8-52-6.5-1.5-10.8.9-11.6 6.2-1 6.9 2.6 19.4 8.4 26.5h.1c20.9 25.7 41.6 36.7 59.7 38.6 18.1 1.9 34.4-5.1 47.3-18.4 20-20.5 30.9-56 22.1-93.5zm-39.9 126c-9.8 3.5-20.4 4.9-31.4 3.8-2.5-.3-5.1-.7-7.6-1.2-1.5 17-5.5 33.2-14.4 42.3-11.1 11.4-47.3 6.7-47.3 6.7-10.9-2.5-11.4 52.2 12.5 43.3 0 0 51.2-14.6 66.3-33.5 3.8-4.8 7.2-10.7 10-17.3l3.2 10.3.7-20.6c.9-2.8 1.8-5.8 2.6-8.7l7 9.2zm-224.3 23.5l-6.6 1.8-1 113.4c9.8 5.5 19.1 3.6 28.2-.7-1.7-9.8-6.8-37.4-12.7-70.5-2.8-15.5-5.5-30.5-7.9-44zm-36.7 9.1c-13 .9-44.9 6.6-46.3 10.1l-1.8 95.3c18.2 10.1 35.7 5.3 53.2.2z\"></path>","GiPalmTree":"<path d=\"M179.125 20.625c-28.052.12-54.046 5.813-66.72 9.78 0 0 114.968 19.51 124.532 98.876C149.573 3.32 54.28 155.657 54.28 155.657c19.868-5.212 76.76-20.682 114.75-14.156 25.992 4.465 51.33 28.03 50.236 27.733-61.943 15.24-160.35 290.92-143.64 313.308 14.9 17.12 29.816 11.28 44.718 2.595 7.376-58.425 64.938-314.765 135.375-294.072.01.003.02-.003.03 0 5.93 2.03 11.54 5.59 11.844 11.03.58 10.363-6.11 27.3-4.53 39.063 3.662 27.296 9.007 36.79 16.78 46.313 18.564-10.435 36.326-48.057 40-67.564 16.634 7.284 43.373 24.155 65.187 86.813 11.404-58.716-5.042-105.03-59.03-125.595 23.38-10.105 125.142 41.03 137.563 69.53C475.648 199.264 390.167 136.378 319 139.72c13.644-3.56 28.638.6 42.906-9.907 19.146-14.098 41.474-26.24 62.28-39.282-69.972-30.435-134.545-15.407-139.092 16.095-3.573-69.916-57.83-86.204-105.97-86z\"></path>","GiJellyfish":"<path d=\"M258.25 19.594c-76.095.492-152.275 42.48-171.844 139.812-2.706 13.46.208 22.172 7.406 30.063 6.18 6.774 16.286 12.65 29.313 17.155 8.87-6.015 17.417-19.395 20.47-34.156 1.136 15.568 7.102 33.066 17.28 42.53 12.807 1.726 26.597 2.752 40.78 3.188C205.5 123.968 313.99 114.71 323.22 208.5c11.655-2.437 22.868-5.327 33.28-8.656 11.107-15.656 7.692-26.07 5.03-41 8.16 11.035 11.332 22.095 28.314 27.25 9.952-5.37 18.034-11.312 23.687-17.5 8.163-8.936 11.494-17.695 9.97-28.47-10.676-75.457-84.34-119.695-161.625-120.53-1.208-.013-2.417-.008-3.625 0zm-29.22 23.093c24.367 0 44.126 19.73 44.126 44.094 0 24.367-19.76 44.126-44.125 44.126-2.338 0-4.633-.18-6.874-.53-3.684 14.55-16.865 25.343-32.562 25.343-18.552 0-33.594-15.044-33.594-33.595 0-16.984 12.604-31.03 28.97-33.28-.032-.682-.032-1.375-.032-2.064 0-24.365 19.727-44.093 44.093-44.093zm95.345 55.97c10.8 0 19.563 8.764 19.563 19.562 0 10.797-8.764 19.53-19.563 19.53-10.8 0-19.53-8.733-19.53-19.53 0-10.8 8.73-19.564 19.53-19.564zm77.156 102.312c-5.32 3-11.025 5.787-17.03 8.374 12.71 15.545 19.88 34.71 22.75 54.25 4.855 33.055-4.353 66.41-16.813 78.97-24.31 24.5-30.547 57.464-23.125 88.248 5.573 23.115 18.495 45.298 36.938 63.407h29.03c-24.623-17.53-41.752-42.65-47.81-67.783-6.2-25.704-1.406-50.908 18.25-70.718 19.685-19.842 27.573-57.107 22.03-94.845-3.062-20.85-10.79-42.05-24.22-59.906zm-41.06 17.25c-5.997 1.886-12.2 3.595-18.533 5.186 8.91 16.314 14.04 30.545 15.625 43.063 2.682 21.173-3.548 38.124-20.187 56.592-23.118 25.66-24.01 54.512-27.563 82.625-3.5 27.702-9.055 55.82-38.812 88.532h24.344c23.8-31.292 29.794-60.816 33-86.19 3.687-29.18 4.24-51.718 22.906-72.436 19.127-21.23 28.188-45.065 24.844-71.47-1.838-14.506-7.098-29.6-15.625-45.905zm-39.75 9.905c-21.83 4.216-44.707 6.853-67.033 8.03-16.476.87-33.335 1.24-49.875.845-14.306 14.035-26.07 29.54-33.78 45.813-12.875 27.174-13.776 57.767 5.562 82.812.295.382.57.788.844 1.188-10.236 6.08-21.41 11.5-33.25 16.75-23.037 10.21-48.35 19.324-72.813 31.125 6.505-27.637 17.068-49.704 29.188-62.063 16.996-17.333 35.44-32.76 46-57.844 6.838-16.245 9.966-35.98 7.75-61.905-6.59-1.016-12.964-2.276-19.094-3.72 2.97 26.23.066 44.26-5.876 58.376-8.568 20.355-24.4 33.955-42.125 52.033-18.482 18.845-31.744 49.66-37.814 86.75-9.37 5.463-18.45 11.502-27.062 18.406v24.936c7.454-7.247 15.6-13.632 24.25-19.406-1.067 14.096-1.178 28.833-.22 43.97h18.75c-1.257-19.685-.448-38.66 1.94-56.158 26.77-14.288 56.505-24.9 84.717-37.406 10.524-4.664 20.864-9.69 30.72-15.375-.125 10.524-4.077 23.175-12.344 37.19-14.266 24.18-40.91 50.666-77.344 71.75h34.344c26.386-19.128 46.457-40.83 59.094-62.25 11.775-19.96 17.327-40.537 13.906-58.095 21.25-15.403 38.72-35.33 48.28-63.47 9.112 1.75 18.513.996 25.314-2.124.256-.116.5-.252.75-.374-7.986 68.863-42.73 137.217-112.313 186.313h30.72c69.553-58.027 100.686-136.855 102.03-213.033 18.65-7.55 31.337-26.797 26.782-53.062zM211.75 255.72c1.172 3.966 3.024 7.484 5.375 10.718l2.938 4.03-1.72 4.688c-3.335 9.118-1.49 15.308 3.5 21.375 2.123 2.58 4.95 4.976 8.25 7.064-7.543 23.296-20.897 39.753-38.124 52.844-.512-.75-1.034-1.492-1.595-2.22-14.877-19.267-14.336-40.467-3.47-63.406 5.618-11.855 14.223-23.8 24.845-35.093z\"></path>","GiDragonfly":"<path d=\"M131.613 21.576c-.667-.002-1.334.015-1.998.05-1.517.082-3.025.263-4.52.55-11.974 2.296-21.052 13.1-23.2 26.908-1.396 8.968-.708 19.472 2.136 31.824-2.445-1.106-4.86-2.102-7.227-2.967-7.13-2.6-14-4.21-20.438-4.467-6.437-.257-12.443.842-17.84 3.662-10.794 5.64-16.044 18.626-14.44 32.8 1.602 14.17 8.625 30.916 21.837 51.21C85.398 191.062 114.3 228.23 144.48 253.7c14.917 12.59 30.117 22.445 45.584 26.738-.845-6.264-.584-12.854.627-19.44-10.287-3.848-22.168-11.46-34.16-21.58-27.774-23.44-56.247-59.745-74.946-88.47-12.245-18.808-17.856-33.625-18.93-43.116-1.073-9.49.955-12.268 4.528-14.135 3.572-1.866 11.803-2.362 23.216 1.8 6.458 2.357 13.792 6.067 21.65 11.18 11.93 32.113 30.72 71.88 53.518 102.02 9.756 12.898 20.218 24.092 31.672 32.06 2.543-5.522 5.687-10.984 9.403-16.294-8.655-6.367-17.628-15.747-26.17-27.04-14.347-18.968-27.52-43.103-38.09-66.32 32.386 29.372 52.07 54.056 72.23 83.198 1.764-2.008 3.61-3.984 5.544-5.917 2.6-2.6 5.276-5.035 8.008-7.324-22.464-32.146-45.464-60.11-85.05-94.265-5.26-4.537-10.46-8.602-15.573-12.21-6.9-19.66-8.5-34.132-7.18-42.628 1.36-8.733 3.763-10.564 8.255-11.426 4.493-.86 13.276 1.01 23.797 7.91 10.52 6.9 22.59 18.372 34.285 34.187 30.384 41.094 45.308 71.17 59.217 106.19 5.643-3.123 11.385-5.618 17.12-7.444-14.292-35.772-30.187-67.765-61.31-109.857-12.76-17.26-26.134-30.224-39.062-38.704-10.605-6.955-21.034-11.202-31.05-11.236zM292.355 122.99c-5.678 0-11.355 2.166-15.687 6.498-8.665 8.665-8.665 22.715 0 31.38 4.917 4.918 11.566 7.04 17.982 6.378-4.65 11.852-2.165 25.768 7.47 35.404 9.343 9.343 22.71 11.97 34.316 7.885-.43 6.184 1.71 12.515 6.437 17.242 8.665 8.666 22.714 8.665 31.38 0 8.664-8.665 8.664-22.715 0-31.38-4.767-4.766-11.16-6.905-17.392-6.428 3.984-11.56 1.338-24.823-7.95-34.11-6.5-6.5-14.947-9.75-23.394-9.75-3.78 0-7.56.657-11.164 1.958.86-6.598-1.238-13.51-6.307-18.58-4.333-4.333-10.01-6.498-15.69-6.498zm-15.388 74.147c-.846.145-1.703.31-2.574.5-13.036 2.85-28.087 11.024-41.024 23.96-12.937 12.938-21.11 27.99-23.96 41.026-2.175 9.95-1.36 18.227 1.922 24.367-46.51 35.78-149.555 119.44-185.19 139.307-14.113 46.802-2.547 79.386 57.16 57.16 18.846-36.327 105.196-141.11 141.325-185.81 5.487 1.66 12.187 1.78 19.898.093 13.036-2.85 28.087-11.024 41.024-23.96 12.935-12.938 21.108-27.99 23.958-41.026.304-1.394.537-2.747.726-4.074-7.817-2.393-15.17-6.658-21.328-12.815-5.468-5.47-9.44-11.885-11.94-18.728zm48.976 46.455c-1.79 5.75-4.26 11.512-7.357 17.176 38.903 14.977 70.47 29.76 114.947 62.648 15.813 11.693 27.286 23.765 34.186 34.285 6.9 10.522 8.767 19.307 7.905 23.8-.862 4.493-2.693 6.895-11.426 8.254-8.733 1.36-23.76-.352-44.264-7.748-1.815-.655-3.667-1.343-5.54-2.05-2.504-3.28-5.182-6.587-8.058-9.92-36.56-42.378-66.137-65.798-101.258-89.868-1.997 2.32-4.094 4.603-6.316 6.826-2.326 2.326-4.716 4.514-7.15 6.592 29.87 20.288 54.574 39.032 83.163 69.332-19.92-9.646-39.86-21.038-56.037-33.275-14.147-10.703-25.3-22.084-31.267-32.666-5.08 3.958-10.33 7.383-15.67 10.246 7.99 13.694 20.677 25.987 35.664 37.324 28.014 21.192 64.35 38.923 95.127 50.902 7.14 9.994 12.13 19.315 15.04 27.298 4.164 11.414 3.668 19.646 1.802 23.22-1.867 3.572-4.645 5.6-14.135 4.526-9.49-1.073-24.304-6.685-43.113-18.93-28.722-18.7-65.025-47.176-88.464-74.953-11.72-13.887-20.09-27.632-23.127-38.92-.19-.702-.362-1.39-.518-2.067-.52.125-1.04.262-1.56.375-5.727 1.252-11.486 1.777-17.063 1.512.29 1.687.645 3.37 1.094 5.035 4.21 15.65 14.155 31.03 26.89 46.12 25.468 30.18 62.636 59.084 92.55 78.562 20.293 13.21 37.04 20.234 51.21 21.837 14.173 1.604 27.16-3.65 32.8-14.443 5.64-10.793 4.393-24.016-.81-38.276-1.363-3.74-3.038-7.587-5.008-11.516 14.58 3.888 26.72 4.976 36.89 3.393 13.807-2.148 24.612-11.228 26.908-23.2 2.297-11.973-2.156-24.64-10.634-37.567-8.48-12.928-21.443-26.302-38.7-39.064-45.53-33.667-79.24-49.524-118.703-64.798z\"></path>","GiAmberMosquito":"<path d=\"M256 25c-49.473 0-94.804 29.19-128.342 78.1C94.121 152.009 73 220.348 73 296c0 52.552 10.198 101.567 27.664 143h310.672C428.802 397.567 439 348.552 439 296c0-75.652-21.12-143.991-54.658-192.9C350.804 54.19 305.472 25 256 25zm-25.922 24.459c7.27.133 13.469 2.777 14.393 9.576-60.873 23.968-114.003 115.36-147.473 175.85 3.256-45.078 49.313-168.96 126.07-184.865a39.545 39.545 0 0 1 5.543-.555c.493-.013.982-.015 1.467-.006zm37.375 76.18c1.031-.02 2.06.004 3.08.07 8.167.529 16.14 3.671 22.34 9.398a31.491 31.491 0 0 1 10.045 24.24c-1.18 32.573-10.66 64.15-18.488 94.893 3.385.972 6.424 2.376 9.13 4.24a27.11 27.11 0 0 1 4.405 3.8c2.754-1.075 5.565-1.672 8.283-1.776.477-.018.95-.021 1.42-.01 2.725.066 5.32.639 7.633 1.7l86.619-34.22 6.613 16.74-81.99 32.393c.05.259.103.516.144.774 1.18 7.31-1.118 14.602-6.433 20.242a20.78 20.78 0 0 1-2.805 2.457l44.885 19.375-7.488 39.367-17.684-3.363 4.793-25.195-33.504-14.463 20.836 32.98-23.25 30.908-14.385-10.82 15.782-20.978-20.577-32.569a23.632 23.632 0 0 1-3.545 1.303l4.9 48.629-42.556 7.086-2.957-17.756 25.914-4.314-3.691-36.618c-2.115-1.295-4.02-2.87-5.723-4.648-10.694 10.598-24 19.62-40.568 26.254l4.295 46.875-52.405 13.064-4.353-17.465 37.424-9.33-3.041-33.193-23.567 31.5-48.459-14.777 5.25-17.22 36.37 11.093 25.847-34.553c10.15-20.76 26.398-34.63 44.98-45.963-38.012-14.96-67.612-38.463-84.613-72.29-4.55-9.053-3.115-20.006 4.393-28.599 4.692-5.37 12.06-8.702 21.03-8.89 5.38-.113 11.338.904 17.642 3.29 17.494 6.624 29.89 18.587 39.431 32.409-2.086-10.15-3.328-20.782-3.134-32.115.192-11.237 4.46-20.59 11.232-26.41 5.926-5.094 13.283-7.402 20.5-7.545zm.365 17.996c-3.572.066-6.788 1.186-9.13 3.199-2.677 2.301-4.848 5.878-4.971 13.066-.449 26.273 8.551 49.377 17.367 73.862 6.61-25.57 12.966-50.761 13.846-75.065.169-4.675-1.44-7.753-4.27-10.367-2.829-2.613-7.104-4.387-11.29-4.658a18.624 18.624 0 0 0-1.552-.037zm-85.56 29.926a13.743 13.743 0 0 0-2.383.12c-2.841.412-4.416 1.742-5.568 3.061-2.306 2.639-2.157 8.094-1.866 8.674 14.766 29.38 40.367 49.957 75.276 63.592-5.725-12.831-11.042-25.53-17.229-36.654-9.35-16.81-20.187-29.689-37.437-36.22-4.67-1.767-8.147-2.494-10.793-2.573zm66.082 109.025c-13.198 8.263-24.09 17.416-31.871 29.578l.388 4.23.34.354c13.88-6.328 24.392-14.474 32.89-23.988a54.511 54.511 0 0 1-1.747-10.174zM89 457v30h334v-30H89z\"></path>","GiAmmoniteFossil":"<path d=\"M221.75 17.813c-2.866.013-5.723.092-8.594.25C94.004 24.596 10.79 136.428 17.436 251.155 25.995 398.813 164.3 501.693 306.315 492.562h.03c68.975-4.446 134.884-33.45 186.063-79.562l4.344-3.906-1.625-5.625-29.844-102.595-1.217-4.188-3.97-1.75L378 258.594c14.594-24.457 22.398-53.31 21-82.563-4.3-89.976-83.124-154.5-168.656-158.06-2.85-.12-5.728-.17-8.594-.157zm.125 18.687c1.174-.007 2.36.015 3.53.03L218.5 81.28l-.28 1.75.155.626c-26.733 2.106-53.554 11.503-75.875 28.438l-14.375-47.28c25.05-16.172 54.175-26.346 86.063-28.095 2.567-.142 5.13-.205 7.687-.22zm22.25 1.406c38.27 5.08 74 23.623 99.28 51.375l-34 19.94-.374.218c-19.422-15.903-44.874-24.69-71.592-26.063l-.22-.938 6.907-44.53zm-132 38.5l14.344 47.25.624 2.094c-14.64 15.204-26.215 34.55-32.844 58.125-.675 2.4-1.285 4.79-1.875 7.156l-40.47-33.218c13.17-31.817 33.873-60.15 60.22-81.406zM355.25 104.03c14.607 20.833 23.788 45.562 25.094 72.876.025.52.044 1.044.062 1.563l-35.844 2.874c-.124-2.074-.265-4.16-.5-6.25-2.332-20.82-10.02-38.198-21.343-52.03l32.53-19.033zm-116.125 44.94c2.345.038 4.665.25 6.97.593l-1.47 39.28c-4.208.59-8.338 1.873-12.22 3.907l-43.718-17.813c11.268-15.01 28.152-25.316 47.938-25.937.834-.026 1.668-.045 2.5-.03zm25.47 6.843c14.38 7.937 24.832 22.162 25.217 39.343.145 6.436-1.438 13.01-4.218 18.75-1.47-4.27-3.73-8.338-6.813-12-4.44-5.274-10.04-9.043-16.092-11.22l.593.033 1.314-34.907zm-219.44 20.625l43.032 35.375c-3.903 25.766-2.57 49.148 2.97 69.968L39 275.22c-1.418-8.22-2.41-16.602-2.906-25.158-1.455-25.12 1.79-50.093 9.062-73.625zm134.282 14.875l38.032 15.562c-4.74 7.95-6.338 17.343-4.657 26.313l-28.844 25.125c-6.018-10.772-9.68-22.974-10.157-36.188-.384-10.633 1.657-21.176 5.625-30.813zm200.22 5.937c-3.353 28.986-16.63 56.285-36.75 76.22L321 251.56c13.37-13.268 21.052-31.418 23.188-51.437l35.468-2.875zm-159 53.875c7.497 11.248 19.977 18.867 33.124 21.53l2.782 32.376c-23.827-2.664-46.187-14.117-61.656-31.436l25.75-22.47zm85.28 11.813l22.625 22.625c-15.317 10.92-33.362 18.028-53.25 19.656l-2.718-32c12.847-1.323 23.948-4.934 33.344-10.283zM43.22 294.594l54.718 6.875c9.884 23.128 25.378 42.458 44.593 57.75l-53.936 22.405c-20.91-25.13-36.706-54.492-45.375-87.03zM448.06 310.03l.47.22 26.906 92.563c-30.294 26.24-65.746 46.28-103.688 58.406l8.594-87.033.156-1.562c26.19-14.795 49.554-35.547 67.563-62.594zm-287.28 61.876c26.235 15.822 57.278 25.373 89.593 28.156l-44 61c-39.634-13.116-75.807-35.403-104.53-64.718l58.936-24.438zm199.968 10.53l-8.344 84.22c-15.49 3.766-31.305 6.222-47.28 7.25-27.044 1.742-53.936-.874-79.688-7.312l45.656-63.344 1.72-2.375c29.813-.32 60.02-6.33 87.936-18.438z\"></path>","GiDiplodocus":"<path d=\"M346.647 22.946c-19.81.144-40.982 6.645-48.194 25.359A39.33 20.719 0 0 0 279.4 66.033a39.33 20.719 0 0 0 36.664 20.649c17.706 4.338 42.703-3.822 56.312-25.166 22.5 9.72 50.156 21.74 56.615 47.18 13.014 51.25-19.25 147.44-38.24 153.953-54.464 18.681-114.531 21.169-152.465 45.69-43.773 28.295-72.155 82.248-111.75 92.456-32.22 8.307-96.032-7.227-103.89 18.01-1.202 8.7 6.012 16.63 25.914.074 28.679 7.782 106.19 35.345 179.18-23.144a169.515 169.515 0 0 0 14.203 7.9c.994 27.816 8.107 57.606 12.525 85.422h46.705l-4.916-44.467c4.988-16.298 11.013-25.643 14.697-43.342l17.664 3.461c-2.009 10.255-3.905 12.287-7.558 22.088 10.685.506 22.867-.07 33.894-1.025-7.715-17.771-11.885-41.54-15.886-57.371l17.45-4.41c5.517 21.825 14.342 52.147 17.983 60.296 3.248 7.27 11.303 64.77 11.303 64.77h37.223l7.515-85.74c28.595-16.919 38.1-37.13 43.64-60.215 19.358-80.647 23.886-168.749-7.448-243.842-19.615-47.005-57.366-60.762-91.875-72.01-7.463-2.65-17.643-4.381-28.211-4.304zm124.39 367.332c-6.211 7.738-13.93 15.286-23.39 22.273-1.986 24.653-3.834 51.635-5.881 76.506h32.767s-1.97-56.922-3.496-98.78zM356.46 443.266c-11.83 1.167-25.701 1.252-39.832.293l4.838 45.498h41.787z\"></path>","GiDinosaurRex":"<path d=\"M249.03 20.844c-15.316.043-30.757 3.48-44 9.187-7.74-.592-15.25-.91-22.5-.905-90.62.073-143.082 46.573-163.968 126.313v340.218h189.313c-5.18-54.53 5.24-114.066 27.28-154.625-28.882-4.973-57.912-8.197-85.843-9.217l-7.656-.282-1.22-7.592c-9.48-58.97-10.128-119.04 22.064-176.47l16.313 9.126c-28.177 50.266-29 102.555-20.97 157.062 81.76 4.08 170.21 25.267 239.376 54.844 22.725-5.73 33.816-29.686 41.842-65.5l-31.968 21.625-10.03-44.438-45.69 30.907-10.78-47.72-43.25 29.22-10.688-47.313-43.812 29.626-15-66.406 70.844-47.906 10.687 47.344 43.813-29.625 10.78 47.718 43.25-29.25 10.032 44.407 45.656-30.875 7.688 34.063c20.848-26.98 35.224-66.535 14.406-85.28-25.446-22.914-52.26-43.34-79.406-60.564-6.566-24.932-61.027-77.113-93.75-47.874-14.44-21.414-38.472-29.88-62.813-29.812zm2.19 21.625c18.102 0 32.593 14.55 32.593 32.78 0 3.19-.453 6.25-1.282 9.156-3.084-6.24-9.503-10.562-16.936-10.562-10.436 0-18.906 8.47-18.906 18.906 0 6.22 3.018 11.713 7.656 15.156-1.03.097-2.07.125-3.125.125-18.104 0-32.626-14.55-32.626-32.78s14.522-32.78 32.625-32.78z\"></path>","GiBamboo":"<path d=\"M51.72 25c3.76 42 3.72 84 0 126h44.22c-4.56-41.6-3.68-83.68.28-126h-44.5zm181.68 0c2.6 54.1 5.5 108.6.4 164.7h44.3c-5-54.5-3.7-109.52.3-164.7h-45zm113.2 0c4.6 31.51 3.6 62.88-.4 94h44.1c-2.4-31.33-2.4-62.67 0-94h-43.7zm116.5 36.46s-41.4 7.81-53.5 23.86c-3.2 4.61-5.9 12.32-3 17.18 3.1 4.8 10.7 5 15.8 3.3 18.3-6 40.7-44.34 40.7-44.34zM173 106.9s12 42.7 28.1 53.1c4.6 3.1 12.2 4.6 16.3.7 4.1-3.9 3.4-12 1.4-17.2-7.8-18.7-45.8-36.6-45.8-36.6zm261.4 6.9c-4.6.1-8.9.6-12.5 1.8-6.3 2.2-14.1 8.1-13.8 14.7.1 6.6 8.2 12 14.8 13.8 23.6 6.2 71.5-16.6 71.5-16.6s-35.2-14-60-13.7zM346.2 137c6.2 47.7 7.1 95.1.2 142h43.8c-4-47.4-3.5-94.8.2-142h-44.2zm67.4 18.9c-2.2.1-4.3.8-5.9 2.3-4.1 3.9-3.4 12-1.4 17.2 7.8 18.7 45.8 36.6 45.8 36.6s-12-42.7-28.1-53.1c-2.6-1.7-6.1-3-9.5-3h-.9zm-255 12.3c-13.1.2-23.2 1.3-23.2 1.3s40.3 34.6 64.7 34.8c6.7-.1 16-3.1 17.8-9.4 2.1-6.3-3.8-14.1-9.5-17.9-10.1-6.8-28.4-8.6-44.1-8.8h-5.7zm-106.59.8c4.41 42.1 3.92 84.1-.2 126h44.42c-3.9-42.3-4.92-84.4-.31-126H52.01zm181.49 32c3.3 52.1 3.5 104.7 0 158h44.6c-5-53.5-3.7-106 .3-158h-44.9zm-76.4 22.6s-38 17.9-45.8 36.6c-2 5.2-2.7 13.3 1.4 17.2 4.1 3.9 11.7 2.4 16.3-.7 16.1-10.4 28.1-53.1 28.1-53.1zm-25.6 72.1c-6.7.2-15 3.1-16.9 9-2.1 6.2 3.6 14.1 9.1 18 19.9 14 72.8 9.4 72.8 9.4s-39.3-35.6-63.7-36.4h-1.3zm214.2 1.3c2.8 36.5 3.6 73.2.2 110h43.9c-4.6-38-1.7-74.3.6-110h-44.7zM51.61 313c3.96 58.2 2.72 116.2-.2 174h45.21c-2.49-57.7-4.56-115.7-.28-174H51.61zM121 337.8c-3.8.1-7.5 1.3-9.4 4.3-2.9 4.8-.2 12.6 3 17.2 12.1 16 53.5 23.8 53.5 23.8s-22.4-38.3-40.7-44.3c-1.9-.6-4.2-1-6.4-1zm359.7 19.4s-52.9 5.1-69.9 22.5c-4.6 4.8-8.9 13.7-5.6 19.4 3.1 5.8 12.8 6.9 19.5 5.5 23.8-5.2 56-47.4 56-47.4zM234 377c3.6 36.7.4 73.9-.7 110h45.2c-1.7-35.8-5.7-72.4-.8-110H234zm182 45c-5.2 0-11.1 2.3-12.7 6.9-1.9 5.3 2.4 12.2 6.6 16 15.4 13 57.4 11.6 57.4 11.6s-30.1-32.5-49.2-34.4c-.7-.1-1.4-.1-2.1-.1zm-70 3c2.1 20.3 3.3 41 .6 62h42.8c-2.8-21.1-1.4-41.8.7-62H346z\"></path>","GiAlgae":"<path d=\"M62 19c-22.537 0-41 18.463-41 41s18.463 41 41 41 41-18.463 41-41-18.463-41-41-41zm170.977 9.97c-16.978-.922-52.997 72.088-53.834 113.33-.66 32.469 37.967 56.928 38.736 89.393.857 36.173-28.546 58.95-38.397 101.532-4.527 15.463 7.926 38.252 15.096 49.978 5.663 9.118 12.2 16.656 18.686 21.809-6.163-28.894-5.196-59.292-.19-87.715 3.262-18.52 13.862-33.667 22.492-47.83 8.63-14.163 15.138-26.884 14.37-39.817-.804-13.533-10.378-26.05-22.053-39.97-11.676-13.92-25.352-29.016-28.285-49.514-2.168-17.163 6.516-40.209 12.607-57.103l16.598 6.964c-6.53 15.961-11.005 30.288-11.387 47.59 1.947 13.606 12.458 26.428 24.258 40.496 11.8 14.069 24.992 29.612 26.23 50.469 1.15 19.365-8.029 35.584-16.966 50.252C242 293.502 233.15 307.076 230.8 320.42c-5.584 31.704-5.592 65.596 3.924 95.435 3.243 10.172 9.433 22.86 16.734 35.637a64.418 64.418 0 0 0 2.748-7.888c2.602-9.482 2.37-19.766-.57-24.102l14.898-10.104c8.174 12.053 6.356 26.848 3.03 38.97-1.664 6.06-3.884 11.553-6.323 16.048-.948 1.746-1.924 3.336-2.998 4.807a401.083 401.083 0 0 0 6.057 9.13A376.253 376.253 0 0 0 279.604 494h32.675c11.057-41.657-56.394-96.948-56.656-147.092-.218-41.702 40.04-78.813 34.764-120.181-4.188-32.838-41.059-53.739-50.657-85.42-10.862-35.856 8.339-109.356-5.959-112.237a5.548 5.548 0 0 0-.794-.1zM85 60c0 12.81-10.19 23-23 23S39 72.81 39 60c0-.124.008-.247.01-.371 2.796 2.023 6.204 3.236 9.865 3.236 9.282 0 17-7.718 17-17 0-3.219-.945-6.24 4.344-7.194C75.507 37.716 85 47.638 85 60zm247.488 17.32c-18.119 0-33 14.882-33 33 0 18.12 14.881 33 33 33 18.12 0 33-14.88 33-33 0-18.118-14.88-33-33-33zm5.315 18.96c5.7 2.11 9.685 7.532 9.685 14.04 0 8.391-6.609 15-15 15-7.773 0-14.005-5.676-14.883-13.181 1.7.688 3.544 1.08 5.467 1.08 8.119 0 14.893-6.774 14.893-14.893 0-.695-.066-1.375-.162-2.047zm-37.315 45.04c-9.282 0-17 7.718-17 17 0 9.283 7.718 17 17 17 9.283 0 17-7.717 17-17 0-9.282-7.717-17-17-17zm66.848 24.186a3.402 3.402 0 0 0-.596.039c-10.503 1.68 19.336 71.981 9.67 106.182-5.636 19.943-32.977 29.52-37.213 49.808-4.903 23.485 16.947 46.093 16.408 70.078-.733 32.688-42.238 68.245-22.625 94.405 5.256 7.009 11.776-1.035 18.069-5.704a305.408 305.408 0 0 0 13.517-13.082 47.85 47.85 0 0 1-4.837-6.308 51.018 51.018 0 0 1-7.993-30.42l17.973.986c-.454 8.28 2.082 14.906 5.164 19.703.595.927 1.21 1.753 1.82 2.522 1.635-2.015 3.157-3.972 4.41-5.776 6.183-8.891 11.334-18.161 11.418-25.935.152-13.948-9.391-28.598-20.005-44.688-10.614-16.089-22.44-34.122-19.098-55.761 2.02-13.086 11.901-20.663 19.61-26.848 7.708-6.185 13.486-11.354 14.833-16.244l17.354 4.781c-3.455 12.54-13.41 19.473-20.924 25.502-7.514 6.029-12.346 10.775-13.084 15.557-2.083 13.492 5.89 27.273 16.332 43.101 10.442 15.829 23.216 33.198 22.982 54.795-.158 14.627-8.032 26.515-14.638 36.016-8.105 11.656-20.935 24.708-32.735 35.424-.136.124-.268.238-.404.361h34.926c9.11-3.612 17.256-8.636 23.16-14.686 20.682-21.19 11.655-57.69 4.309-88.726-4.341-18.338-33.18-41.566-32.676-66.156.405-19.792 28.159-32.332 28.457-52.125.591-39.28-40.65-106.57-53.584-106.801zm-288.252 5.137c-.202.01-.4.033-.59.068-10.503 1.94 12.938 49.915 9.668 74.863-2.726 20.794-21.818 37.342-23.867 58.213C61.632 330.902 81.385 356.79 80 384c-1.724 33.881-50.665 71.441-31.268 97.729 4.765-4.382 10.554-10.11 16.575-16.625 13.477-14.583 27.891-33.125 33.732-46.319 5.181-11.703 6.3-26.25 4.834-40.08-4.093-21.186-19.261-39.903-20.545-59.387-1.076-20.698 9.154-37.472 11.904-52.1 2.151-11.44 5.143-36.394 5.143-36.394l17.875 2.117s-2.876 24.561-5.328 37.604c-3.574 19.007-12.318 34.359-11.617 47.838 3.083 21.238 18.184 39.242 20.468 58.424 1.699 16.013.694 33.525-6.273 49.263-7.594 17.154-22.785 35.897-36.975 51.25a330.056 330.056 0 0 1-13.828 14.106c18.087 3.662 43.034-6.147 55.946-17.62 28.862-25.645 32.23-64.006 20.91-108.853-7.237-28.668-22.264-48.927-20.48-74.678 1.085-15.683 27.202-25.725 18.622-43.33-14.053-28.836-47.91-76.956-60.611-76.302zM458.82 289.986c-7.618 0-14.66 2.639-20.267 7.035a15.268 15.268 0 0 0-5.24 5.118c-4.674 5.698-7.493 12.965-7.493 20.847 0 18.12 14.882 33 33 33 18.12 0 33-14.88 33-33 0-18.118-14.88-33-33-33zm1.924 18.133c7.453.924 13.076 7.131 13.076 14.867 0 8.391-6.609 15-15 15-7.843 0-14.127-5.776-14.914-13.382.677.097 1.363.164 2.063.164 8.118 0 14.892-6.774 14.892-14.893 0-.594-.046-1.178-.117-1.756zM172.037 379.66c-3.674 46.106 5.923 85.524 35.01 114.34h50.219a432.13 432.13 0 0 1-3.82-5.482c-12.572-18.375-25.576-40.12-33.094-59.407-17.026-4.533-30.563-19.501-41.065-36.412a159.892 159.892 0 0 1-7.25-13.039z\"></path>","GiMicroscope":"<path d=\"M367.717 25.318L325.94 63.475l49.953 38.296 26.002-50.247-34.178-26.205zm-62.71 41.608l-38.562 49.242 70.936 55.66 38.604-49.12-70.978-55.782zm-50.495 64.28l-58.035 73.85 118.628 88.885s3.513 2.384 5.48 5.904c2.02 3.612 1.81 6.935 1.81 6.935v128.544H297.14v-24.56H89.255v24.56H61.51v59.358H432.963V338.184c-9.25 4.65-19.462 7.077-29.817 7.084-36.706 0-66.463-29.758-66.462-66.465.034-23.723 12.71-45.63 33.26-57.48L254.51 131.206zM185 220.175l-68.21 87.103 112.83 1.668 27.495-34.984L185 220.175zm218.146 11.285a47.344 47.344 0 0 0-47.34 47.343 47.344 47.344 0 0 0 47.34 47.343 47.344 47.344 0 0 0 47.344-47.343 47.344 47.344 0 0 0-47.344-47.344zm0 17.67a29.674 29.674 0 0 1 29.676 29.673 29.674 29.674 0 0 1-29.676 29.674 29.674 29.674 0 0 1-29.673-29.674 29.674 29.674 0 0 1 29.673-29.674z\"></path>","GiRoundBottomFlask":"<path d=\"M196.336 18.547l39.486 92.598c15.428 5.19 30.466 4.96 46.135.003l34.246-92.6H196.336zM163.73 35.12l4.58 12.55c8.285 22.705 21.58 45.92 28.958 67.684 7.376 21.764 9.1 40.382-3.14 57.646-13.68 19.295-38.588 39.036-60.622 62.426S91.95 286.95 91.95 323.506c0 90.996 73.863 165.607 164.91 165.607 91.046 0 165.607-74.562 165.607-165.607 0-36.353-18.633-64.975-40.346-88.727-21.712-23.752-46.847-43.572-62.23-62.305-9.18-11.176-8.083-34.136-.88-58.948 7.202-24.812 19.265-50.037 25.908-65.34l5.67-13.066H330l-32.982 89.187c-4.628 21.963-4.8 43.92 8.43 60.03 17.494 21.302 42.586 40.852 62.88 63.052 20.295 22.198 35.45 46.107 35.45 76.116 0 80.852-66.064 146.92-146.92 146.92-80.853 0-146.22-66.015-146.22-146.92 0-29.948 15.754-53.275 36.47-75.266 20.72-21.99 46.04-41.55 62.263-64.43 16.084-22.685 13.952-48.6 6.29-72.304l-24.262-56.893c-.116-.265-.242-.538-.357-.802h.017l-7.97-18.69H163.73zm93.225 202.234c-29.526 0-56.244 4.575-74.752 11.5-9.254 3.462-16.414 7.55-20.732 11.37-3.928 3.476-5.263 6.203-5.474 8.42h-.267c0 15.347 7.808 29.99 20.916 41.887-.505-.217-1.025-.427-1.523-.65-10.727-4.78-19.682-10.378-26.387-16.952-2.23-2.187-4.24-4.532-5.937-7.02-7.48 12.14-12.415 25.588-12.415 41.14 0 69.77 56.745 127.132 126.517 127.132 69.772 0 127.13-57.36 127.13-127.13 0-15.723-4.923-29.484-12.39-41.93-1.802 2.782-4 5.39-6.466 7.808-6.705 6.574-15.66 12.17-26.387 16.953-.444.198-.908.385-1.356.58 13.06-11.885 20.837-26.5 20.837-41.817h-.354c-.21-2.216-1.546-4.943-5.475-8.418-4.317-3.82-11.477-7.91-20.73-11.37-18.51-6.926-45.23-11.5-74.755-11.5z\"></path>","GiSmokingVolcano":"<path d=\"M22.617 18C18.6 55.817 39.13 114.441 82.812 150.084c20.272 13.078 45.532 20.176 90.76 10.582-28.04 20.036-55.985 22.522-81.12 13.705-1.643 40.508 11.725 74.172 44.724 92.262l6.955 1.222c21.812 3.834 40.577 6.554 57.064 8.432 43.104-1.027 100.974-15.253 107.075-46.26 5.206 17.254-9.413 35.895-30.461 49.03 26.736-1.788 45.89-6.535 70.962-9.475 22.66-4.201 45.749-6.556 58.325-33.943-23.624-1.572-66.964-39.445-58.032-67.244 10.233 24.752 34.786 46.375 67.489 50.714 32.703 4.34 61.938 2.762 74.445-21.978-36.742-7.347-83.678-30.66-83.576-58.164 16.688 23.709 57.832 37.588 86.578 41.625v-80.367c-17.403-2.517-37.61-11.616-61.531-29.284-28.723 10.61-70.17 1.176-89.559-29.08 14.67 9.377 77.616 31.436 119.41-5.072-2.133 13.262-9.706 23.112-20.197 29.512C457.929 79.04 478.128 83.145 494 83.523V18H88.773c22.714 38.433 60.376 43.69 115.748 20.205-24.984 30.51-67.748 36.77-92.095 26.365C90.848 55.35 76.912 36.484 68.246 18H22.617zm226.037 67.768c-5.42 16.917-20.469 33.547-37.633 42.332 24.37 28.568 86.318 17.27 125.743-10.262-5.5 12.47-35.01 35.827-65.514 39.754-26.159 3.367-55.237-2.426-74.432-24.31-25.83 5.454-53.32-9.415-63.224-37.438 13.345 8.887 35.848 29.588 62.52 21.334 15.613-5.072 39.086-16.757 52.54-31.41zm-100.34 201.021C121.427 356.821 61.605 426.55 13.25 494H494v-24.408c-18.259-18.204-37.237-36.465-55.416-54.854-40.17-40.634-76.623-81.875-91.643-126.703-7.676.987-15.006 2.15-22.4 3.317 10.79 34.39 34.149 70.833 49.826 97.377l-15.5 9.154c-15.667-26.527-40.826-64.792-52.338-103.836-6.255.86-12.756 1.639-19.756 2.242 1.656 18.171 7.979 36.85 17.04 55.934l-16.262 7.718c-9.69-20.41-16.917-41.23-18.754-62.57-9.018.304-18.917.282-29.969-.178-3.288 26.44-10.26 52.782-20.441 79.002l-16.78-6.513c9.565-24.633 16.081-49.149 19.223-73.569-8.416-.65-17.48-1.547-27.248-2.717-9.62 41.042-41.908 95.648-64.287 118.19l-12.774-12.682c17.29-17.414 49.743-72.746 59.051-107.87a1030.786 1030.786 0 0 1-27.258-4.245z\"></path>","GiSpiralShell":"<path d=\"M485.096 39.047c-7.14.375-49.73 5.767-52.11 23.037-9.77-2.646-19.678-1.8-26.85 3.115-5.393 3.694-8.374 9.102-9.01 15.17-11.383-2.674-22.25-1.52-29.87 4.1-6.4 4.722-9.476 11.842-9.45 19.932-4.608-1.094-9.15-1.7-13.51-1.777-.584-.01-1.163-.01-1.74-.002-8.644.127-16.51 2.363-22.69 6.922-6.807 5.02-10.638 12.188-11.67 20.422-22.614-6.658-44.65-5.202-59.692 5.894-12.258 9.043-17.78 22.947-17.025 38.652-46.313-12-87.766-.726-90.414 55.246-4.322 91.366-104.763 126.175-107.828 254.664 71.16-106.47 255.07-279.767 239.6-137.213-8.058 74.248-92.804 24.706-211.91 115.454 108.46-74.824 224.278-15.26 232.486-121.47 19.974 10.955 29.233 6.274 46.232-6.266 24.394-17.993 27.178-41.515 16.985-65.127 6.975-1.565 13.346-4.3 18.792-8.318 16.943-12.497 21.037-34.275 13.43-57.277 7.5-.54 14.307-2.75 19.787-6.79 11.34-8.366 14.457-22.676 10.042-37.99 7.16.034 13.692-1.72 18.775-5.47 9.79-7.222 11.822-20.045 6.822-33.39 4.467-.53 8.62-1.952 12.12-4.35 8.628-5.912 11.097-16.204 7.616-26.59 17.763-3.348 20.07-43.588 21.08-50.578z\"></path>","GiTooth":"<path d=\"M246.752 23.084c-11.678-.205-23.032 4.26-30.952 15.185-29.264 40.35-39.476 78.655-44.385 111.545-4.514 30.235-13.507 59.72-30.952 87.02-31.793 49.747-65.857 124.744-73.587 167.612-5.864 32.387 17.908 42.053 32.705 7.008 20.245-47.94 65.492-125.768 122.06-103.955 51.25 19.76 8.924 122.165-22.193 152.43-25.11 24.424-7.202 51.466 23.944 22.192 33.048-31.062 78.602-92.256 94.612-147.172 6.233-21.378 15.79-43.776 34.458-54.315 39.813-22.477 81.826-58.99 98.115-133.156 10.9-49.632-50.517-70.425-85.266-37.378-5.303-50.398-46.487-62.34-76.51-35.624 10.073-27.63-16.357-50.942-42.048-51.394z\"></path>","GiCaveman":"<path d=\"M159.1 25.62l-3.5 12.53 134.9 36.28 4.4-13.19zM316.4 54.6l-8.6 25.73c14.6 13.43 29.6 14.58 47.1 13.07l6-29.18c-12.6-6.91-27.8-9.25-44.5-9.62zm128 27.27l-29.6 8.09-4.7 17.24 23.8 23 52.1-11.7zm-68.5.58L373 96.57l19.6 5.33 3.8-14.07zm-174.6 7.46c-7.3.18-14.4 3.61-20.7 9.95-7 7.24-12.4 18.24-13.9 31.04s1.4 24.7 6.7 33.3c5.4 8.4 12.7 13.5 21.1 14.4 8.4.8 16.7-2.6 23.8-9.9 7-7.2 12.5-18.2 14-31.1 1.4-12.7-1.5-24.6-6.8-33.1-5.4-8.55-12.7-13.61-21-14.47-1-.11-2.1-.15-3.2-.12zm113.3 16.39c-4.6 33.6-11.8 60.1-22 88.3l-27.5-3.6c-.4 15-2.4 30-7.5 45.2 20.6-.5 40.2-2.8 59.3-11.3 11.3-37.8 18.4-75.3 24.3-112.9-8.9-.4-17.8-1.9-26.6-5.7zm-174.1 76.9c-8.7 0-15.5.7-26.6 4.1-26.62 16.2-45.72 40.2-53 57.9-8.4 20.9-11.67 47-11.26 70.5l25.64 3.2c3.41-24 4.92-41.7 10.83-60.8l47.29-34-2.9 45.9 7.5-2.3c18-9.1 30.5-20.7 41.3-34.1 9.4-11.6 17.3-24.5 25.7-37.5-4.1.8-8.2 1-12.5.6-10.5-1-19.6-5.9-26.9-13.1-10.9 0-18.7-.4-25.1-.4zm106.1 4.8l-13.7.2c-12.9 17-23.3 36.5-37.9 55 6.4 2.3 11.4 8.4 11.5 13.9-.9 10.3-10.6 15-19 15.1-6.1-.4-11-2-15-5.6-12.1 10-26.8 18.8-45.4 25.2.2 2.4.5 4.9.6 7.3 3.1-1 6.3-1.5 9.8-1.5 11.5.3 23.1 7.4 23.3 18.1-1.3 12.4-13.3 18-23.3 18.1-3.7 0-7.2-.6-10.3-1.8-.9 7.5-2.5 15.1-5.1 22.7l27 2.5 5.8 29.4 24.9-23 12.5 32.3c5.4-10.2 11-20.4 17.2-30.4-11.3-.2-23.6-6.5-23.9-16.7 1.3-12.5 14.3-16.7 24-16.8 7.3.4 13.8 1.8 19 6.2 7.8-9.8 16.6-19.1 26.4-27.8-1.3-3.4-3-7-5.1-10.6-3 .8-6.4 1.2-9.9 1.2-10.2-1.1-22.7-3.5-22.9-14.5.4-6.3 4.9-10.2 9.9-12.3 1.3-.5 2.7-.9 4.1-1.2-2.7-3.5-5.1-6.5-7.8-10.1l3.7-5.5c15.5-23.2 19.4-45.3 19.6-69.4zm4.2 152c-8 8.9-15 18.3-21.6 28.3 4.5 3.8 9.4 7.8 14.2 11.9 9.4 8 19.2 17 21.7 30.3l14.4 75.9 27.8-10.4c-3.6-28.8-5.3-48.9-12.7-81.3v-.3l-.1-.3c-1.6-10-10.3-20.4-21.8-31.6-7.1-7-15.1-14.3-21.9-22.5zM126 373.4l-20 50.1c-24.75 5.4-51.43 1-72.64-3.4l-7.39 23.7c32.23 6.1 74.93 10.2 97.83 5.9l18.8-31.1-8.8-44.5z\"></path>","GiPhotoCamera":"<path d=\"M41 122.496v14h62v-14zm154.73 0l-32 32H137v46h30.682C192.4 159.898 237.08 132.738 288 132.738c50.92 0 95.6 27.16 120.318 67.758H487v-46h-74.73l-32-32c-92.27-9-92.27-9-184.54 0zM288 150.738c-67.903 0-122.758 54.855-122.758 122.758 0 67.903 54.855 122.758 122.758 122.758 67.903 0 122.758-54.855 122.758-122.758 0-67.903-54.855-122.758-122.758-122.758zm-263 3.758v46h94v-46zm263 14.713c57.49 0 104.287 46.796 104.287 104.286S345.49 377.783 288 377.783c-57.49 0-104.287-46.797-104.287-104.287 0-57.49 46.797-104.287 104.287-104.287zm-21.787 22.042c-12.173.42-25.717 6.526-36.78 16.578-20.025 18.19-26.342 43.853-14.11 57.318 12.232 13.465 38.38 9.634 58.406-8.558 20.023-18.192 26.34-43.855 14.108-57.32-5-5.504-12.62-8.33-21.625-8.018zM25 218.496v142h94v-142zm112 0v142h40.412c-18.888-23.96-30.17-54.183-30.17-87 0-19.507 3.988-38.096 11.188-55zm280.57 0c7.2 16.904 11.188 35.493 11.188 55 0 32.817-11.282 63.04-30.17 87H487v-142zM25 378.496v14h94v-14zm112 0v14h75.89c-6.567-4.158-12.763-8.846-18.536-14zm244.646 0c-5.773 5.154-11.97 9.842-18.535 14H487v-14z\"></path>","GiFeather":"<path d=\"M470.7 20L368.2 49.81l41.5-28.09c-26.2 5.92-59.3 17.5-100.9 36.19l-67.9 70.79L265 79.25c-23.3 12.96-48 29.95-71.8 49.85l-15.8 64.3-3.4-47.6c-23.5 21.6-45.6 45.6-63.9 70.9-19.23 26.5-34.26 54.5-41.79 82.4l-28.12-18.8c2.52 23.7 10.31 44.3 23.09 63.2l-33.62-10.3c7.64 23.5 20.13 38.7 41.25 51-11.83 33.3-17.38 68.1-23.34 102.8l18.4 3.1C87.31 277.4 237.9 141.8 374 81.72l6.9 17.38c-121.7 54.5-216.3 146.5-265.8 279.1 18.1.1 35.8-2.1 52.2-6.3l4.9-60.9 13.1 55.5c10.9-4 20.9-8.8 29.8-14.4l-20.7-43.5 32.8 34.8c8-6.4 14.6-13.6 19.6-21.5 30.4-47.5 62.2-94.7 124.8-134.2l-45.7-16.2 70.1 2.1c11.4-5.8 23.4-12.9 32.5-19.6l-49.7-4 74.7-17.6c5.8-5.8 11.2-11.9 16.1-18 17.3-21.94 29-44.78 26.2-65.55-1.3-10.39-7.5-20.16-17.6-25.63-2.5-1.3-5.2-2.45-7.5-3.22z\"></path>","GiWolfHowl":"<path d=\"M255.563 22.094c-126.81 0-229.594 102.784-229.594 229.594 0 25.4 4.132 49.846 11.75 72.687 40.154-24.203 76.02-41.17 107.56-52.03-35.752 5.615-66.405 23.66-109.843 4 31.552-27.765 87.682-65.842 138.532-71.658 26.58-21.615 68.113-43.962 89.655-37.28 30.492-26.873 67.982-61.093 108.125-85.75 10.667 16.156 17.124 35.94 12.563 57.874-80.37 20.205-61.692 148.928 13.468 67.44 6.348 13.064 9.41 26.665 9.095 41.436-32.675 33.83-66.97 63.026-101.938 87.906.466 23.99-5.605 52.915-19 84.813-5.635 13.42-7.33 36.406 22.875 53.97 101.14-24.012 176.375-114.924 176.375-223.408 0-126.81-102.815-229.593-229.625-229.593zm3.312 164.375c-17.835 2.22-32.794 9.046-45.844 18.968 12.083-.036 25.612 2.882 37.5 6.156 6.208-6.698 10.236-18.52 8.345-25.125z\"></path>","GiTombstone":"<path d=\"M253.75 18.906c-77.635.03-154.875 54.01-154.875 167.5v209.72c25.67 19.717 46.68 41.386 52.156 69.124-3.507-44.464-4.166-88.692 14.595-133.156 5.265 38.52 8.087 77.137 26.875 115.656 25.316-53.302 59.948-75.555 102.188-72.438-29.706 25.94-56.26 55.26-74.75 95.22 31.477-30.2 66.886-38.728 103.968-40.907-21.57 15.247-41.576 30.414-54.156 50.22h78.344c6.443-27.99-4.756-54.648-17.78-82.908 27.59 18.168 51.09 40.4 61.905 77.657 3.525-39-3.843-73.686-15.19-106.875 13.34 6.44 23.875 15.568 31.595 27.374V186.406c0-113.616-77.24-167.528-154.875-167.5zM150.156 144.594h114.938v18.687H150.156v-18.686zm152.438 0h56.125v18.687h-56.126v-18.686zm-152.438 42.75h36.5v18.687h-36.5v-18.686zm72.25 0H358.72v18.687H222.405v-18.686zm-72.28 40.312h95.81v18.688h-95.81v-18.688zm126.31 0h82.283v18.688h-82.283v-18.688zm-177.56 189.53v62.658h23.686c-4.638-21.58-13.086-42.375-23.687-62.656z\"></path>","GiHouse":"<path d=\"M256 19.27L25.637 249.638 19.27 256 32 268.73l6.363-6.367L256 44.727l217.637 217.636L480 268.73 492.73 256l-6.367-6.363zM96 48v107.273l64-64.002V48zm160 20.727l-192 192V486h64V320h96v166h224V260.727zM288 320h96v80h-96z\"></path>","GiLaurelsTrophy":"<path d=\"M137.273 41c1.41 59.526 16.381 119.035 35.125 167.77 19.69 51.191 44.086 90.988 57.965 104.867l2.637 2.636V343h46v-26.727l2.637-2.636c13.879-13.88 38.275-53.676 57.965-104.867 18.744-48.735 33.715-108.244 35.125-167.77zm-50.605 68.295c-17.97 6.05-32.296 18.214-37.625 30.367-3.015 6.875-3.48 13.44-.988 20.129.285.766.62 1.54.996 2.318a119.032 119.032 0 0 1 8.504-4.812l6.277-3.215 4.621 5.326c5.137 5.92 9.61 12.37 13.422 19.125 2.573-3.06 5.207-7.864 7.05-14.037 4.491-15.034 4.322-36.95-2.257-55.201zm338.664 0c-6.58 18.25-6.748 40.167-2.258 55.201 1.844 6.173 4.478 10.977 7.051 14.037 3.813-6.756 8.285-13.205 13.422-19.125l4.621-5.326 6.277 3.215a119.033 119.033 0 0 1 8.504 4.812c.375-.779.71-1.552.996-2.318 2.492-6.689 2.027-13.254-.988-20.129-5.329-12.153-19.655-24.317-37.625-30.367zm-365.975 67.74c-20.251 12.486-34.121 31.475-36.746 47.973-1.447 9.1.09 17.224 5.323 24.545 1.66 2.324 3.743 4.594 6.304 6.76a116.606 116.606 0 0 1 11.44-14.977l4.72-5.24 6.217 3.33c7.91 4.236 15.262 9.424 21.94 15.252.973-3.633 1.619-7.892 1.773-12.616.636-19.438-6.762-45.536-20.97-65.027zm393.286 0c-14.21 19.49-21.607 45.59-20.971 65.027.154 4.724.8 8.983 1.773 12.616 6.678-5.828 14.03-11.016 21.94-15.252l6.217-3.33 4.72 5.24a116.606 116.606 0 0 1 11.44 14.976c2.56-2.165 4.643-4.435 6.304-6.76 5.233-7.32 6.77-15.444 5.323-24.544-2.625-16.498-16.495-35.487-36.746-47.973zM54.4 259.133c-14.394 18.806-20.496 41.413-17.004 57.748 1.928 9.014 6.298 16.078 13.844 21.078 4.944 3.276 11.48 5.7 19.94 6.645a120.631 120.631 0 0 1 7.101-17.852l3.125-6.338 6.9 1.535c4.095.911 8.133 2.046 12.094 3.377-.373-3.838-1.309-8.185-2.925-12.82-6.416-18.396-22.749-40.184-43.075-53.373zm403.2 0c-20.326 13.189-36.66 34.977-43.075 53.373-1.616 4.635-2.552 8.982-2.925 12.82a119.337 119.337 0 0 1 12.093-3.377l6.9-1.535 3.126 6.338a120.63 120.63 0 0 1 7.101 17.852c8.46-.944 14.996-3.37 19.94-6.645 7.546-5 11.916-12.065 13.844-21.078 3.492-16.335-2.61-38.942-17.004-57.748zM91.5 341.527c-9.285 23.14-9.027 47.85-.709 63.54 4.57 8.619 11.106 14.607 20.268 17.562 4.586 1.479 9.957 2.19 16.185 1.803-2.135-11.155-2.771-22.97-1.756-34.938l.602-7.074 7.02-1.065a129.43 129.43 0 0 1 13.458-1.312c.554-.025 1.107-.04 1.66-.059-12.419-15.776-33.883-31.43-56.728-38.457zm329 0c-22.845 7.027-44.31 22.68-56.729 38.457.554.019 1.107.034 1.66.059 4.5.206 8.995.637 13.46 1.312l7.02 1.065.6 7.074c1.016 11.967.38 23.783-1.755 34.938 6.228.386 11.6-.324 16.185-1.803 9.162-2.955 15.699-8.943 20.268-17.563 8.318-15.69 8.576-40.4-.709-63.539zM199.729 361c-1.943 7.383-6.045 14.043-11.366 19.363a46.544 46.544 0 0 1-3.484 3.125c14.804 3.295 28.659 8.692 40.404 15.46 2.384-5.36 5.376-10.345 9.408-14.534C239.96 378.942 247.51 375 256 375c8.491 0 16.041 3.942 21.309 9.414 4.032 4.19 7.024 9.175 9.408 14.533 11.815-6.808 25.766-12.23 40.67-15.52a48.107 48.107 0 0 1-3.739-3.413c-5.227-5.333-9.27-11.852-11.261-19.014zM256 393c-3.434 0-5.635 1.084-8.34 3.895-2.704 2.81-5.395 7.52-7.527 13.298-4.265 11.556-6.343 27-7.156 38.446-1.07 15.043 3 33.368 12.285 40.06 4.733 3.412 16.743 3.412 21.476 0 9.285-6.692 13.355-25.017 12.285-40.06-.813-11.446-2.891-26.89-7.156-38.446-2.132-5.777-4.823-10.488-7.527-13.298-2.705-2.81-4.906-3.895-8.34-3.895zm-103.521 4.979c-1.714-.008-3.424.022-5.127.09-1.405.055-2.77.281-4.164.39-.418 27.817 9.816 53.543 24.994 66.644 8.264 7.134 17.586 10.772 28.35 10.157 5.908-.338 12.394-2.03 19.374-5.52-1.27-7.665-1.377-15.42-.883-22.379.632-8.89 1.852-19.962 4.479-30.877-17.16-10.686-42.426-18.395-67.023-18.506zm207.042 0c-24.597.11-49.863 7.82-67.023 18.505 2.627 10.915 3.847 21.987 4.479 30.877.494 6.958.387 14.714-.883 22.38 6.98 3.49 13.466 5.181 19.375 5.519 10.763.615 20.085-3.023 28.35-10.156 15.177-13.102 25.411-38.828 24.993-66.645-1.393-.109-2.76-.335-4.164-.39a116.32 116.32 0 0 0-5.127-.09z\"></path>"};
+const ARCHAEO = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 420 300\"><path d=\"M260.61538461538464,187.53846153846155 Q274.92703445927003,182.9317397271724 272,168.1846153846154 Q261.1360870167457,174.81941770215812 260.61538461538464,187.53846153846155 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"260.61538461538464\" y1=\"187.53846153846155\" x2=\"271.08923076923077\" y2=\"169.7329230769231\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M260.61538461538464,187.53846153846155 Q262.3306636502461,202.818244990121 277.69230769230774,203.47692307692307 Q273.24775565600623,191.1213606982351 260.61538461538464,187.53846153846155 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"260.61538461538464\" y1=\"187.53846153846155\" x2=\"276.3261538461539\" y2=\"202.20184615384616\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M271.2307692307692,191.07692307692307 Q285.73472676696235,186.14327818871084 283,171.06923076923076 Q271.943779324438,178.03095616369654 271.2307692307692,191.07692307692307 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"271.2307692307692\" y1=\"191.07692307692307\" x2=\"282.05846153846153\" y2=\"172.66984615384615\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M271.2307692307692,191.07692307692307 Q273.23450980409217,206.6259372978133 288.88461538461536,207.55384615384614 Q284.1516018098523,194.9290530059274 271.2307692307692,191.07692307692307 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"271.2307692307692\" y1=\"191.07692307692307\" x2=\"287.47230769230765\" y2=\"206.2356923076923\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M281.84615384615387,194.6153846153846 Q296.5424190746546,189.35481665024932 294,173.95384615384614 Q282.7514716321303,181.24249462523503 281.84615384615387,194.6153846153846 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"281.84615384615387\" y1=\"194.6153846153846\" x2=\"293.0276923076923\" y2=\"175.60676923076923\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M281.84615384615387,194.6153846153846 Q284.13835595793836,210.43362960550562 300.0769230769231,211.63076923076923 Q295.0554479636985,198.7367453136197 281.84615384615387,194.6153846153846 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"281.84615384615387\" y1=\"194.6153846153846\" x2=\"298.61846153846153\" y2=\"210.26953846153847\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M292.46153846153845,198.15384615384616 Q307.35011138234694,192.5663551117878 305,176.83846153846156 Q293.5591639398226,184.45403308677348 292.46153846153845,198.15384615384616 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"292.46153846153845\" y1=\"198.15384615384616\" x2=\"303.99692307692305\" y2=\"178.5436923076923\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M292.46153846153845,198.15384615384616 Q295.04220211178455,214.2413219131979 311.2692307692308,215.7076923076923 Q305.9592941175447,202.544437621312 292.46153846153845,198.15384615384616 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"292.46153846153845\" y1=\"198.15384615384616\" x2=\"309.7646153846154\" y2=\"214.3033846153846\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M303.0769230769231,201.69230769230768 Q318.15780369003926,195.77789357332622 316,179.72307692307692 Q304.36685624751493,187.66557154831193 303.0769230769231,201.69230769230768 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"303.0769230769231\" y1=\"201.69230769230768\" x2=\"314.9661538461539\" y2=\"181.48061538461536\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M303.0769230769231,201.69230769230768 Q305.9460482656307,218.04901422089023 322.46153846153845,219.78461538461536 Q316.8631402713908,206.35212992900432 303.0769230769231,201.69230769230768 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"303.0769230769231\" y1=\"201.69230769230768\" x2=\"320.91076923076923\" y2=\"218.33723076923076\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M313.6923076923077,205.23076923076923 Q328.9654959977315,198.9894320348647 327,182.6076923076923 Q315.1745485552072,190.87711000985038 313.6923076923077,205.23076923076923 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"313.6923076923077\" y1=\"205.23076923076923\" x2=\"325.93538461538463\" y2=\"184.41753846153847\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M313.6923076923077,205.23076923076923 Q316.8498944194768,221.85670652858255 333.65384615384613,223.86153846153846 Q327.76698642523695,210.15982223669664 313.6923076923077,205.23076923076923 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"313.6923076923077\" y1=\"205.23076923076923\" x2=\"332.05692307692306\" y2=\"222.3710769230769\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M324.3076923076923,208.76923076923077 Q339.7731883054239,202.20097049640316 338,185.4923076923077 Q325.9822408628996,194.08864847138886 324.3076923076923,208.76923076923077 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"324.3076923076923\" y1=\"208.76923076923077\" x2=\"336.9046153846154\" y2=\"187.35446153846152\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M324.3076923076923,208.76923076923077 Q327.753740573323,225.66439883627487 344.84615384615387,227.93846153846155 Q338.67083257908314,213.96751454438896 324.3076923076923,208.76923076923077 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"324.3076923076923\" y1=\"208.76923076923077\" x2=\"343.20307692307694\" y2=\"226.4049230769231\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M334.9230769230769,212.30769230769232 Q350.58088061311616,205.41250895794167 349,188.3769230769231 Q336.78993317059184,197.30018693292735 334.9230769230769,212.30769230769232 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"334.9230769230769\" y1=\"212.30769230769232\" x2=\"347.87384615384616\" y2=\"190.29138461538463\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M334.9230769230769,212.30769230769232 Q338.65758672716913,229.47209114396716 356.03846153846155,232.01538461538462 Q349.57467873292927,217.77520685208125 334.9230769230769,212.30769230769232 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"334.9230769230769\" y1=\"212.30769230769232\" x2=\"354.34923076923076\" y2=\"230.43876923076922\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M345.53846153846155,215.84615384615384 Q361.3885729208085,208.6240474194801 360,191.26153846153846 Q347.59762547828416,200.5117253944658 345.53846153846155,215.84615384615384 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"345.53846153846155\" y1=\"215.84615384615384\" x2=\"358.8430769230769\" y2=\"193.22830769230768\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M345.53846153846155,215.84615384615384 Q349.56143288101526,233.27978345165945 367.2307692307692,236.09230769230768 Q360.4785248867754,221.58289915977355 345.53846153846155,215.84615384615384 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"345.53846153846155\" y1=\"215.84615384615384\" x2=\"365.49538461538464\" y2=\"234.47261538461538\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M356.1538461538462,219.3846153846154 Q372.1962652285008,211.83558588101857 371.00000000000006,194.14615384615385 Q358.4053177859765,203.72326385600425 356.1538461538462,219.3846153846154 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"356.1538461538462\" y1=\"219.3846153846154\" x2=\"369.81230769230774\" y2=\"196.1652307692308\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M356.1538461538462,219.3846153846154 Q360.46527903486145,237.08747575935178 378.42307692307696,240.16923076923078 Q371.3823710406216,225.39059146746587 356.1538461538462,219.3846153846154 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"356.1538461538462\" y1=\"219.3846153846154\" x2=\"376.6415384615385\" y2=\"238.50646153846154\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M366.7692307692308,222.9230769230769 Q383.00395753619307,215.047124342557 382,197.0307692307692 Q369.21301009366874,206.9348023175427 366.7692307692308,222.9230769230769 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"366.7692307692308\" y1=\"222.9230769230769\" x2=\"380.78153846153845\" y2=\"199.10215384615384\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M366.7692307692308,222.9230769230769 Q371.36912518870764,240.89516806704404 389.61538461538464,244.24615384615382 Q382.2862171944678,229.19828377515813 366.7692307692308,222.9230769230769 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"366.7692307692308\" y1=\"222.9230769230769\" x2=\"387.78769230769234\" y2=\"242.54030769230766\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M377.38461538461536,226.46153846153845 Q393.8116498438854,218.25866280409548 393,199.9153846153846 Q380.02070240136106,210.14634077908116 377.38461538461536,226.46153846153845 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"377.38461538461536\" y1=\"226.46153846153845\" x2=\"391.7507692307692\" y2=\"202.0390769230769\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M377.38461538461536,226.46153846153845 Q382.2729713425537,244.70286037473636 400.80769230769226,248.3230769230769 Q393.19006334831386,233.00597608285045 377.38461538461536,226.46153846153845 Z\" fill=\"#94704B\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"377.38461538461536\" y1=\"226.46153846153845\" x2=\"398.9338461538461\" y2=\"246.57415384615382\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M206,190 L222,226 L206,258\" fill=\"none\" stroke=\"#4E3A28\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M206,258 L178,264 M206,258 L184,272 M206,258 L196,276 M206,258 L226,266\" stroke=\"#4E3A28\" stroke-width=\"3.5\" stroke-linecap=\"round\"/><ellipse cx=\"208\" cy=\"170\" rx=\"54\" ry=\"30\" transform=\"rotate(-14 208 170)\" fill=\"#8A6A4B\" stroke=\"#4E3A28\" stroke-width=\"2\"/><path d=\"M178,158 Q150,140 124,118\" fill=\"none\" stroke=\"#8A6A4B\" stroke-width=\"20\" stroke-linecap=\"round\"/><ellipse cx=\"114\" cy=\"113\" rx=\"23\" ry=\"17\" fill=\"#8A6A4B\" stroke=\"#4E3A28\" stroke-width=\"2\"/><path d=\"M100,104 L48,114 L98,117 Z\" fill=\"#B8936A\" stroke=\"#4E3A28\" stroke-width=\"1.8\" stroke-linejoin=\"round\"/><path d=\"M98,121 L54,123 L98,131 Z\" fill=\"#B8936A\" stroke=\"#4E3A28\" stroke-width=\"1.8\" stroke-linejoin=\"round\"/><path d=\"M56,114.48 L58.2,118.98 L60.4,114.48\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M62.5,114.87 L64.7,119.37 L66.9,114.87\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M69,115.26 L71.2,119.76 L73.4,115.26\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M75.5,115.65 L77.7,120.15 L79.9,115.65\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M82,116.04 L84.2,120.54 L86.4,116.04\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M88.5,116.43 L90.7,120.93 L92.9,116.43\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M60,123.06818181818181 L62.2,119.06818181818181 L64.4,123.06818181818181\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M66.5,123.14204545454545 L68.7,119.14204545454545 L70.9,123.14204545454545\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M73,123.2159090909091 L75.2,119.2159090909091 L77.4,123.2159090909091\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M79.5,123.28977272727273 L81.7,119.28977272727273 L83.9,123.28977272727273\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M86,123.36363636363636 L88.2,119.36363636363636 L90.4,123.36363636363636\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><path d=\"M92.5,123.4375 L94.7,119.4375 L96.9,123.4375\" fill=\"#FFFFFF\" stroke=\"#4E3A28\" stroke-width=\"0.8\"/><circle cx=\"116\" cy=\"108\" r=\"4\" fill=\"#1E1A16\"/><circle cx=\"117.3\" cy=\"106.8\" r=\"1.3\" fill=\"#FFFFFF\"/><path d=\"M214,132 Q204.64839996614688,169.7696647695851 228.55381835724316,200.47033205136637 Q231.25401470610637,164.11446677934202 214,132 Z\" fill=\"#B9946A\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"214\" y1=\"132\" x2=\"227.38951288866372\" y2=\"194.99270548725707\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M223.55555555555554,125.33333333333333 Q219.31084460229027,166.33823769866078 247.31958345474712,196.5860525119873 Q245.11360444686792,157.73256605706004 223.55555555555554,125.33333333333333 Z\" fill=\"#A9845C\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"223.55555555555554\" y1=\"125.33333333333333\" x2=\"245.4184612228118\" y2=\"190.88583497769497\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M233.11111111111111,118.66666666666667 Q234.57113358777733,162.20710268808855 266.8734280557909,191.438301888081 Q259.2449511808552,150.75971323094504 233.11111111111111,118.66666666666667 Z\" fill=\"#B9946A\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"233.11111111111111\" y1=\"118.66666666666667\" x2=\"264.1724427002165\" y2=\"185.61657107036785\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M242.66666666666666,112 Q250.33336195144426,157.28428234889907 287.0413762499597,184.88801634820484 Q273.56641716243456,143.1398436692244 242.66666666666666,112 Z\" fill=\"#A9845C\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"242.66666666666666\" y1=\"112\" x2=\"283.4913994832962\" y2=\"179.05697504034845\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M252.22222222222223,105.33333333333334 Q266.48870482858484,151.4908555454106 307.62853819858526,176.81995922091892 Q287.98738543949514,134.82812071615547 252.22222222222223,105.33333333333334 Z\" fill=\"#B9946A\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"252.22222222222223\" y1=\"105.33333333333334\" x2=\"303.1960329204762\" y2=\"171.10102914991208\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M261.77777777777777,98.66666666666666 Q282.9171767757231,144.76267364545373 328.42234113178057,167.14561505874678 Q302.40978906221284,125.7922211930585 261.77777777777777,98.66666666666666 Z\" fill=\"#A9845C\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"261.77777777777777\" y1=\"98.66666666666666\" x2=\"323.09077606346034\" y2=\"161.66729918738037\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M271.3333333333333,92 Q299.4896103884981,137.0518424355458 349.196140335219,155.80565071813683 Q316.729812701743,116.01341511318198 271.3333333333333,92 Z\" fill=\"#B9946A\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"271.3333333333333\" y1=\"92\" x2=\"342.9671157750682\" y2=\"150.7011986606859\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M280.8888888888889,85.33333333333334 Q316.06982337535936,128.32794249029521 369.713152807842,142.77189538759362 Q330.83973933216913,105.48741748256444 280.8888888888889,85.33333333333334 Z\" fill=\"#A9845C\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"280.8888888888889\" y1=\"85.33333333333334\" x2=\"362.60721169432577\" y2=\"138.1768104232528\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M290.44444444444446,78.66666666666667 Q332.5169399429399,118.57896479997599 389.7306503634976,128.04879899417685 Q344.6299118805897,94.2249936486892 290.44444444444446,78.66666666666667 Z\" fill=\"#B9946A\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"290.44444444444446\" y1=\"78.66666666666667\" x2=\"381.7877538899734\" y2=\"124.09822840797604\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M300,72 Q348.6878295690463,107.81194286624924 409.00434401116536,111.67433662577757 Q357.9907774675045,82.25230358087252 300,72 Z\" fill=\"#A9845C\" stroke=\"#4E3A28\" stroke-width=\"1.4\"/><line x1=\"300\" y1=\"72\" x2=\"400.2839964902721\" y2=\"108.50038969571537\" stroke=\"#4E3A28\" stroke-width=\"1\" opacity=\"0.7\"/><path d=\"M200,148 L240,104 L292,76\" fill=\"none\" stroke=\"#8A6A4B\" stroke-width=\"11\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M200,148 L240,104 L292,76\" fill=\"none\" stroke=\"#4E3A28\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\"0.6\"/><line x1=\"288\" y1=\"76\" x2=\"300\" y2=\"48\" stroke=\"#4E3A28\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M300,48 q7,-3 8,5 q-3,-3 -7,-1 z\" fill=\"#1E1A16\" stroke=\"#1E1A16\" stroke-width=\"2\" stroke-linejoin=\"round\"/><line x1=\"294\" y1=\"80\" x2=\"316\" y2=\"58\" stroke=\"#4E3A28\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M316,58 q7,-3 8,5 q-3,-3 -7,-1 z\" fill=\"#1E1A16\" stroke=\"#1E1A16\" stroke-width=\"2\" stroke-linejoin=\"round\"/><line x1=\"300\" y1=\"84\" x2=\"326\" y2=\"72\" stroke=\"#4E3A28\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M326,72 q7,-3 8,5 q-3,-3 -7,-1 z\" fill=\"#1E1A16\" stroke=\"#1E1A16\" stroke-width=\"2\" stroke-linejoin=\"round\"/><rect x=\"245\" y=\"180.8\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 250 184)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"256.5\" y=\"184.63333333333335\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 261.5 187.83333333333334)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"268\" y=\"188.46666666666667\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 273 191.66666666666666)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"279.5\" y=\"192.3\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 284.5 195.5)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"291\" y=\"196.13333333333335\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 296 199.33333333333334)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"302.5\" y=\"199.96666666666667\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 307.5 203.16666666666666)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"314\" y=\"203.8\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 319 207)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"325.5\" y=\"207.63333333333335\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 330.5 210.83333333333334)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"337\" y=\"211.46666666666667\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 342 214.66666666666666)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"348.5\" y=\"215.3\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 353.5 218.5)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"360\" y=\"219.13333333333335\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 365 222.33333333333334)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"371.5\" y=\"222.96666666666667\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 376.5 226.16666666666666)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/><rect x=\"383\" y=\"226.8\" width=\"10\" height=\"6.4\" rx=\"2.5\" transform=\"rotate(18.6 388 230)\" fill=\"#EFE4CC\" stroke=\"#4E3A28\" stroke-width=\"1\"/></svg>";
+/* ===================================================================
+   Szenen: viewBox 1100 x 200, "meet" (nie beschnitten).
+   Himmel und Boden reichen weit über die viewBox hinaus und füllen
+   dadurch jedes Seitenverhältnis.
+   =================================================================== */
+const VBW = 1100, VBH = 200;
+let GID = 0;
+function svgScene(defs, body, al) {
+  return `<svg viewBox="0 0 ${VBW} ${VBH}" preserveAspectRatio="${al || "xMidYMax"} meet" aria-hidden="true" focusable="false"><defs>${defs}</defs>${body}</svg>`;
+}
+function vgrad(a, b, y1, y2) {
+  const id = "sg" + (++GID);
+  return [id, `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${y1}" x2="0" y2="${y2}"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`];
+}
+function skyBand(a, b, gy) { const [id, d] = vgrad(a, b, 0, gy); return [d, `<rect x="-4000" y="-2500" width="9100" height="${2500 + gy + 2}" fill="url(#${id})"/>`]; }
+function groundBand(c, gy) { return `<rect x="-4000" y="${gy}" width="9100" height="2600" fill="${c}"/>`; }
+
+/* Symbol aus der Icon-Sammlung oder eigene Form platzieren (x, y = linke obere Ecke, size = Breite) */
+function icG(name, x, y, size, fill, o = {}) {
+  const box = SHAPE[name] ? SHAPE[name].vb.split(" ").map(Number) : [0, 0, 512, 512];
+  const sc = size / box[2], h = box[3] * sc;
+  const flip = o.flip ? `translate(${size} 0) scale(-1 1)` : "";
+  const rot = o.rot ? `rotate(${o.rot} ${size / 2} ${h / 2})` : "";
+  const inner = SHAPE[name] ? SHAPE[name].d : ICON[name];
+  const g = `<g transform="translate(${x} ${y}) ${rot} ${flip} scale(${sc})" fill="${fill}" opacity="${o.op ?? 1}">${inner}</g>`;
+  return o.cls ? `<g class="${o.cls}">${g}</g>` : g;
+}
+
+/* ---------- Zeitmaschine Z-8 (Mittelpunkt des Rumpfs bei x, y; Breite etwa 120 * s) ---------- */
+function machine(x, y, s = 1, o = {}) {
+  const rings = o.glow ? `<g class="spin"><ellipse cx="0" cy="6" rx="84" ry="20" fill="none" stroke="#5CE1CB" stroke-width="3" stroke-dasharray="26 10"/></g>` +
+    `<g class="spin rev"><ellipse cx="0" cy="6" rx="102" ry="26" fill="none" stroke="#F4B03E" stroke-width="2" stroke-dasharray="10 12" opacity=".8"/></g>` : "";
+  const smoke = o.smoke ? [[-20, -40, 7], [-8, -52, 9], [6, -66, 11]].map(([cx, cy, r], i) => `<circle class="rise d${i}" cx="${cx}" cy="${cy}" r="${r}" fill="#9AA3A5" opacity=".7"/>`).join("") : "";
+  const bubbles = o.bubbles ? [[-30, -30, 4], [10, -44, 3], [24, -24, 5], [-6, -60, 3]].map(([cx, cy, r], i) => `<circle class="rise d${i}" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#CFEAF2" stroke-width="1.5"/>`).join("") : "";
+  return `<g transform="translate(${x} ${y}) rotate(${o.tilt || 0}) scale(${s})"><g${o.cls ? ` class="${o.cls}"` : ""}>${rings}
+    <path d="M-34,24 L-50,46 M34,24 L50,46 M0,30 L0,48" stroke="#3E4E52" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-60,47 h20 M40,47 h20 M-10,49 h20" stroke="#3E4E52" stroke-width="5" stroke-linecap="round"/>
+    <line x1="0" y1="-30" x2="0" y2="-48" stroke="#3E4E52" stroke-width="3"/><circle class="blink" cx="0" cy="-51" r="4.5" fill="#F4B03E"/>
+    <path d="M-34,0 A34,32 0 0 1 34,0 Z" fill="#BDEFE8" stroke="#3E4E52" stroke-width="2.4"/>
+    <path d="M-22,-10 A24,22 0 0 1 4,-24" fill="none" stroke="#FFFFFF" stroke-width="3" opacity=".8" stroke-linecap="round"/>
+    <ellipse cx="0" cy="10" rx="62" ry="24" fill="#93A9AD" stroke="#3E4E52" stroke-width="2.4"/>
+    <ellipse cx="0" cy="12" rx="62" ry="8" fill="#6F8589"/>
+    ${[-40, -20, 0, 20, 40].map((lx, i) => `<circle${i % 2 ? ' class="blink"' : ""} cx="${lx}" cy="12" r="3.6" fill="${i % 2 ? "#F4B03E" : "#5CE1CB"}"/>`).join("")}
+    <text x="0" y="31" text-anchor="middle" font-family="Chakra Petch, Avenir Next, Arial, sans-serif" font-weight="700" font-size="11" fill="#1B2426">Z-8</text>
+    ${smoke}${bubbles}</g></g>`;
+}
+function machineAvatar() { return `<svg viewBox="-72 -64 144 118" aria-hidden="true">${machine(0, 0, 1)}</svg>`; }
+
+/* ---------- einzelne Szenen ---------- */
+const SCENE = {
+  lab(o = {}) {
+    const [sd, sk] = skyBand("#DCE6E2", "#C9D6D1", 168);
+    const jars = [[316, "#7FC6A4"], [342, "#E7B65A"], [368, "#9EC3E6"], [394, "#D98C7A"]].map(([x, c]) => `<rect x="${x}" y="54" width="18" height="24" rx="3" fill="#EEF4F2" stroke="#7E8D8A" stroke-width="1.5"/><rect x="${x + 2}" y="64" width="14" height="12" rx="2" fill="${c}"/>`).join("");
+    const stripes = PERIODS.map((p, i) => `<rect x="842" y="${34 + i * 6.5}" width="96" height="6.6" fill="${p[3]}"/>`).join("");
+    const win = (x) => `<rect x="${x}" y="28" width="170" height="96" rx="4" fill="#BFE3F2" stroke="#61757B" stroke-width="5"/><line x1="${x + 85}" y1="28" x2="${x + 85}" y2="124" stroke="#61757B" stroke-width="4"/><circle cx="${x + 130}" cy="56" r="14" fill="#FFF2C2"/><path d="M${x},112 Q${x + 50},96 ${x + 100},108 T${x + 170},104 L${x + 170},124 L${x},124 Z" fill="#8DBF7A"/>`;
+    return svgScene(sd, sk + groundBand("#B39B7B", 168) +
+      `<rect x="-4000" y="164" width="9100" height="6" fill="#8C765A"/>` + [0, 1, 2, 3, 4, 5, 6, 7].map(i => `<line x1="${-400 + i * 260}" y1="170" x2="${-460 + i * 260}" y2="200" stroke="#9E8668" stroke-width="2"/>`).join("") +
+      win(70) + win(-260) + win(1170) +
+      `<rect x="296" y="78" width="140" height="6" fill="#7E6A52"/><rect x="300" y="84" width="6" height="18" fill="#7E6A52"/><rect x="426" y="84" width="6" height="18" fill="#7E6A52"/>` + jars +
+      icG("GiAmmoniteFossil", 300, 24, 30, "#7E6A52") + icG("GiDinosaurBones", 398, 18, 36, "#8C7A63") +
+      `<rect x="836" y="28" width="108" height="92" fill="#F7F4EC" stroke="#7E8D8A" stroke-width="2"/>` + stripes +
+      `<rect x="830" y="118" width="250" height="10" fill="#7E6A52"/><rect x="842" y="128" width="8" height="40" fill="#6B5944"/><rect x="1060" y="128" width="8" height="40" fill="#6B5944"/>` +
+      icG("GiMicroscope", 960, 70, 50, "#3E4E52") + icG("GiRoundBottomFlask", 1020, 84, 34, "#3E4E52") +
+      (o.flash ? `<circle class="flashc" cx="550" cy="120" r="120" fill="#FFFFFF"/>` : "") +
+      (o.noMachine ? "" : machine(550, 112, 1, { glow: o.glow, smoke: o.smoke, cls: o.shake ? "shake" : "" })));
+  },
+  kambrium(o = {}) {
+    const [sd, sk] = skyBand("#1F7896", "#0C3C4F", 166);
+    let rays = ""; for (let i = -2; i < 9; i++) rays += `<path d="M${120 + i * 150},-20 L${170 + i * 150},-20 L${250 + i * 150},200 L${160 + i * 150},200 Z" fill="#FFFFFF" opacity=".05"/>`;
+    const sponge = (x, h, c) => `<rect x="${x}" y="${170 - h}" width="22" height="${h + 4}" rx="10" fill="${c}"/><ellipse cx="${x + 11}" cy="${172 - h}" rx="7" ry="3" fill="#00000030"/>`;
+    let bub = ""; for (let i = 0; i < 16; i++) bub += `<circle class="rise d${i % 4}" cx="${40 + (i * 71) % 1040}" cy="${30 + (i * 37) % 120}" r="${2 + (i % 3)}" fill="none" stroke="#BFE3EE" stroke-width="1" opacity=".55"/>`;
+    return svgScene(sd, sk + rays + groundBand("#BFA472", 166) +
+      `<path d="M-400,168 Q-100,158 200,166 T700,164 T1500,166 L1500,200 L-400,200 Z" fill="#BFA472"/><rect x="-4000" y="184" width="9100" height="2600" fill="#A88F5E"/>` +
+      sponge(110, 46, "#E39A57") + sponge(136, 30, "#D47C47") + sponge(1000, 52, "#E39A57") + sponge(1026, 34, "#C9703F") + sponge(-160, 40, "#E39A57") + sponge(1230, 44, "#D47C47") +
+      icG("GiAlgae", 30, 110, 60, "#3E8E6A") + icG("GiAlgae", 940, 116, 54, "#3E8E6A", { flip: true }) +
+      icG("GiTrilobite", 300, 140, 38, "#5E4B37", { rot: 70 }) + icG("GiTrilobite", 520, 146, 32, "#6E5A43", { rot: -80 }) + icG("GiTrilobite", 640, 136, 42, "#5E4B37", { rot: 95 }) +
+      icG("GiJellyfish", 420, 14, 46, "#D6EEF5", { op: .55, cls: "bob" }) + icG("GiJellyfish", 210, 40, 34, "#D6EEF5", { op: .45, cls: "bob d2" }) + bub +
+      (o.machine ? machine(820, 128, .62, { tilt: 14, bubbles: true }) : ""));
+  },
+  karbon(o = {}) {
+    const [sd, sk] = skyBand("#D6E5C8", "#8EAD83", 168);
+    const tree = (x, h, c, w = 16) => {
+      let s = `<rect x="${x}" y="${170 - h}" width="${w}" height="${h}" fill="${c}"/>`;
+      for (let y = 176 - h; y < 166; y += 13) for (let k = 0; k < 2; k++) s += `<path d="M${x + 3 + k * 7},${y} l3.5,-5 l3.5,5 l-3.5,5 Z" fill="#00000022"/>`;
+      return s + `<path d="M${x + w / 2},${170 - h} q-22,-12 -36,-4 M${x + w / 2},${170 - h} q22,-14 38,-6 M${x + w / 2},${170 - h} q-6,-18 -20,-24 M${x + w / 2},${170 - h} q8,-18 24,-22" stroke="${c}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+    };
+    return svgScene(sd, sk +
+      tree(-300, 130, "#9DB48F") + tree(-120, 110, "#93AB86") + tree(80, 128, "#9DB48F") + tree(300, 140, "#93AB86", 18) + tree(560, 120, "#9DB48F") + tree(760, 136, "#8EA681", 18) + tree(980, 126, "#9DB48F") + tree(1200, 130, "#93AB86") +
+      tree(180, 104, "#5E7D57", 20) + tree(690, 96, "#5E7D57", 18) + tree(1080, 112, "#55744F", 20) +
+      icG("GiBamboo", 230, 96, 70, "#4F7A43") + icG("GiBamboo", 610, 100, 64, "#4F7A43") + icG("GiBamboo", 1150, 96, 70, "#4F7A43") + icG("GiBamboo", -150, 96, 70, "#4F7A43") +
+      groundBand("#3D5B4C", 170) + `<path d="M-4000,170 L5100,170" stroke="#6F9180" stroke-width="2"/>` +
+      icG("GiFern", -10, 66, 112, "#2E6B3E", { rot: 16 }) + icG("GiFern", 990, 70, 104, "#2E6B3E", { flip: true, rot: -14 }) + icG("GiFern", 420, 104, 70, "#3A7A4A") + icG("GiFern", -220, 70, 100, "#2E6B3E") + icG("GiFern", 1210, 74, 96, "#2E6B3E", { flip: true }) +
+      icG("GiDragonfly", 500, 14, 56, "#1F3B33", { rot: -20, cls: "bob" }) +
+      (o.machine ? machine(860, 144, .58, { tilt: -7, smoke: true }) + `<rect x="790" y="166" width="140" height="12" fill="#3D5B4C" opacity=".9"/>` : ""));
+  },
+  jura(o = {}) {
+    const [sd, sk] = skyBand("#FBE1AE", "#CCEAE4", 150);
+    let conifer = ""; [[60, 152], [86, 146], [480, 154], [508, 150], [1040, 150], [-120, 150], [1180, 152]].forEach(([x, y]) => conifer += `<path d="M${x},${y} L${x - 11},${y} L${x},${y - 42} L${x + 11},${y} Z" fill="#2F5D46"/>`);
+    const branch = `<rect x="770" y="58" width="12" height="104" fill="#6B4E36"/><path d="M776,96 Q740,90 700,96" stroke="#6B4E36" stroke-width="7" fill="none" stroke-linecap="round"/><ellipse cx="790" cy="56" rx="44" ry="20" fill="#3F6B4C"/>`;
+    return svgScene(sd, sk + `<circle cx="960" cy="44" r="26" fill="#FFF4C8"/>` +
+      `<path d="M-4000,150 L0,140 Q200,120 360,140 T800,138 T1300,140 L5100,140 L5100,152 L-4000,152 Z" fill="#B9C9A4" opacity=".7"/>` +
+      icG("GiDiplodocus", 150, 70, 110, "#6E5D4C", { op: .75 }) + icG("GiDiplodocus", 290, 92, 72, "#6E5D4C", { op: .6, flip: true }) +
+      `<rect x="-4000" y="150" width="9100" height="26" fill="#4FB7BE"/>` + groundBand("#D7C089", 174) +
+      conifer + icG("GiPalmTree", 560, 96, 64, "#3C6E4F") + icG("GiPalmTree", -40, 98, 60, "#3C6E4F", { flip: true }) + branch +
+      `<g transform="translate(694 34) scale(.27)">${ARCHAEO.replace(/^<svg[^>]*>/, "").replace(/<\/svg>$/, "")}</g>` +
+      (o.machine ? machine(960, 146, .58, { tilt: 5, smoke: true }) : ""));
+  },
+  eozaen(o = {}) {
+    const [sd, sk] = skyBand("#FCE3B0", "#BCE3E4", 140);
+    let waves = ""; for (let i = 0; i < 12; i++) waves += `<path d="M${640 + (i * 83) % 600},${126 + (i * 13) % 60} q12,-4 24,0" stroke="#BFE7E6" stroke-width="2" fill="none" opacity=".7"/>`;
+    return svgScene(sd, sk + `<circle cx="1000" cy="40" r="24" fill="#FFF4C8"/>` +
+      `<rect x="560" y="118" width="4600" height="2600" fill="#3E9FB0"/><rect x="560" y="168" width="4600" height="2600" fill="#348FA1"/>` +
+      `<path d="M-4000,146 L470,146 Q540,148 580,166 Q610,186 630,200 L-4000,200 Z" fill="#D8C48E"/><path d="M-4000,118 L560,118 L560,146 L-4000,146 Z" fill="none"/>` + groundBand("#C9B47E", 196) +
+      icG("GiPalmTree", 30, 66, 80, "#3C6E4F") + icG("GiPalmTree", 150, 84, 62, "#3C6E4F", { flip: true }) + icG("GiPalmTree", -150, 70, 76, "#3C6E4F") + icG("GiPalmTree", 1220, 70, 74, "#3C6E4F") +
+      icG("paki", 260, 104, 130, "#6B5440") + icG("doru", 740, 110, 180, "#1E5D6A", { op: .9 }) + waves +
+      (o.machine ? machine(470, 128, .5, { tilt: -6, smoke: true }) : ""));
+  },
+  eiszeit(o = {}) {
+    const [sd, sk] = skyBand("#C7D7E2", "#EEF2F1", 150);
+    let snow = ""; for (let i = 0; i < 60; i++) snow += `<circle class="fall d${i % 4}" cx="${-100 + (i * 139) % 1300}" cy="${(i * 37) % 180}" r="${1 + (i % 3) * .7}" fill="#FFFFFF" opacity=".85"/>`;
+    return svgScene(sd, sk +
+      `<path d="M-4000,150 L-200,120 L0,60 L120,110 L240,40 L380,120 L470,80 L620,130 L760,50 L900,120 L1040,70 L1300,130 L5100,150 Z" fill="#A9BCCB"/>` +
+      `<path d="M0,60 L24,76 L46,70 L70,90 L30,86 L12,90 Z M240,40 L280,66 L306,60 L332,82 L284,78 L258,82 Z M760,50 L796,76 L826,70 L856,92 L800,88 L776,92 Z M1040,70 L1070,90 L1094,86 L1110,100 L1066,98 Z" fill="#FFFFFF"/>` +
+      groundBand("#D3CCA6", 150) + `<path d="M-4000,152 Q500,140 5100,152" stroke="#B8B08A" stroke-width="3" fill="none"/>` +
+      icG("GiMammoth", 560, 44, 120, "#5A4636") + icG("GiMammoth", 700, 70, 92, "#6B5442") + icG("GiMammoth", 420, 92, 62, "#7A6250", { flip: true }) +
+      (o.machine ? machine(220, 140, .58, { tilt: -4 }) + `<path d="M150,120 L290,120 L280,176 L160,176 Z" fill="#D8EEF6" opacity=".55"/>` : "") + snow);
+  },
+  fruehzeit(o = {}) {
+    const [sd, sk] = skyBand("#3A1410", "#D9652F", 150);
+    const volc = (x, w, h) => `<path d="M${x - w / 2},150 L${x - 14},${150 - h} L${x + 14},${150 - h} L${x + w / 2},150 Z" fill="#2A1A17"/><path d="M${x - 10},${150 - h} L${x - 2},${158 - h} L${x - 8},${170 - h + h / 2} L${x},${150}" stroke="#FF8A3D" stroke-width="4" fill="none"/>` +
+      [0, 1, 2].map(i => `<circle class="rise d${i}" cx="${x + i * 8 - 8}" cy="${136 - h - i * 14}" r="${10 + i * 5}" fill="#6B5A55" opacity=".6"/>`).join("");
+    return svgScene(sd, sk + volc(160, 260, 84) + volc(860, 300, 94) + volc(-260, 280, 80) + volc(1300, 260, 84) +
+      groundBand("#3B2A26", 150) + `<path d="M-4000,170 Q300,160 600,172 T1300,166 L5100,172" stroke="#FF7A2E" stroke-width="5" fill="none" opacity=".8"/>` +
+      [[470, 30], [520, 22], [560, 34], [610, 24]].map(([x, h]) => `<path d="M${x - 22},152 Q${x},${152 - h * 2} ${x + 22},152 Z" fill="#6C5B48"/>`).join("") +
+      (o.machine ? machine(700, 128, .55, { tilt: 8, smoke: true }) : ""));
+  },
+  sturm(o = {}) {
+    const [sd, sk] = skyBand("#120E24", "#3B2B5E", 200);
+    let ring = ""; for (let i = 0; i < 6; i++) ring += `<g class="spin${i % 2 ? " rev" : ""}"><ellipse cx="550" cy="100" rx="${80 + i * 70}" ry="${26 + i * 22}" fill="none" stroke="${i % 2 ? "#F4B03E" : "#5CE1CB"}" stroke-width="${2.5 - i * .25}" stroke-dasharray="${30 + i * 10} ${14 + i * 4}" opacity="${.85 - i * .1}"/></g>`;
+    const bolt = (x, y, s, cls) => `<path class="${cls}" transform="translate(${x} ${y}) scale(${s})" d="M0,0 L-14,34 L2,34 L-10,74 L22,26 L6,26 L18,0 Z" fill="#FFF3B0"/>`;
+    return svgScene(sd, sk + ring + bolt(170, 20, 1.2, "flash") + bolt(910, 30, 1.4, "flash d2") + bolt(-120, 40, 1.2, "flash d1") + bolt(1260, 24, 1.3, "flash d3") +
+      (o.noMachine ? "" : machine(550, 96, .9, { tilt: -10, cls: "shake" })), "xMidYMid");
+  },
+};
+
+/* ---------- Walvorfahren und andere eigene Formen ---------- */
+const SHAPE = {
+  foot: { vb: "0 0 100 100", d: '<path d="M50,96 C31,96 28,72 36,60 L21,20 C18,11 29,8 33,16 L45,48 L47,8 C48,-1 58,-1 58,8 L56,48 L68,16 C72,8 82,11 79,20 L64,60 C72,72 69,96 50,96 Z"/>' },
+  tooth: { vb: "0 0 100 100", d: '<path d="M14,70 L50,4 L86,70 Q78,64 70,70 Q60,92 50,96 Q40,92 30,70 Q22,64 14,70 Z"/>' },
+  urchin: { vb: "0 0 100 100", d: '<path d="M8,64 Q10,22 50,18 Q90,22 92,64 Q72,74 50,74 Q28,74 8,64 Z"/>' + [20, 32, 44, 56, 68, 80].map(x => `<path d="M${x},${30 + Math.abs(50 - x) * .5} L${x},${66}" stroke="rgba(255,255,255,.45)" stroke-width="3"/>`).join("") },
+  basalt: { vb: "0 0 100 100", d: [[8, 34], [30, 22], [52, 28], [74, 18]].map(([x, y]) => `<path d="M${x},${y + 6} L${x + 9},${y} L${x + 18},${y + 6} L${x + 18},96 L${x},96 Z"/><path d="M${x},${y + 6} L${x + 9},${y + 12} L${x + 18},${y + 6}" stroke="rgba(255,255,255,.45)" stroke-width="2" fill="none"/>`).join("") },
+  layers: { vb: "0 0 100 100", d: '<rect x="6" y="14" width="88" height="20" rx="3" opacity=".55"/><rect x="6" y="40" width="88" height="20" rx="3" opacity=".8"/><rect x="6" y="66" width="88" height="20" rx="3"/>' },
+  paki: { vb: "0 0 200 100", d: '<path d="M150,36 Q166,28 186,36 L196,42 Q194,47 184,47 Q168,48 158,52 Q152,58 144,60 L148,94 L141,94 L134,62 Q104,66 74,62 L72,94 L65,94 L60,59 Q48,55 44,47 Q24,52 6,66 Q2,64 6,58 Q24,44 44,40 Q62,30 100,29 Q134,27 150,36 Z"/><path d="M160,30 L166,20 L170,31 Z"/>' },
+  ambulo: { vb: "0 0 200 100", d: '<path d="M30,54 Q60,40 112,42 Q142,42 160,46 L197,51 L196,56 Q172,58 158,58 Q142,64 122,64 L126,80 L142,84 L142,88 L116,88 L108,66 Q88,68 72,66 L70,80 L104,86 L104,91 L62,90 L58,64 Q44,62 30,60 Q14,62 2,70 Q2,64 8,60 Q18,54 30,54 Z"/>' },
+  rodho: { vb: "0 0 200 100", d: '<path d="M22,52 Q60,34 122,37 Q152,39 170,45 L197,50 L196,55 Q170,58 152,60 Q132,66 112,66 L118,76 L134,82 L130,85 L110,78 L104,68 Q86,70 72,68 L72,80 L102,96 L96,98 L62,88 L58,66 Q40,62 22,58 Q10,58 2,62 Q4,56 10,54 Z"/>' },
+  doru: { vb: "0 0 200 100", d: '<path d="M10,40 Q18,34 26,42 L36,48 Q70,32 122,33 Q160,35 186,46 L197,50 Q186,58 166,60 Q140,64 118,64 Q84,66 52,58 L34,54 Q26,64 8,66 Q20,56 22,50 Q14,46 10,40 Z"/><path d="M128,58 Q138,74 150,80 Q146,66 142,58 Z"/><path d="M64,60 L66,68 L72,68" stroke="currentColor" stroke-width="2.5" fill="none"/>' },
+};
+
+if (typeof module !== "undefined") module.exports = { SCENE, SHAPE, machine, machineAvatar, icG, VBW, VBH };
+
+"use strict";
+/* ===================================================================
+   Mission Rückkehr: Escape-Spiel durch die Erdgeschichte
+   Inhalte nur aus der Unterrichtsreihe UV 8.1 (Fossilien, Altersbestimmung,
+   Erdzeitalter, Archaeopteryx, Stammbaum der Wirbeltiere, Wale).
+   =================================================================== */
+const PERIODS = [
+  ["Kambrium", 539, 485, "#7FA056"], ["Ordovizium", 485, 444, "#009270"], ["Silur", 444, 419, "#B3E1B6"],
+  ["Devon", 419, 359, "#CB8C37"], ["Karbon", 359, 299, "#67A599"], ["Perm", 299, 252, "#F04028"],
+  ["Trias", 252, 201, "#812B92"], ["Jura", 201, 145, "#34B2C9"], ["Kreide", 145, 66, "#7FC64E"],
+  ["Paläogen", 66, 23, "#FD9A52"], ["Neogen", 23, 2.6, "#FFE619"], ["Quartär", 2.6, 0, "#F9F97F"],
+];
+const ERA_COL = Object.assign(Object.fromEntries(PERIODS.map(p => [p[0], p[3]])), { "Erdfrühzeit": "#9A6B55", "Zeitsturm": "#7B5CC0", "Gegenwart": "#5CE1CB", "Biologieraum": "#5CE1CB" });
+const NEED = 8;
+const $ = (s, el = document) => el.querySelector(s);
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wait = ms => new Promise(r => setTimeout(r, RM ? Math.min(ms, 60) : ms));
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const pick = (a, n) => shuffle(a).slice(0, n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function textOn(hex) { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#1B2426" : "#FFFFFF"; }
+function glyph(name, cls) {
+  if (SHAPE[name]) return `<svg class="${cls || "ic"}" viewBox="${SHAPE[name].vb}" aria-hidden="true"><g fill="currentColor">${SHAPE[name].d}</g></svg>`;
+  return `<svg class="${cls || "ic"}" viewBox="0 0 512 512" aria-hidden="true"><g fill="currentColor">${ICON[name]}</g></svg>`;
+}
+const tile = (name, bg, fg) => `<span class="tile" style="background:${bg};color:${fg || textOn(bg)}">${glyph(name)}</span>`;
+
+/* ===================== Aufgaben (Zufallsauswahl bei jedem Versuch) ===================== */
+function tFossilOderNicht() {
+  const nein = [
+    { img: tile("GiSpiralShell", "#E9D6BC", "#8A5A35"), t: "Eine Schneckenschale vom letzten Strandurlaub", ok: false, ex: "Sie stammt von einem Lebewesen, ist aber viel jünger als 10 000 Jahre." },
+    { img: tile("basalt", "#55606A"), t: "Basaltsäulen: regelmäßige Säulen aus erstarrter Lava", ok: false, ex: "Hier war kein Lebewesen beteiligt. Gestein allein ist kein Fossil." },
+  ];
+  const ja = [
+    { img: tile("GiAmmoniteFossil", "#7A6A55"), t: "Ein Ammonit im Kalkstein, viele Millionen Jahre alt", ok: true, ex: "Ein versteinerter Überrest eines Lebewesens: der Prototyp eines Fossils." },
+    { img: tile("foot", "#A0522D"), t: "Eine versteinerte Dinosaurierfährte", ok: true, ex: "Auch Spuren von Lebewesen zählen, nicht nur Knochen und Schalen." },
+    { img: tile("GiAmberMosquito", "#C77A12"), t: "Ein Insekt, eingeschlossen in Bernstein", ok: true, ex: "Ein Einschluss in fossilem Baumharz. Deshalb wirkt das Tier so frisch." },
+    { img: tile("GiTooth", "#6B4F3B"), t: "Ein Mammutzahn, 30 000 Jahre alt, nicht versteinert", ok: true, ex: "Überrest eines Lebewesens und älter als 10 000 Jahre. Versteinert muss ein Fossil nicht sein." },
+  ];
+  return { type: "yesno", max: 4, yes: "Fossil", no: "Kein Fossil", items: shuffle(nein.concat(pick(ja, 2))),
+    z8: "Mein Fossil-Scanner ist kaputt. Entscheidet ihr: Ist das ein Fossil?", how: "Denkt an die drei Bedingungen: von einem Lebewesen, Überrest oder Spur, mindestens 10 000 Jahre alt." };
+}
+function tFossilformen() {
+  const one = a => a[Math.floor(Math.random() * a.length)];
+  const items = [
+    one([{ img: tile("GiTrilobite", "#5E5546"), t: "Trilobit: Mineralstoffe haben den Panzer ersetzt" }, { img: tile("tooth", "#55606A"), t: "Haifischzahn aus Stein" }]),
+    one([{ img: tile("GiAmmoniteFossil", "#7A6A55"), t: "Ammonit: Gestein füllt das Gehäuse, die Schale ist weg" }, { img: tile("urchin", "#8C7A63"), t: "Seeigel: Gestein füllt das Innere, die Schale ist weg" }]),
+    { img: tile("GiFern", "#2E6B3E"), t: "Farnblatt als Muster im feinen Gestein" },
+    { img: tile("foot", "#A0522D"), t: "Dinosaurierfährte im Sandstein" },
+    { img: tile("GiAmberMosquito", "#C77A12"), t: "Insekt in hartem Baumharz" },
+    { img: tile("GiMammoth", "#6B4F3B"), t: "Wollhaarmammut mit Haut und Haaren aus dem Dauerfrost" },
+  ];
+  ["ver", "stk", "abd", "spu", "ber", "mum"].forEach((a, i) => items[i].ans = a);
+  return { type: "bins", layout: "match", max: 6, items,
+    targets: [{ id: "ver", label: "Versteinerung" }, { id: "stk", label: "Steinkern" }, { id: "abd", label: "Abdruck" }, { id: "spu", label: "Spurenfossil" }, { id: "ber", label: "Bernsteinfossil" }, { id: "mum", label: "Mumie" }],
+    z8: "Sechs Wege, ein Fossil zu werden: Welche Fossilform ist das jeweils?", how: "Tippt auf einen Fund und dann auf die passende Fossilform. Ihr habt einen Versuch." };
+}
+function tCloze() {
+  return { type: "bins", layout: "cloze", max: 6,
+    text: "In ungestörten Gesteinsschichten liegen die älteren Schichten {g1} und die jüngeren {g2}. Diese {g3} Altersbestimmung liefert nur eine Reihenfolge, keine Jahreszahl. {g4} sind gute Zeitmarken: gut erkennbar, häufig, weit verbreitet und nur kurze Zeit vorhanden. Eine Zahl in Jahren liefert die {g5} Altersbestimmung, zum Beispiel die {g6} bei einem Mammutbaby aus dem Dauerfrost.",
+    targets: ["g1", "g2", "g3", "g4", "g5", "g6"].map(id => ({ id })),
+    items: [{ t: "unten", ans: "g1" }, { t: "oben", ans: "g2" }, { t: "relative", ans: "g3" }, { t: "Leitfossilien", ans: "g4" }, { t: "absolute", ans: "g5" }, { t: "C14-Methode", ans: "g6" }, { t: "Steinkerne" }, { t: "Mumien" }],
+    z8: "Meine Zeitanzeige spinnt. Füllt die Lücken, dann kann ich sie neu einstellen.", how: "Tippt auf ein Wort und dann auf die passende Lücke. Zwei Wörter bleiben übrig. Ihr habt einen Versuch." };
+}
+function tMethoden() {
+  return { type: "bins", layout: "match", max: 4,
+    targets: [{ id: "c14", label: "C14-Methode" }, { id: "kar", label: "Kalium-Argon-Methode" }, { id: "leit", label: "Leitfossil" }, { id: "sch", label: "Schichten lesen" }],
+    items: [
+      { img: tile("GiMammoth", "#6B4F3B"), t: "Ein Mammutbaby aus dem Dauerfrost, mit Haut und Haaren", ans: "c14" },
+      { img: tile("GiSmokingVolcano", "#7A3B2A"), t: "Ein Fossil liegt zwischen zwei Schichten aus alter Vulkanasche", ans: "kar" },
+      { img: tile("GiAmmoniteFossil", "#7A6A55"), t: "Eine unbekannte Muschel liegt in derselben Schicht wie ein bekannter Ammonit", ans: "leit" },
+      { img: tile("layers", "#8C7A63"), t: "Fossil A liegt in einer Schicht unter Fossil B. Welches ist älter?", ans: "sch" },
+    ],
+    z8: "Noch ein Test für die Zeitanzeige: Welche Methode passt zu welchem Fund?", how: "Tippt auf einen Fund und dann auf die passende Methode. Ihr habt einen Versuch." };
+}
+function tLabel() {
+  return { type: "bins", layout: "label", max: 4,
+    targets: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }],
+    items: [{ t: "Federn", ans: "3" }, { t: "Zähne im Kiefer", ans: "1" }, { t: "lange Schwanzwirbelsäule", ans: "4" }, { t: "Krallen an den Vordergliedmaßen", ans: "2" }],
+    z8: "Mein Scanner zeigt das seltsame Tier. Beschriftet seine Merkmale!", how: "Tippt zuerst auf einen Begriff und dann auf die passende Nummer. Ihr habt einen Versuch." };
+}
+function tSortAP() {
+  const v = pick(["Gabelbein", "flügelähnliche Vorderextremitäten", "eine Zehe zeigt nach hinten", "hohle Knochen", "Federn"], 3);
+  const r = pick(["Bauchrippen", "kleines Brustbein ohne Kamm", "Zähne im Kiefer", "lange Schwanzwirbelsäule", "Krallen an den Vordergliedmaßen"], 3);
+  return { type: "bins", layout: "bins", max: 6,
+    targets: [{ id: "v", label: "vogelähnlich" }, { id: "r", label: "reptilienähnlich" }],
+    items: shuffle(v.map(t => ({ t, ans: "v" })).concat(r.map(t => ({ t, ans: "r" })))),
+    z8: "Vogel oder Reptil? Sortiert die Merkmale des Archaeopteryx.", how: "Tippt auf ein Merkmal und dann auf die passende Spalte. Ihr habt einen Versuch." };
+}
+function tWalOrder() {
+  const card = (sh, name, f) => `<b>${name}</b><small>${f}</small>`;
+  return { type: "bins", layout: "order", max: 4,
+    targets: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }],
+    items: [
+      { id: "d", img: `<span class="wt">${glyph("doru")}</span>`, t: card("doru", "Dorudon", "Flossen, winzige Hinterbeine · Nase weit hinten · Meer"), ans: "4" },
+      { id: "p", img: `<span class="wt">${glyph("paki")}</span>`, t: card("paki", "Pakicetus", "vier lange, dünne Beine · Nase vorne · Flüsse"), ans: "1" },
+      { id: "r", img: `<span class="wt">${glyph("rodho")}</span>`, t: card("rodho", "Rodhocetus", "Paddelfüße · Nase etwas weiter oben · flaches Meer"), ans: "3" },
+      { id: "a", img: `<span class="wt">${glyph("ambulo")}</span>`, t: card("ambulo", "Ambulocetus", "kurze Beine, sehr lange Füße · Nase vorne · Küste"), ans: "2" },
+    ],
+    z8: "Vom Landtier zum Wal: Bringt die Fossilien in die richtige Reihenfolge.", how: "Platz 1 ist am wenigsten walähnlich, Platz 4 am meisten. Ihr habt einen Versuch." };
+}
+function tHomAna() {
+  const h = pick(["Arm eines Menschen und Brustflosse eines Wals", "Vorderbein eines Pferdes und Flügel einer Fledermaus", "Arm eines Menschen und Flügel eines Vogels", "Grabhand eines Maulwurfs und Arm eines Menschen"], 3);
+  const a = pick(["Flügel eines Vogels und Flügel eines Schmetterlings", "Grabbein des Maulwurfs und Grabbein der Maulwurfsgrille", "Körperform von Delfin und Hai", "Körperform von Wal und Fisch"], 3);
+  return { type: "bins", layout: "bins", max: 6,
+    targets: [{ id: "h", label: "homolog", sub: "gleicher Grundbauplan, gemeinsame Abstammung" }, { id: "a", label: "analog", sub: "gleiche Aufgabe, anderer Bau" }],
+    items: shuffle(h.map(t => ({ t, ans: "h" })).concat(a.map(t => ({ t, ans: "a" })))),
+    z8: "Letzter Tankstopp vor dem Heimflug: homolog oder analog?", how: "Tippt auf ein Paar und dann auf die passende Spalte. Ihr habt einen Versuch." };
+}
+
+const CH = [
+  { id: "kambrium", era: "Kambrium", group: "Erdaltertum", ago: "vor etwa 500 Millionen Jahren", ma: 500, scene: "kambrium", title: "Notlandung im Urmeer", fail: "urmeer",
+    intro: ["Wir sind im Kambrium, im Erdaltertum, vor etwa 500 Millionen Jahren.", "Das Leben spielt sich hier fast nur im Meer ab. Auf dem Boden krabbeln Trilobiten.", "Mein Fossil-Scanner ist kaputt. Wenn ihr mir helft, lade ich Treibstoff."],
+    tasks: () => [tFossilOderNicht(), tFossilformen()] },
+  { id: "karbon", era: "Karbon", group: "Erdaltertum", ago: "vor etwa 300 Millionen Jahren", ma: 300, scene: "karbon", title: "Gestrandet im Sumpfwald", fail: "sumpf",
+    intro: ["Immer noch Erdaltertum, aber diesmal an Land: vor etwa 300 Millionen Jahren.", "Um uns herum sumpfige Wälder mit Farnen und Schachtelhalmen, so hoch wie Bäume.", "Beim Sprung ist meine Zeitanzeige kaputtgegangen. Ich brauche euer Wissen über die Altersbestimmung."],
+    tasks: () => [tCloze(), tMethoden()] },
+  { id: "jura", era: "Jura", group: "Erdmittelalter", ago: "vor etwa 150 Millionen Jahren", ma: 150, scene: "jura", title: "Begegnung im Erdmittelalter", fail: "saurier",
+    intro: ["Erdmittelalter, vor etwa 150 Millionen Jahren. In der Ferne stampfen Saurier vorbei.", "Auf einem Ast sitzt ein taubengroßes Tier mit Federn. Und mit Zähnen?!", "Mein Scanner erkennt es nur, wenn ihr seine Merkmale richtig bestimmt."],
+    tasks: () => [tLabel(), tSortAP()] },
+  { id: "eozaen", era: "Paläogen", group: "Erdneuzeit", ago: "vor etwa 50 Millionen Jahren", ma: 50, scene: "eozaen", title: "Die Spur der Wale", fail: "kueste", wal: true,
+    intro: ["Erdneuzeit, vor etwa 50 Millionen Jahren. Die Saurier sind ausgestorben, Säugetiere breiten sich aus.", "Am Ufer läuft ein Tier, etwa so groß wie ein Wolf. Mein Scanner meldet: Es hat einen Ohrknochen wie ein Wal!", "Für den letzten Tankstopp braucht ihr euer Wissen über die Wale."],
+    tasks: () => [tWalOrder(), tHomAna()] },
+];
+const PORTALS = {
+  kambrium: { clue: "Ich schaffe nur kleine Sprünge. Unser nächstes Ziel liegt noch im Erdaltertum, aber diesmal an Land.", opts: [
+    { t: "Riesige Farne und Schachtelhalme in sumpfigen Wäldern", ic: ["GiFern", "GiBamboo"], col: "#67A599", ok: true },
+    { t: "Glühende Erde, kaum Sauerstoff, nur Einzeller", ic: ["GiSmokingVolcano"], col: "#9A4A32", death: "fruehzeit", era: "Erdfrühzeit", ma: 3500 },
+    { t: "Mammuts und Menschen in einer eisigen Steppe", ic: ["GiMammoth", "GiCaveman"], col: "#9DB6C7", death: "eiszeit", era: "Quartär", ma: 0.02 } ] },
+  karbon: { clue: "Nächstes Ziel: das Erdmittelalter.", opts: [
+    { t: "Saurier und ein Urvogel mit Federn und Zähnen", ic: ["GiDiplodocus", "GiFeather"], col: "#34B2C9", ok: true },
+    { t: "Trilobiten auf dem Meeresboden", ic: ["GiTrilobite"], col: "#7FA056", death: "urmeer", era: "Kambrium", ma: 500 },
+    { t: "Rauchende Vulkane auf einer jungen Erde", ic: ["GiSmokingVolcano"], col: "#9A4A32", death: "fruehzeit", era: "Erdfrühzeit", ma: 3500 } ] },
+  jura: { clue: "Nächstes Ziel: die Erdneuzeit.", opts: [
+    { t: "Die Saurier sind verschwunden, Säugetiere breiten sich aus", ic: ["GiWolfHowl"], col: "#FD9A52", ok: true },
+    { t: "Große Saurier-Vielfalt an Land, im Wasser und in der Luft", ic: ["GiDinosaurRex"], col: "#7FC64E", death: "saurier", era: "Kreide", ma: 90 },
+    { t: "Sumpfige Wälder mit Farnen und Schachtelhalmen", ic: ["GiFern"], col: "#67A599", death: "sumpf", era: "Karbon", ma: 300 } ] },
+  final: { clue: "Tank voll! Ich kann direkt nach Hause springen. Oder ...", opts: [
+    { t: "Direkt zurück in die Gegenwart", ic: ["GiHouse"], col: "#5CE1CB", ok: true },
+    { t: "Kurzer Abstecher in die Eiszeit: Selfie mit Mammut!", ic: ["GiMammoth", "GiPhotoCamera"], col: "#9DB6C7", death: "eiszeit", era: "Quartär", ma: 0.02 } ] },
+};
+const DEATH = {
+  urmeer: { scene: "kambrium", title: "Gefangen im Urmeer", lines: ["Tag 1: Ohne Treibstoff sinkt Z-8 auf den Meeresboden.", "Tag 3: An Land wächst nichts. Kein Baum, kein Grashalm, kein Snack.", "Tag 9: Algensuppe. Schon wieder.", "Tag 12: Eine Schlammlawine deckt euch zu. Schnell bedeckt, wenig Sauerstoff: beste Bedingungen für ein Fossil."],
+    find: ["500 Millionen Jahre später", "Versteinerung", "Mineralstoffe haben eure Knochen ersetzt.", "Datiert über Trilobiten in derselben Schicht: ein Fall für Leitfossilien."] },
+  sumpf: { scene: "karbon", title: "Gefangen im Sumpfwald", lines: ["Tag 1: Z-8 steckt im Sumpf fest. Ihr baut eine Hütte aus Farnwedeln.", "Tag 30: Farnsalat. Zum dreißigsten Mal.", "Jahr 2: Ihr seid jetzt Profis im Schachtelhalm-Flechten.", "Jahr 5: Ein Fehltritt im Moor. Der Schlamm schließt sich über euch."],
+    find: ["300 Millionen Jahre später", "Abdruck", "Eure Körper sind zersetzt, ihre Umrisse bleiben im feinen Gestein.", "Datiert über Vulkanasche mit der Kalium-Argon-Methode. Für die C14-Methode seid ihr viel zu alt."] },
+  saurier: { scene: "jura", title: "Ein Saurier hat Hunger", lines: ["Tag 1: Z-8 springt nicht an. Ihr erkundet die Gegend.", "Tag 2: Ein großer Schatten. Ein Raubsaurier, und er hat euch entdeckt.", "Tag 2, eine Minute später: Wegrennen hilft nicht."],
+    find: ["150 Millionen Jahre später", "Spurenfossil", "Von euch bleiben nur eure Fußspuren im Schlamm. Man sieht noch, wie schnell ihr gerannt seid.", "Datiert durch Schichten lesen: Die Spuren liegen über den Schichten mit Trilobiten, sind also jünger."] },
+  kueste: { scene: "eozaen", title: "Gestrandet an der Urzeit-Küste", lines: ["Tag 1: Z-8 bleibt stumm. Ihr wollt zur nächsten Insel schwimmen.", "Tag 50: Ihr trainiert jeden Tag. Paddelfüße bekommt ihr trotzdem nicht: Was man im Leben erwirbt, wird nicht vererbt.", "Tag 51: Die Strömung ist stärker als ihr."],
+    find: ["50 Millionen Jahre später", "Versteinerung", "Eure Knochen liegen in Gestein aus einem flachen Meer, gleich neben frühen Walen.", "Datiert über Leitfossilien in derselben Schicht."] },
+  eiszeit: { scene: "eiszeit", title: "Eingefroren in der Eiszeit", lines: ["Minute 1: Brrr, Eiszeit! Ein Mammut beschnuppert eure Pausenbrote.", "Minute 5: Das Mammut mag Käsebrot. Es will mehr. Es tritt auf Z-8.", "Tag 3: Ohne Zeitmaschine kein Rückweg. Und es ist sehr, sehr kalt."],
+    find: ["20 000 Jahre später", "Mumie", "Im Dauerfrost bleiben sogar Haut und Haare erhalten, wie beim Wollhaarmammut.", "Datiert mit der C14-Methode: Dafür seid ihr jung genug."] },
+  fruehzeit: { scene: "fruehzeit", title: "Viel zu weit zurück", lines: ["Sekunde 1: Rauchende Vulkane, glühende Erde. Erdfrühzeit!", "Sekunde 10: In der Luft ist kaum Sauerstoff. Nur winzige Einzeller fühlen sich hier wohl.", "Sekunde 30: Euch wird schwarz vor Augen."],
+    find: ["4 Milliarden Jahre später", "kein Fossil", "Ohne schnelle Bedeckung zersetzt sich alles. Von euch bleibt nichts übrig.", "Nichts zu datieren. Schade."] },
+  sturm: { scene: "sturm", title: "Vom Zeitsturm verschluckt", lines: ["Blitze zucken, die Zeitanzeige spielt verrückt.", "Z-8 dreht sich wie ein Kreisel und bricht in tausend Teile.", "Wo in der Erdgeschichte ihr gelandet seid, weiß bis heute niemand."],
+    find: ["irgendwann später", "unbekannt", "Forschende rätseln über eine seltsame Schleifspur quer durch fünf Gesteinsschichten.", "Schichten lesen hilft hier nicht: Die Spur ist älter und jünger zugleich."] },
+};
+const STORM = [
+  [true, "Unten liegende Gesteinsschichten sind in der Regel älter als die darüber.", "Was unten liegt, wurde früher abgelagert."],
+  [false, "Die relative Altersbestimmung liefert eine genaue Jahreszahl.", "Sie liefert nur eine Reihenfolge: älter, jünger oder gleich alt."],
+  [true, "Für ein Mammutbaby aus dem Dauerfrost passt die C14-Methode.", "Junge organische Reste lassen sich mit C14 datieren."],
+  [false, "Ein gutes Leitfossil ist selten und lebte sehr lange.", "Es ist häufig, weit verbreitet und lebte nur kurze Zeit."],
+  [true, "Ein Fossil ist mindestens 10 000 Jahre alt.", "Das ist eine der drei Bedingungen."],
+  [false, "Basaltsäulen sind Fossilien.", "Erstarrte Lava. Kein Lebewesen beteiligt."],
+  [true, "„Im Kiefer von Archaeopteryx sind Zähne“ ist eine Beobachtung.", "Das kann man am Fossil sehen."],
+  [false, "Dass Archaeopteryx der direkte Vorfahr aller Vögel ist, ist sicher belegt.", "Das ist eine zu starke Deutung."],
+  [true, "Archaeopteryx zeigt: Vögel und Reptilien haben gemeinsame Vorfahren.", "Er hat Merkmale beider Gruppen."],
+  [true, "Homologe Merkmale haben den gleichen Grundbauplan.", "Sie gehen auf gemeinsame Erbanlagen zurück."],
+  [false, "Die Flügel von Vogel und Schmetterling sind homolog.", "Analog: gleiche Aufgabe, anderer Bau."],
+  [false, "Analoge Merkmale zeigen eine enge Verwandtschaft.", "Sie zeigen nur eine ähnliche Lebensweise."],
+  [true, "Trilobiten lebten im Erdaltertum.", "Das Erdaltertum begann vor etwa 540 Millionen Jahren."],
+  [false, "Mammuts lebten im Erdmittelalter.", "Mammuts gehören in die Erdneuzeit."],
+  [false, "In der Erdfrühzeit gab es schon Saurier.", "Damals lebten nur Einzeller und später einfache Vielzeller."],
+  [true, "Der nächste heute lebende Verwandte der Wale ist das Flusspferd.", "Das zeigen DNA-Vergleiche.", "wal"],
+  [true, "Die kleinen Beckenknochen heutiger Wale sind Rudimente.", "Sie zeigen: Die Vorfahren der Wale hatten Hinterbeine.", "wal"],
+  [false, "Die frühen Wale bekamen Paddelfüße, weil sie viel geschwommen sind.", "Was ein Tier im Leben erwirbt, wird nicht vererbt.", "wal"],
+  [false, "Wale stammen von Fischen ab, weil sie Flossen haben.", "Wale sind Säugetiere. Ihre Vorfahren lebten an Land.", "wal"],
+];
+
+/* ===================== Zustand ===================== */
+const S = { screen: "title", crew: "", ch: 0, ti: 0, fuel: 0, tasks: null, deaths: 0, cells: 0, t0: 0, portal: null, storm: null, cfg: { timer: true, wal: true } };
+const main = $("#main");
+let stopTimer = null;
+const chapters = () => CH.filter(c => S.cfg.wal || !c.wal);
+const curCh = () => chapters()[S.ch];
+const portalKey = () => (S.ch < chapters().length - 1 ? curCh().id : "final");
+
+/* ===================== Konsole ===================== */
+function readout() {
+  const n = chapters().length;
+  if (S.screen === "title") return ["Biologieraum", "heute, kurz vor acht", 0];
+  if (S.screen === "finIntro" || S.screen === "storm") return ["Zeitsturm", "Rückflug in die Gegenwart", 2];
+  if (S.screen === "diploma") return ["Gegenwart", "Biologieraum, heute", 0];
+  const c = curCh(); return [c.era, `${c.group} · ${c.ago} · Kapitel ${S.ch + 1} von ${n}`, c.ma];
+}
+function tlPos(ma) { return ma > 539 ? 3 : 6 + (539 - ma) / 539 * 94; }
+let taps = [];
+function hud() {
+  const [e, a, ma] = readout();
+  $("#hud").innerHTML = `<div class="brand" id="brand">Mission Rückkehr<small>${S.crew ? "Crew: " + esc(S.crew) : "Zeitmaschine Z-8"}</small></div>
+    <div class="readout">${e}<span>${a}</span></div>
+    <div class="fuel" id="fuel"></div>
+    <div class="lives" title="Game over">${glyph("GiTombstone")}<span>${S.deaths}</span></div>`;
+  fuelGauge();
+  $("#brand").onclick = () => { const now = Date.now(); taps = taps.filter(t => now - t < 2500); taps.push(now); if (taps.length >= 5) { taps = []; teacher(); } };
+  if (!$("#tl").firstChild) {
+    const segs = PERIODS.map(p => `<i title="${p[0]}" style="width:${(p[1] - p[2]) / 539 * 94}%;background:${p[3]}"></i>`).join("");
+    const grp = [["Erdfrühzeit", 4000], ["Erdaltertum", 395], ["Erdmittelalter", 159], ["Erdneuzeit", 30]].map(([g, m]) => `<span style="left:${tlPos(m)}%">${g}</span>`).join("");
+    $("#tl").innerHTML = `<div class="tl-mark" id="tlm"><b></b><i></i></div><div class="tl-bar"><i class="pre" style="width:6%" title="Erdfrühzeit"></i>${segs}</div><div class="tl-groups">${grp}</div>`;
+  }
+  const m = $("#tlm"); m.style.left = `clamp(36px, ${tlPos(ma)}%, calc(100% - 36px))`; m.querySelector("b").textContent = e;
+}
+function fuelGauge(popIdx) {
+  const st = S.screen === "storm" && S.storm;
+  const val = st ? S.storm.ok : S.fuel;
+  let cells = "";
+  for (let i = 0; i < 10; i++) {
+    let c = "";
+    if (st) c = i < S.storm.ok ? "on" : (i >= 10 - S.storm.bad ? "red" : "");
+    else c = i < S.fuel ? "on" : "";
+    if (i === popIdx) c += " pop";
+    cells += (i === NEED ? '<em class="sep"></em>' : "") + `<i class="${c}"></i>`;
+  }
+  const f = $("#fuel"); if (!f) return;
+  f.innerHTML = `<div class="fl">${st ? "Stabilität" : "Treibstoff"}<b>${val} / 10</b></div><div class="cells${val >= NEED ? " ready" : ""}" title="Für einen Sprung braucht ihr ${NEED} von 10.">${cells}</div>`;
+}
+function addFuel() { S.fuel = Math.min(10, S.fuel + 1); fuelGauge(S.fuel - 1); }
+
+/* ===================== Bausteine ===================== */
+function eraTag(era, ago) { const c = ERA_COL[era] || "#5CE1CB"; return `<span class="era" style="background:${c};color:${textOn(c)}">${era}</span><span class="ago">${ago}</span>`; }
+function stageShell(scene, tag, inner, hero) {
+  if (stopTimer) { stopTimer(); stopTimer = null; }
+  main.innerHTML = `<section class="stage"><div class="scene${hero ? " hero" : ""}">${scene}${tag ? `<div class="tag">${tag}</div>` : ""}</div><div class="panel" id="panel">${inner}</div></section>`;
+  main.scrollTop = 0;
+}
+function z8Box(id) { return `<div class="z8"><div class="z8-ava">${machineAvatar()}</div><div class="z8-msg" id="${id || "z8m"}"><b>Z-8</b></div></div>`; }
+function z8Static(text) { return `<div class="z8"><div class="z8-ava">${machineAvatar()}</div><div class="z8-msg"><b>Z-8</b><p>${text}</p></div></div>`; }
+function typeLines(el, lines) {
+  const ps = lines.map(() => { const p = document.createElement("p"); el.appendChild(p); return p; });
+  const ctl = { done: false, finish() { ps.forEach((p, k) => p.textContent = lines[k]); ctl.done = true; ctl.cb && ctl.cb(); } };
+  if (RM) { ctl.finish(); return ctl; }
+  (async () => {
+    for (let k = 0; k < lines.length; k++) for (let c = 1; c <= lines[k].length; c++) {
+      if (ctl.done) return;
+      ps[k].textContent = lines[k].slice(0, c);
+      await new Promise(r => setTimeout(r, 16));
+    }
+    if (!ctl.done) { ctl.done = true; ctl.cb && ctl.cb(); }
+  })();
+  return ctl;
+}
+function fbSet(box, kind, html) { const f = box.querySelector(".fb"); if (f) { f.className = "fb " + kind; f.innerHTML = html; } }
+
+/* ===================== Bildschirme ===================== */
+function render() {
+  const f = { title: renderTitle, chIntro: renderChIntro, task: renderTask, chDone: renderChDone, chFail: renderChFail, portal: renderPortal, finIntro: renderFinIntro, storm: renderStorm, diploma: renderDiploma }[S.screen];
+  (f || renderTitle)();
+}
+function renderTitle() {
+  hud();
+  stageShell(SCENE.lab({}), "", `
+    <p class="hero-sub">Ein Escape-Spiel durch die Erdgeschichte</p>
+    <h1 class="hero-h">Mission Rückkehr</h1>
+    <p style="margin:0;max-width:60ch">Eure Crew darf die neue Zeitmaschine der Schule testen. Nur ein kurzer Testflug, fünf Minuten in die Vergangenheit. Was soll schon schiefgehen?</p>
+    <div class="crew"><label for="crewname">Name eurer Crew</label><input id="crewname" maxlength="24" autocomplete="off" autocapitalize="words" placeholder="zum Beispiel: Die Trilobiten" value="${esc(S.crew)}"></div>
+    <ul class="rules">
+      <li><b>Zu zweit</b>Ein iPad pro Crew. Wechselt euch beim Tippen ab.</li>
+      <li><b>Treibstoff</b>Jede richtige Antwort lädt eine Zelle. Für jeden Zeitsprung braucht ihr 8 von 10.</li>
+      <li><b>Game over</b>Zu wenig Treibstoff oder das falsche Portal, und ihr sitzt fest. Dann heißt es: noch einmal versuchen.</li>
+    </ul>
+    <div class="actions"><button class="btn" id="go">Mission starten</button></div>
+    <p class="credits">Biologie · Jahrgang 8 · Der Stammbaum des Lebens. Symbole: game-icons.net (CC BY 3.0).</p>`, true);
+  $("#go").onclick = () => {
+    S.crew = ($("#crewname").value || "").trim().slice(0, 24) || "Die Namenlosen";
+    Object.assign(S, { deaths: 0, cells: 0, t0: Date.now(), ch: 0 });
+    hud(); playIntro();
+  };
+}
+function startChapter(i) {
+  Object.assign(S, { ch: i, ti: 0, fuel: 0, tasks: chapters()[i].tasks(), screen: "chIntro", portal: null });
+  render();
+}
+function renderChIntro() {
+  const c = curCh(); hud();
+  stageShell(SCENE[c.scene]({ machine: true }), eraTag(c.era, c.ago), `<div class="tk-n">Kapitel ${S.ch + 1}: ${c.title}</div>${z8Box()}<div class="actions"><button class="btn" id="go">Los geht's</button></div>`, true);
+  const ctl = typeLines($("#z8m"), c.intro);
+  $("#z8m").onclick = () => ctl.finish();
+  $("#go").onclick = () => { ctl.finish(); S.screen = "task"; render(); };
+}
+function renderTask() {
+  const c = curCh(), t = S.tasks[S.ti]; hud();
+  stageShell(SCENE[c.scene]({ machine: true }), eraTag(c.era, c.ago), `<div class="tk-n">Kapitel ${S.ch + 1} · Aufgabe ${S.ti + 1} von ${S.tasks.length}</div>${z8Static(t.z8)}<p class="tk-how">${t.how}</p><div id="task"></div>`);
+  runTask($("#task"), t, afterTask);
+}
+function afterTask() {
+  const rest = S.tasks.slice(S.ti + 1).reduce((s, t) => s + t.max, 0);
+  if (S.fuel + rest < NEED) { S.screen = "chFail"; return render(); }
+  if (S.ti < S.tasks.length - 1) { S.ti++; return render(); }
+  S.cells += S.fuel; S.screen = "chDone"; render();
+}
+function renderChDone() {
+  const c = curCh(); hud();
+  stageShell(SCENE[c.scene]({ machine: true }), eraTag(c.era, c.ago), `<div class="tk-n">Kapitel ${S.ch + 1} geschafft</div>${z8Box()}<div class="actions"><button class="btn teal" id="go">Zu den Sprungportalen</button></div>`, true);
+  const ctl = typeLines($("#z8m"), [`${S.fuel} von 10 Zellen geladen. Das reicht für einen Sprung!`, "Aber Vorsicht: Ich öffne mehrere Portale. Nur eines führt dorthin, wo wir hinwollen."]);
+  $("#z8m").onclick = () => ctl.finish();
+  $("#go").onclick = () => { ctl.finish(); S.screen = "portal"; S.portal = null; render(); };
+}
+function renderChFail() {
+  const c = curCh(); hud();
+  stageShell(SCENE[c.scene]({ machine: true }), eraTag(c.era, c.ago), `<div class="tk-n">Kapitel ${S.ch + 1}: Tank zu leer</div>${z8Box()}<div class="actions"><button class="btn red" id="go">Und jetzt?</button></div>`, true);
+  const ctl = typeLines($("#z8m"), [`Nur ${S.fuel} von 10 Zellen ...`, "Zündung ... Zündung ... nichts.", `Für einen Sprung brauche ich mindestens ${NEED}. Wir sitzen fest.`]);
+  $("#z8m").onclick = () => ctl.finish();
+  $("#go").onclick = () => { ctl.finish(); death(c.fail, () => startChapter(S.ch), "Kapitel wiederholen"); };
+}
+function renderPortal() {
+  const c = curCh(), p = PORTALS[portalKey()]; hud();
+  if (!S.portal) S.portal = shuffle(p.opts.map((_, i) => i));
+  stageShell(SCENE[c.scene]({ machine: true }), eraTag(c.era, c.ago), `<div class="tk-n">Sprungziel wählen</div>${z8Static(p.clue)}<p class="tk-how">Tippt auf ein Portal. Wählt gut: Ein falsches Portal kann böse enden.</p>
+    <div class="portals">${S.portal.map(k => { const o = p.opts[k]; return `<button type="button" class="portal" data-k="${k}"><span class="ring" style="background:radial-gradient(circle, ${o.col} 0%, #0D181B 78%)"><span style="color:${textOn(o.col)}">${o.ic.map(n => glyph(n)).join("")}</span></span><span>${o.t}</span></button>`; }).join("")}</div>`);
+  main.querySelectorAll(".portal").forEach(b => b.onclick = async () => {
+    const o = p.opts[+b.dataset.k];
+    if (o.ok) {
+      if (portalKey() === "final") { await jump("Zeitsturm", curCh().ma, 20, () => { S.screen = "finIntro"; render(); }); }
+      else { const nx = chapters()[S.ch + 1]; await jump(nx.era, curCh().ma, nx.ma, () => startChapter(S.ch + 1)); }
+    } else {
+      await jump(o.era, curCh().ma, o.ma, null);
+      death(o.death, () => { S.screen = "portal"; render(); }, "Zurück zum Portal", "Z-8: Ups. Das war das falsche Portal.");
+    }
+  });
+}
+function renderFinIntro() {
+  hud();
+  stageShell(SCENE.sturm({}), eraTag("Zeitsturm", "auf dem Weg in die Gegenwart"), `<div class="tk-n">Finale: Der Zeitsturm</div>${z8Box()}<div class="actions"><button class="btn" id="go">Ab durch den Sturm!</button></div>`, true);
+  const lines = ["Achtung! Vor uns tobt ein Zeitsturm.", "Ich steuere, ihr beantwortet meine Fragen: Stimmt die Aussage oder nicht?", (S.cfg.timer ? "Für jede Frage habt ihr 20 Sekunden. " : "") + "Bei drei Fehlern zerreißt uns der Sturm."];
+  const ctl = typeLines($("#z8m"), lines);
+  $("#z8m").onclick = () => ctl.finish();
+  $("#go").onclick = () => {
+    ctl.finish();
+    const pool = STORM.filter(s => S.cfg.wal || s[3] !== "wal");
+    const items = shuffle(pick(pool.filter(s => s[0]), 5).concat(pick(pool.filter(s => !s[0]), 5)));
+    S.storm = { items, i: 0, ok: 0, bad: 0 }; S.screen = "storm"; render();
+  };
+}
+function renderStorm() {
+  hud();
+  stageShell(SCENE.sturm({}), eraTag("Zeitsturm", "Rückflug in die Gegenwart"), `<div class="track"><div class="rail"></div><div class="home">${glyph("GiHouse")}heute</div><div class="ship" id="ship">${machineAvatar()}</div></div><div id="task"></div>`);
+  stormTask($("#task"));
+}
+function renderDiploma() {
+  hud();
+  const sec = Math.round((Date.now() - S.t0) / 1000), mm = Math.floor(sec / 60), ss = String(sec % 60).padStart(2, "0");
+  const rank = S.deaths === 0 ? "Zeitreise-Legenden" : S.deaths <= 2 ? "Erfahrene Zeitreisende" : "Zähe Überlebende";
+  stageShell(SCENE.lab({ smoke: true }), eraTag("Gegenwart", "Biologieraum, heute"), `
+    <div class="diploma">${glyph("GiLaurelsTrophy", "trophy")}<div class="dk">Zeitreise-Diplom für die Crew</div><h1>${esc(S.crew)}</h1>
+    <p>hat die Zeitmaschine Z-8 sicher durch über 500 Millionen Jahre Erdgeschichte zurück in die Gegenwart gebracht.</p>
+    <div class="stats"><div><b>${S.cells}</b>Zellen geladen</div><div><b>${S.deaths}</b>Game over</div><div><b>${mm}:${ss}</b>Reisezeit</div></div>
+    <div class="rank">Rang: ${rank}</div></div>
+    <p class="tk-how" style="margin-top:14px">Zeigt dieses Diplom eurer Lehrkraft.</p>
+    <div class="actions"><span class="grow"></span><button class="btn ghost" id="again">Neue Crew starten</button></div>`, true);
+  $("#again").onclick = () => { Object.assign(S, { screen: "title", crew: "", ch: 0, fuel: 0, deaths: 0, cells: 0, storm: null }); render(); };
+  confetti();
+}
+
+/* ===================== Filmsequenzen ===================== */
+function cine(shots, onEnd, lastLabel) {
+  const ov = document.createElement("div"); ov.className = "ov cine";
+  ov.innerHTML = `<div class="ov-stage" id="cs"></div><div class="ov-bottom"><div class="cap" id="cc" aria-live="polite"></div><div class="actions"><button type="button" class="skip" id="cskip">Überspringen</button><button type="button" class="btn" id="cnext">Weiter</button></div></div>`;
+  document.body.appendChild(ov);
+  let i = -1, ctl = null, fxStop = null;
+  const end = () => { if (fxStop) fxStop(); ov.classList.add("out"); setTimeout(() => ov.remove(), 340); onEnd(); };
+  const show = k => {
+    i = k; const sh = shots[k];
+    if (fxStop) { fxStop(); fxStop = null; }
+    $("#cs", ov).innerHTML = sh.scene() + (sh.extra || "");
+    if (sh.fx) fxStop = sh.fx(ov);
+    $("#cnext", ov).textContent = k === shots.length - 1 ? lastLabel : "Weiter";
+    const cc = $("#cc", ov); cc.innerHTML = sh.who ? `<span class="who">${sh.who}</span>` : "";
+    ctl = typeLines(cc, sh.lines);
+  };
+  $("#cnext", ov).onclick = () => { if (ctl && !ctl.done) return ctl.finish(); if (i < shots.length - 1) show(i + 1); else end(); };
+  $("#cskip", ov).onclick = end;
+  $("#cs", ov).onclick = () => $("#cnext", ov).click();
+  show(0);
+}
+function playIntro() {
+  const crew = S.crew;
+  cine([
+    { scene: () => SCENE.lab({}), lines: ["Biologieraum, heute, 7:58 Uhr.", "Vor euch steht Z-8, die neue Zeitmaschine der Schule."] },
+    { scene: () => SCENE.lab({ glow: true, shake: true }), extra: `<div class="count"><b>3</b><b style="animation-delay:1s">2</b><b style="animation-delay:2s">1</b></div>`, lines: ["Euer Auftrag: ein Testflug. Nur fünf Minuten zurück in die Vergangenheit.", "Countdown läuft ..."] },
+    { scene: () => SCENE.sturm({}), extra: `<div class="redwash"></div><div class="alarm"><div><b>SYSTEMFEHLER</b><span id="race">vor 5 Minuten</span></div></div>`,
+      fx: ov => { const steps = ["vor 5 Minuten", "vor 1 Jahr", "vor 100 Jahren", "vor 10 000 Jahren", "vor 2 Millionen Jahren", "vor 66 Millionen Jahren", "vor 250 Millionen Jahren", "vor 500 Millionen Jahren"]; let k = 0; const h = setInterval(() => { const el = $("#race", ov); if (!el || k >= steps.length - 1) return clearInterval(h); el.textContent = steps[++k]; }, RM ? 30 : 420); return () => clearInterval(h); },
+      lines: ["Der Zeitregler klemmt!", "Z-8 rast weiter und weiter in die Vergangenheit ..."] },
+    { scene: () => SCENE.kambrium({ machine: true }), lines: ["Platsch!", "Wasser, so weit das Auge reicht. Kein Mensch, kein Baum, kein Handynetz."] },
+    { scene: () => SCENE.kambrium({ machine: true }), who: "Z-8, BORDCOMPUTER", lines: [`Hallo, Crew „${crew}“. Schlechte Nachricht: Mein Tank ist leer.`, "Ich laufe mit Wissen. Jede richtige Antwort lädt eine Zelle.", "Für jeden Sprung brauche ich 8 von 10 Zellen. Sonst bleiben wir hier. Für immer."] },
+  ], () => startChapter(0), "Los geht's");
+}
+function playLanding() {
+  cine([
+    { scene: () => SCENE.sturm({}), lines: ["Mit dem letzten Rest Treibstoff schießt Z-8 aus dem Zeitsturm ..."] },
+    { scene: () => SCENE.lab({ flash: true, smoke: true }), lines: ["Krachend landet Z-8 im Biologieraum.", "Genau fünf Minuten nach dem Start."] },
+    { scene: () => SCENE.lab({ smoke: true }), lines: ["Eure Lehrkraft schaut vom Pult auf.", "„Und? Wie war der Testflug?“"] },
+  ], () => { S.screen = "diploma"; render(); }, "Zum Diplom");
+}
+
+/* ===================== Game over ===================== */
+function death(id, retry, label, prefix) {
+  const d = DEATH[id];
+  S.deaths++; hud();
+  const lines = (prefix ? [prefix] : []).concat(d.lines);
+  const ov = document.createElement("div"); ov.className = "ov death";
+  ov.innerHTML = `<div class="ov-stage">${SCENE[d.scene]({ machine: d.scene !== "sturm" })}</div>
+    <div class="scroll"><div class="ov-bottom"><div class="go">GAME OVER</div><h2>${d.title}</h2>
+    <ol class="dlines">${lines.map(l => `<li>${l}</li>`).join("")}</ol>
+    <div class="find"><div class="fk">Fundbericht · ${d.find[0]}</div><div class="ff">Fossilform: ${d.find[1]}</div><p>${d.find[2]}</p><p>${d.find[3]}</p></div>
+    <div class="actions"><span class="grow"></span><button type="button" class="btn" id="retry">${label}</button></div></div></div>`;
+  document.body.appendChild(ov);
+  const lis = [...ov.querySelectorAll(".dlines li")];
+  (async () => { await wait(500); for (const li of lis) { li.classList.add("in"); await wait(900); } ov.querySelector(".find").classList.add("in"); })();
+  $("#retry", ov).onclick = () => { lis.forEach(l => l.classList.add("in")); ov.classList.add("out"); setTimeout(() => ov.remove(), 340); retry(); };
+}
+
+/* ===================== Zeitsprung ===================== */
+function fmtAgo(ma) { if (ma <= 0.0005) return "heute"; if (ma >= 1000) return `vor ${(ma / 1000).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Milliarden Jahren`; if (ma < 1) return `vor ${(Math.round(ma * 1000) * 1000).toLocaleString("de-DE")} Jahren`; return `vor ${Math.round(ma)} Millionen Jahren`; }
+function jump(name, from, to, then) {
+  return new Promise(res => {
+    const ov = document.createElement("div"); ov.className = "ov jump";
+    ov.innerHTML = `<div><div class="rings"><i></i><i></i><i></i><b></b></div><h2>Zeitsprung</h2><div class="to">${name}</div><div class="cnt" id="jc">${fmtAgo(from)}</div></div>`;
+    document.body.appendChild(ov);
+    const t0 = performance.now(), dur = RM ? 150 : 1700;
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      const el = $("#jc", ov); if (el) el.textContent = fmtAgo(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step);
+      else { if (then) then(); setTimeout(() => { ov.classList.add("out"); setTimeout(() => { ov.remove(); res(); }, 340); }, then ? 200 : 350); }
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+/* ===================== Aufgabentypen ===================== */
+function runTask(box, t, done) { if (t.type === "bins") return binsTask(box, t, done); if (t.type === "yesno") return yesnoTask(box, t, done); }
+
+function binsTask(box, t, done) {
+  const items = t.items.map((it, i) => ({ id: it.id || ("i" + i), ...it }));
+  const order = shuffle(items.map(i => i.id));
+  const pos = Object.fromEntries(items.map(i => [i.id, null]));
+  const res = {}, gapFix = {};
+  let sel = null, armed = null, checked = false;
+  const cap1 = t.layout !== "bins";
+  const tgt = id => t.targets.find(z => z.id === id);
+  const tgLabel = id => t.layout === "order" ? "Platz " + id : t.layout === "label" ? "Nummer " + id : tgt(id).label;
+  function chip(it) {
+    const r = res[it.id];
+    const cls = ["chip", t.layout === "order" ? "card" : "", sel === it.id ? "sel" : "", r || ""].join(" ");
+    const fix = r === "bad" && it.ans && t.layout !== "cloze" ? `<span class="fix">richtig: ${tgLabel(it.ans)}</span>` : "";
+    return `<button type="button" class="${cls}" data-item="${it.id}"${checked ? ' aria-disabled="true"' : ""}>${it.img ? `<span class="ci">${it.img}</span>` : ""}<span class="ct">${it.t}${fix}</span></button>`;
+  }
+  const zone = (id, extra) => `<div class="zone ${extra || ""} ${armed === id ? "armed" : ""}" data-zone="${id}" role="button" tabindex="0" aria-label="Feld ${tgLabel(id)}">${items.filter(i => pos[i.id] === id).map(chip).join("")}${gapFix[id] ? `<span class="fixw">richtig: ${gapFix[id]}</span>` : ""}</div>`;
+  function layout() {
+    const L = t.layout;
+    if (L === "label") return `<div class="lab"><figure>${labelFigure()}</figure><div class="rows">${t.targets.map(z => `<div class="lrow"><span class="num">${z.id}</span>${zone(z.id)}</div>`).join("")}</div></div>`;
+    if (L === "bins") return `<div class="bins">${t.targets.map(z => `<div class="bin"><div class="bin-h">${z.label}${z.sub ? `<small>${z.sub}</small>` : ""}</div>${zone(z.id)}</div>`).join("")}</div>`;
+    if (L === "order") return `<div class="order" style="--n:${t.targets.length}">${t.targets.map(z => `<div class="oslot"><span class="num">${z.id}</span>${zone(z.id)}</div>`).join("")}</div><div class="order-hint"><span>1 = Landtier</span><span>${t.targets.length} = am meisten walähnlich</span></div>`;
+    if (L === "match") return `<div class="match">${t.targets.map(z => `<div class="mrow"><div class="cat">${z.label}</div>${zone(z.id)}</div>`).join("")}</div>`;
+    if (L === "cloze") return `<div class="cloze">${t.text.replace(/\{(g\d)\}/g, (m, g) => zone(g, "gap"))}</div>`;
+  }
+  function complete() {
+    if (t.layout === "cloze") return t.targets.every(z => items.some(i => pos[i.id] === z.id));
+    return items.filter(i => i.ans).every(i => pos[i.id] !== null);
+  }
+  function render() {
+    const pool = order.map(byId => items.find(i => i.id === byId)).filter(i => pos[i.id] === null);
+    box.className = checked ? "locked" : "";
+    box.innerHTML = layout() +
+      (checked ? "" : `<div class="tray"><div class="pool-l">Kärtchen${pool.length ? ` · noch ${pool.length}` : ""}${pool.length > 2 ? '<span class="swipe"> · zum Wischen</span>' : ""}</div><div class="pool" data-pool="1">${pool.map(chip).join("")}</div></div>`) +
+      `<div class="fb"></div><div class="actions">${checked ? `<button type="button" class="btn" data-act="next">Weiter</button>` : `<button type="button" class="btn" data-act="check"${complete() ? "" : " disabled"}>Prüfen</button><span class="tk-how" style="margin:0">${complete() ? "Alles verteilt. Ihr habt einen Versuch." : "Verteilt erst alle Kärtchen."}</span>`}</div>`;
+  }
+  function labelFigure() {
+    const M = [[1, 34, 74, 76, 116], [2, 360, 26, 320, 50], [3, 398, 166, 362, 136], [4, 296, 274, 322, 214]];
+    return ARCHAEO.replace("</svg>", M.map(([n, x, y, fx, fy]) => `<line x1="${x}" y1="${y}" x2="${fx}" y2="${fy}" stroke="#0E7F70" stroke-width="2" stroke-dasharray="4 3"/><circle cx="${fx}" cy="${fy}" r="3.5" fill="#0E7F70"/><circle cx="${x}" cy="${y}" r="14" fill="#0E7F70"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-family="Chakra Petch, Arial, sans-serif" font-weight="700" font-size="17" fill="#FFFFFF">${n}</text>`).join("") + "</svg>");
+  }
+  function moveTo(id, z) {
+    if (cap1) { const occ = items.find(i => pos[i.id] === z && i.id !== id); if (occ) pos[occ.id] = pos[id]; }
+    pos[id] = z;
+  }
+  box.onclick = async e => {
+    const act = e.target.closest("[data-act]");
+    if (act) {
+      if (act.dataset.act === "next") return done();
+      if (act.dataset.act === "check" && !act.disabled) return check();
+      return;
+    }
+    if (checked) return;
+    const c = e.target.closest("[data-item]"), z = e.target.closest("[data-zone]"), p = e.target.closest("[data-pool]");
+    if (c) {
+      const id = c.dataset.item;
+      if (sel && sel !== id && pos[id] !== null) { moveTo(sel, pos[id]); sel = armed = null; return render(); }
+      if (armed && pos[id] === null) { moveTo(id, armed); sel = armed = null; return render(); }
+      sel = sel === id ? null : id; armed = null; return render();
+    }
+    if (z) { const zid = z.dataset.zone; if (sel) { moveTo(sel, zid); sel = armed = null; } else armed = armed === zid ? null : zid; return render(); }
+    if (p && sel && pos[sel] !== null) { pos[sel] = null; sel = null; return render(); }
+  };
+  box.onkeydown = e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-zone]")) { e.preventDefault(); e.target.click(); } };
+  async function check() {
+    checked = true; sel = armed = null;
+    let score = 0;
+    if (t.layout === "cloze") {
+      for (const z of t.targets) {
+        const right = items.find(i => i.ans === z.id), inGap = items.find(i => pos[i.id] === z.id);
+        if (inGap === right) { res[right.id] = "ok"; score++; } else { if (inGap) res[inGap.id] = "bad"; gapFix[z.id] = right.t; }
+      }
+    } else for (const it of items) if (it.ans) { if (pos[it.id] === it.ans) { res[it.id] = "ok"; score++; } else res[it.id] = "bad"; }
+    render();
+    const btn = box.querySelector('[data-act="next"]'); btn.disabled = true;
+    for (let k = 0; k < score; k++) { addFuel(); await wait(170); }
+    btn.disabled = false;
+    fbSet(box, score === t.max ? "ok" : "info", `<b>${score} von ${t.max} richtig: +${score} ${score === 1 ? "Zelle" : "Zellen"}.</b>${score < t.max ? " Rot markiert: So wäre es richtig gewesen." : ""}`);
+  }
+  render();
+}
+
+function yesnoTask(box, t, done) {
+  let i = 0, answered = false; const res = [];
+  function show() {
+    const it = t.items[i]; answered = false;
+    box.innerHTML = `<div class="prog">${t.items.map((_, k) => `<i class="${res[k] === true ? "ok" : res[k] === false ? "bad" : k === i ? "cur" : ""}"></i>`).join("")}</div>
+      <div class="yn">${it.img}<div><div class="cnt">Fund ${i + 1} von ${t.items.length}</div><q>${it.t}</q></div></div>
+      <div class="two"><button type="button" class="opt" data-v="1">${t.yes}</button><button type="button" class="opt" data-v="0">${t.no}</button></div>
+      <div class="fb"></div><div class="actions"></div>`;
+  }
+  box.onclick = e => {
+    const b = e.target.closest("[data-v]");
+    if (b && !answered) {
+      answered = true;
+      const it = t.items[i], right = (b.dataset.v === "1") === it.ok; res[i] = right;
+      box.querySelectorAll("[data-v]").forEach(x => { x.disabled = true; if ((x.dataset.v === "1") === it.ok) x.classList.add("ok"); else if (x === b) x.classList.add("bad"); });
+      if (right) addFuel();
+      fbSet(box, right ? "ok" : "bad", `<b>${right ? "Richtig! +1 Zelle." : "Leider falsch."}</b> ${it.ok ? "Das ist ein Fossil." : "Das ist kein Fossil."} ${it.ex}`);
+      box.querySelector(".actions").innerHTML = `<button type="button" class="btn" data-act="next">${i < t.items.length - 1 ? "Nächster Fund" : "Weiter"}</button>`;
+      return;
+    }
+    if (e.target.closest('[data-act="next"]')) { if (i < t.items.length - 1) { i++; show(); } else done(); }
+  };
+  show();
+}
+
+function stormTask(box) {
+  const st = S.storm;
+  const ship = () => { const el = $("#ship"); if (el) el.style.left = `calc(${Math.min(1, st.ok / NEED) * 100}% * .82 + 8px)`; };
+  function show() {
+    const [ok, text] = st.items[st.i];
+    box.innerHTML = `<div class="st-card"><div class="cnt">Frage ${st.i + 1} von 10</div><q>${text}</q>${S.cfg.timer ? '<div class="timer" id="tm"><i></i></div>' : ""}</div>
+      <div class="two"><button type="button" class="opt" data-v="1">Stimmt</button><button type="button" class="opt" data-v="0">Stimmt nicht</button></div><div class="fb"></div><div class="actions"></div>`;
+    ship(); fuelGauge();
+    if (S.cfg.timer) {
+      const T = 20000, t0 = performance.now(); let raf;
+      const tick = now => { const k = Math.min(1, (now - t0) / T), bar = $("#tm i", box); if (!bar) return; bar.style.width = (100 - k * 100) + "%"; $("#tm", box).classList.toggle("low", k > .7); if (k >= 1) answer(null); else raf = requestAnimationFrame(tick); };
+      raf = requestAnimationFrame(tick); stopTimer = () => cancelAnimationFrame(raf);
+    }
+  }
+  function answer(v) {
+    if (st.answered) return; st.answered = true;
+    if (stopTimer) { stopTimer(); stopTimer = null; }
+    const [ok, , ex] = st.items[st.i], right = v !== null && (v === "1") === ok;
+    if (right) st.ok++; else st.bad++;
+    box.querySelectorAll("[data-v]").forEach(x => { x.disabled = true; if ((x.dataset.v === "1") === ok) x.classList.add("ok"); else if (x.dataset.v === v) x.classList.add("bad"); });
+    fuelGauge(right ? st.ok - 1 : 10 - st.bad); ship();
+    fbSet(box, right ? "ok" : "bad", `<b>${right ? "Richtig!" : v === null ? "Zu langsam! Ein Blitz trifft Z-8." : "Falsch! Ein Blitz trifft Z-8."}</b> Die Aussage ${ok ? "stimmt" : "stimmt nicht"}. ${ex}`);
+    const last = st.bad >= 3 || st.i === st.items.length - 1;
+    box.querySelector(".actions").innerHTML = `<button type="button" class="btn${st.bad >= 3 ? " red" : ""}" data-act="next">${st.bad >= 3 ? "Oh nein ..." : last ? "Landung einleiten" : "Nächste Frage"}</button>`;
+  }
+  box.onclick = e => {
+    const b = e.target.closest("[data-v]"); if (b && !st.answered) return answer(b.dataset.v);
+    if (e.target.closest('[data-act="next"]')) {
+      if (st.bad >= 3) return death("sturm", () => { S.screen = "finIntro"; render(); }, "Sturm noch einmal versuchen");
+      if (st.i === st.items.length - 1) { S.cells += st.ok; return playLanding(); }
+      st.i++; st.answered = false; show();
+    }
+  };
+  st.answered = false; show();
+}
+
+/* ===================== Konfetti ===================== */
+function confetti() {
+  if (RM) return;
+  const c = document.createElement("div"); c.className = "confetti";
+  const cols = ["#F4B03E", "#5CE1CB", "#E2563C", "#7FA056", "#34B2C9", "#812B92"];
+  c.innerHTML = Array.from({ length: 70 }, (_, i) => `<i style="left:${(i * 37) % 100}%;background:${cols[i % cols.length]};animation-delay:${(i % 14) * .12}s;animation-duration:${2.4 + (i % 5) * .3}s"></i>`).join("");
+  document.body.appendChild(c); setTimeout(() => c.remove(), 5000);
+}
+
+/* ===================== Lehrkraft-Menü (5x auf "Mission Rückkehr" tippen) ===================== */
+function teacher() {
+  const ov = document.createElement("div"); ov.className = "teach";
+  const draw = () => {
+    const chs = chapters();
+    ov.innerHTML = `<div class="box"><div class="tk-n">Für die Lehrkraft</div><h2 style="margin:4px 0 6px">Direkt springen</h2>
+      <div class="grid"><button class="btn ghost" data-t="title">Titel</button>${chs.map((c, i) => `<button class="btn ghost" data-t="c${i}">Kapitel ${i + 1}: ${c.era}</button>`).join("")}<button class="btn ghost" data-t="fin">Zeitsturm</button><button class="btn ghost" data-t="dip">Diplom</button></div>
+      <label><input type="checkbox" id="opt-timer"${S.cfg.timer ? " checked" : ""}> 20-Sekunden-Timer im Zeitsturm</label>
+      <label><input type="checkbox" id="opt-wal"${S.cfg.wal ? " checked" : ""}> Kapitel „Die Spur der Wale“ (nur nach der Walstunde)</label>
+      <p class="tk-how" style="margin:8px 0 0">Schwelle: ${NEED} von 10 Zellen pro Kapitel. Neustart für die nächste Crew: Seite neu laden.</p>
+      <div class="actions"><button class="btn" data-t="x">Schließen</button></div></div>`;
+  };
+  draw();
+  ov.onchange = e => { if (e.target.id === "opt-timer") S.cfg.timer = e.target.checked; if (e.target.id === "opt-wal") { S.cfg.wal = e.target.checked; S.ch = Math.min(S.ch, chapters().length - 1); draw(); } };
+  ov.onclick = e => {
+    const b = e.target.closest("[data-t]"); if (!b) return;
+    const k = b.dataset.t;
+    if (!S.crew && k !== "title" && k !== "x") S.crew = "Test";
+    if (!S.t0) S.t0 = Date.now();
+    if (k === "title") { S.screen = "title"; render(); }
+    else if (k[0] === "c") startChapter(+k.slice(1));
+    else if (k === "fin") { S.ch = chapters().length - 1; S.screen = "finIntro"; render(); }
+    else if (k === "dip") { S.screen = "diploma"; render(); }
+    ov.remove();
+  };
+  document.body.appendChild(ov);
+}
+
+/* ===================== Start ===================== */
+window.claude?.hot?.snapshot?.(() => JSON.parse(JSON.stringify(Object.assign({}, S, { tasks: null }))));
+function boot(data) {
+  if (data && data.screen && data.screen !== "title") { Object.assign(S, data); if (!S.tasks && ["task", "chIntro"].includes(S.screen)) { S.tasks = curCh().tasks(); S.ti = 0; S.fuel = 0; S.screen = "chIntro"; } if (S.screen === "storm") S.screen = "finIntro"; }
+  render();
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+
+</script>
+
+</body>
+</html>
